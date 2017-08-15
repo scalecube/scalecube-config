@@ -1,0 +1,17 @@
+.ssh
+/.settings
+*/.settings
+/.classpath
+*/.classpath
+/.project
+*/.project
+/target
+*/target
+/bin
+*/bin
+
+/.idea
+*/.idea
+*.iml
+/target-proto
+*/target-proto

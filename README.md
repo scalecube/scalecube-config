@@ -59,3 +59,30 @@ See more examples at `config-examples` module.
 * support list and array property types
 * support git repository configuration source
 * support zookeeper configuration source
+
+## Maven 
+
+Binaries and dependency information for Maven can be found at 
+[http://search.maven.org](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.scalecube%22%20AND%20a%3A%22config%22).
+
+Change history and version numbers at [CHANGES.md](https://github.com/scalecube/config/blob/master/CHANGES.md).
+
+Maven dependency: 
+
+``` xml
+<dependency>
+  <groupId>io.scalecube</groupId>
+  <artifactId>config</artifactId>
+  <version>x.y.z</version>
+</dependency>
+```
+
+// TBD
+
+## Bugs and Feedback
+
+For bugs, questions and discussions please use the [GitHub Issues](https://github.com/scalecube/config/issues).
+
+## License
+
+[Apache License, Version 2.0](https://github.com/scalecube/config/blob/master/LICENSE.txt)

@@ -13,6 +13,7 @@
         ScaleCube Config is a configuration management library for JVM based distributed applications.
     </description>
     <inceptionYear>2017</inceptionYear>
+    <url>https://github.com/scalecube/config</url>
 
     <licenses>
         <license>

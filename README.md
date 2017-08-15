@@ -1,6 +1,9 @@
 # ScaleCube Config
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.scalecube/config/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.scalecube/config)
+
 ScaleCube Config is a configuration management library for JVM based distributed applications.
+
 It provides the following functionality:
 * Dynamic typed properties
 * Register callbacks on property changes
@@ -37,28 +40,19 @@ Register callback on property changes:
 timeoutProperty.addCallback((oldValue, newValue) -> System.out.println("Timeout value changed to " + newValue));
 ```
 
-Start embedded HTTP server which exposes configuration endpoint:
+Start embedded HTTP server which exposes configuration endpoints:
   
 ``` java
 ConfigRegistryHttpServer.create(configRegistry, 5050); // starts http server on port 5050
 ```
 
-After HTTp server is started try to explore configuration registry by browsing following endpoints: 
-* [/configuration/properties](http://localhost:5050/configuration/properties)
-* [/configuration/sources](http://localhost:5050/configuration/sources)
-* [/configuration/events](http://localhost:5050/configuration/events)
-* [/configuration/settings](http://localhost:5050/configuration/settings)
+After HTTP server is started explore configuration registry by browsing following endpoints: 
+* [http://localhost:5050/configuration/properties](http://localhost:5050/configuration/properties)
+* [http://localhost:5050/configuration/sources](http://localhost:5050/configuration/sources)
+* [http://localhost:5050/configuration/events](http://localhost:5050/configuration/events)
+* [http://localhost:5050/configuration/events](http://localhost:5050/configuration/events)
 
-See more examples at `config-examples` module.
-
-## TODO
-
-* clean up mongodb configuration source support
-* support secured properties
-* support of grouped callbacks
-* support list and array property types
-* support git repository configuration source
-* support zookeeper configuration source
+See more examples at [config-examples](https://github.com/scalecube/config/tree/master/config-examples/src/main/java/io/scalecube/config/examples) module.
 
 ## Maven 
 
@@ -75,9 +69,22 @@ Maven dependency:
   <artifactId>config</artifactId>
   <version>x.y.z</version>
 </dependency>
-```
 
-// TBD
+<!-- For exposing config HTTP endpoints -->
+<dependency>
+  <groupId>io.scalecube</groupId>
+  <artifactId>config-http-server</artifactId>
+  <version>x.y.z</version>
+</dependency>
+
+<!-- For MongoDB integration (beta version) -->
+<dependency>
+  <groupId>io.scalecube</groupId>
+  <artifactId>config-mongo</artifactId>
+  <version>x.y.z</version>
+</dependency>
+
+```
 
 ## Bugs and Feedback
 

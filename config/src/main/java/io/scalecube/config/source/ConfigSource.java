@@ -9,8 +9,8 @@ import java.util.Map;
  */
 public interface ConfigSource {
 
-	/**
-	 * Loads all properties from the source.
-	 */
-	Map<String, ConfigProperty> loadConfig();
+  /**
+   * Loads all properties from the source.
+   */
+  Map<String, ConfigProperty> loadConfig();
 }

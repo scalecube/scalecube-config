@@ -5,8 +5,8 @@ package io.scalecube.config.audit;
  */
 public interface ConfigEventListener {
 
-	/**
-	 * Process configuration change event.
-	 */
-	void onEvent(ConfigEvent event);
+  /**
+   * Process configuration change event.
+   */
+  void onEvent(ConfigEvent event);
 }

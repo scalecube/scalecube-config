@@ -9,27 +9,27 @@ import java.util.stream.Collectors;
 
 public final class ConfigCollectorUtil {
 
-	private ConfigCollectorUtil() {
-		// Do not instantiate
-	}
+  private ConfigCollectorUtil() {
+    // Do not instantiate
+  }
 
-	public static <T> void filterAndCollectInOrder(Iterator<Predicate<T>> predicateIterator,
-			Map<T, Map<String, String>> configMap,
-			BiConsumer<T, Map<String, String>> configCollector) {
+  public static <T> void filterAndCollectInOrder(Iterator<Predicate<T>> predicateIterator,
+      Map<T, Map<String, String>> configMap,
+      BiConsumer<T, Map<String, String>> configCollector) {
 
-		if (!predicateIterator.hasNext()) {
-			return;
-		}
+    if (!predicateIterator.hasNext()) {
+      return;
+    }
 
-		Predicate<T> groupPredicate = predicateIterator.next();
-		List<T> groups = configMap.keySet().stream().filter(groupPredicate).collect(Collectors.toList());
-		for (T group : groups) {
-			Map<String, String> map = configMap.get(group);
-			if (!map.isEmpty()) {
-				configCollector.accept(group, map);
-			}
-		}
+    Predicate<T> groupPredicate = predicateIterator.next();
+    List<T> groups = configMap.keySet().stream().filter(groupPredicate).collect(Collectors.toList());
+    for (T group : groups) {
+      Map<String, String> map = configMap.get(group);
+      if (!map.isEmpty()) {
+        configCollector.accept(group, map);
+      }
+    }
 
-		filterAndCollectInOrder(predicateIterator, configMap, configCollector);
-	}
+    filterAndCollectInOrder(predicateIterator, configMap, configCollector);
+  }
 }

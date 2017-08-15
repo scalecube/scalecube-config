@@ -5,9 +5,9 @@ import java.util.function.BiConsumer;
 
 public interface BooleanConfigProperty extends ConfigProperty {
 
-	Optional<Boolean> get();
+  Optional<Boolean> get();
 
-	boolean get(boolean defaultValue);
+  boolean get(boolean defaultValue);
 
-	void addCallback(BiConsumer<Boolean, Boolean> callback);
+  void addCallback(BiConsumer<Boolean, Boolean> callback);
 }

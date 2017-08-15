@@ -11,19 +11,19 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
  */
 public class ObjectMapperHolder {
 
-	private static final ObjectMapper objectMapper = new ObjectMapper()
-			.registerModule(new Jdk8Module())
-			.registerModule(new JavaTimeModule());
+  private static final ObjectMapper objectMapper = new ObjectMapper()
+      .registerModule(new Jdk8Module())
+      .registerModule(new JavaTimeModule());
 
-	static {
-		objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-		objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-		objectMapper.configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true);
-	}
+  static {
+    objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+    objectMapper.configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true);
+  }
 
-	public static ObjectMapper getInstance() {
-		return objectMapper;
-	}
+  public static ObjectMapper getInstance() {
+    return objectMapper;
+  }
 
 }

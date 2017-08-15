@@ -44,7 +44,7 @@ ConfigRegistryHttpServer.create(configRegistry, 5050); // starts http server on 
 ```
 
 After HTTp server is started try to explore configuration registry by browsing following endpoints: 
-* [/configurations/properties](http://localhost:5050/configuration/properties)
+* [/configuration/properties](http://localhost:5050/configuration/properties)
 * [/configuration/sources](http://localhost:5050/configuration/sources)
 * [/configuration/events](http://localhost:5050/configuration/events)
 * [/configuration/settings](http://localhost:5050/configuration/settings)

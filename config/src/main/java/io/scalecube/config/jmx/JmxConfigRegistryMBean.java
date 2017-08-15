@@ -4,11 +4,11 @@ import java.util.Collection;
 
 public interface JmxConfigRegistryMBean {
 
-	Collection<String> getProperties();
+  Collection<String> getProperties();
 
-	Collection<String> getSources();
+  Collection<String> getSources();
 
-	Collection<String> getEvents();
+  Collection<String> getEvents();
 
-	Collection<String> getSettings();
+  Collection<String> getSettings();
 }

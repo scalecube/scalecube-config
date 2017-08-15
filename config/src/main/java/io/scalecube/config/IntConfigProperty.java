@@ -5,9 +5,9 @@ import java.util.function.BiConsumer;
 
 public interface IntConfigProperty extends ConfigProperty {
 
-	Optional<Integer> get();
+  Optional<Integer> get();
 
-	int get(int defaultValue);
+  int get(int defaultValue);
 
-	void addCallback(BiConsumer<Integer, Integer> callback);
+  void addCallback(BiConsumer<Integer, Integer> callback);
 }

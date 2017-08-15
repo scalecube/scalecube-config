@@ -5,9 +5,9 @@ import java.util.function.BiConsumer;
 
 public interface DoubleConfigProperty extends ConfigProperty {
 
-	Optional<Double> get();
+  Optional<Double> get();
 
-	double get(double defaultValue);
+  double get(double defaultValue);
 
-	void addCallback(BiConsumer<Double, Double> callback);
+  void addCallback(BiConsumer<Double, Double> callback);
 }

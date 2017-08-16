@@ -57,7 +57,7 @@ See more examples at [config-examples](https://github.com/scalecube/config/tree/
 ## Maven 
 
 Binaries and dependency information for Maven can be found at 
-[http://search.maven.org](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.scalecube%22%20AND%20a%3A%22config%22).
+[http://search.maven.org](http://search.maven.org/#search%7Cga%7C1%7Cio.scalecube.config).
 
 Change history and [version numbers](http://semver.org/) can be found at [CHANGES.md](https://github.com/scalecube/config/blob/master/CHANGES.md). 
 

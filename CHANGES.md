@@ -1,6 +1,6 @@
 # Changes
 
-## 0.1.1
+## 0.1.1 / 2017-08-17
 
 * Change HTTP resource base path to `_config`
 * Add shortcut methods to get property values from `ConfigRegistry`

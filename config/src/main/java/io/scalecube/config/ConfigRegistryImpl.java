@@ -111,8 +111,18 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
+  public String stringValue(String name, String defaultValue) {
+    return stringProperty(name).get(defaultValue);
+  }
+
+  @Override
   public DoubleConfigProperty doubleProperty(String name) {
     return new DoubleConfigPropertyImpl(name);
+  }
+
+  @Override
+  public double doubleValue(String name, double defaultValue) {
+    return doubleProperty(name).get(defaultValue);
   }
 
   @Override
@@ -121,13 +131,28 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
+  public long longValue(String name, long defaultValue) {
+    return longProperty(name).get(defaultValue);
+  }
+
+  @Override
   public BooleanConfigProperty booleanProperty(String name) {
     return new BooleanConfigPropertyImpl(name);
   }
 
   @Override
+  public boolean booleanValue(String name, boolean defaultValue) {
+    return booleanProperty(name).get(defaultValue);
+  }
+
+  @Override
   public IntConfigProperty intProperty(String name) {
     return new IntConfigPropertyImpl(name);
+  }
+
+  @Override
+  public int intValue(String name, int defaultValue) {
+    return intProperty(name).get(defaultValue);
   }
 
   @Override

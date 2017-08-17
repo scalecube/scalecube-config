@@ -18,7 +18,7 @@ It provides the following functionality:
 Create configuration registry instance:
 
 ``` java
-Predicate<Path> predicate = path -> path.toString().endsWith(".props"); // match files with .props extension
+Predicate<Path> predicate = path -> path.toString().endsWith(".props"); // match by .props extension
 ConfigRegistrySettings settings = ConfigRegistrySettings.builder()
         .addLastSource("classpath", new ClassPathConfigSource(predicate))
         .addLastSource("configDirectory", new DirectoryConfigSource("." /* base path */, predicate))
@@ -37,7 +37,8 @@ long timeout = timeoutProperty.get(30 /* default value */);
 Register callback on property changes:
  
 ``` java
-timeoutProperty.addCallback((oldValue, newValue) -> System.out.println("Timeout value changed to " + newValue));
+timeoutProperty.addCallback((oldValue, newValue) -> 
+        System.out.println("Timeout value changed to " + newValue));
 ```
 
 Start embedded HTTP server which exposes configuration endpoints:

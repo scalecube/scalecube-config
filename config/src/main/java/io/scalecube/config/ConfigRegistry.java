@@ -35,12 +35,30 @@ public interface ConfigRegistry {
   StringConfigProperty stringProperty(String name);
 
   /**
+   * Returns current value of string property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  String stringValue(String name, String defaultValue);
+
+  /**
    * Returns dynamic typed double property.
    *
    * @param name property name
    * @return property instance
    */
   DoubleConfigProperty doubleProperty(String name);
+
+  /**
+   * Returns current value of double property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  double doubleValue(String name, double defaultValue);
 
   /**
    * Returns dynamic typed long property.
@@ -51,6 +69,15 @@ public interface ConfigRegistry {
   LongConfigProperty longProperty(String name);
 
   /**
+   * Returns current value of long property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  long longValue(String name, long defaultValue);
+
+  /**
    * Returns dynamic typed boolean property.
    *
    * @param name property name
@@ -59,12 +86,30 @@ public interface ConfigRegistry {
   BooleanConfigProperty booleanProperty(String name);
 
   /**
+   * Returns current value of boolean property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  boolean booleanValue(String name, boolean defaultValue);
+
+  /**
    * Returns dynamic typed integer property.
    *
    * @param name property name
    * @return property instance
    */
   IntConfigProperty intProperty(String name);
+
+  /**
+   * Returns current value of int property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  int intValue(String name, int defaultValue);
 
   /**
    * Returns set of all loaded property keys.

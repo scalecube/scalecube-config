@@ -48,10 +48,10 @@ ConfigRegistryHttpServer.create(configRegistry, 5050); // starts http server on 
 ```
 
 After HTTP server is started explore configuration registry by browsing following endpoints: 
-* [http://localhost:5050/configuration/properties](http://localhost:5050/configuration/properties)
-* [http://localhost:5050/configuration/sources](http://localhost:5050/configuration/sources)
-* [http://localhost:5050/configuration/events](http://localhost:5050/configuration/events)
-* [http://localhost:5050/configuration/settings](http://localhost:5050/configuration/settings)
+* [http://localhost:5050/_config/properties](http://localhost:5050/_config/properties)
+* [http://localhost:5050/_config/sources](http://localhost:5050/_config/sources)
+* [http://localhost:5050/_config/events](http://localhost:5050/_config/events)
+* [http://localhost:5050/_config/settings](http://localhost:5050/_config/settings)
 
 See more examples at [config-examples](https://github.com/scalecube/config/tree/master/config-examples/src/main/java/io/scalecube/config/examples) module.
 

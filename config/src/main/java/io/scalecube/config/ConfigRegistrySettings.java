@@ -5,7 +5,9 @@ import io.scalecube.config.source.ConfigSource;
 
 import java.net.InetAddress;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 /**
@@ -29,8 +31,12 @@ public final class ConfigRegistrySettings {
   private ConfigRegistrySettings(Builder builder) {
     this.reloadIntervalSec = builder.reloadIntervalSec;
     this.recentConfigEventsNum = builder.recentConfigEventsNum;
-    this.listeners = Collections.unmodifiableMap(builder.listeners);
-    this.sources = Collections.unmodifiableMap(builder.sources);
+    this.listeners = Collections.unmodifiableMap(new HashMap<>(builder.listeners));
+    Map<String, ConfigSource> sourcesTmp = new LinkedHashMap<>(builder.sources.size());
+    for (String name : builder.sourceOrder) {
+      sourcesTmp.put(name, builder.sources.get(name));
+    }
+    this.sources = Collections.unmodifiableMap(sourcesTmp);
     this.host = builder.host != null ? builder.host : resolveHost();
     this.jmxEnabled = builder.jmxEnabled;
     this.jmxMBeanName = builder.jmxMBeanName;
@@ -92,8 +98,9 @@ public final class ConfigRegistrySettings {
   public static class Builder {
     private int reloadIntervalSec = DEFAULT_RELOAD_PERIOD_SEC;
     private int recentConfigEventsNum = DEFAULT_RECENT_EVENTS_NUM;
-    private Map<String, ConfigEventListener> listeners = new LinkedHashMap<>();
-    private Map<String, ConfigSource> sources = new LinkedHashMap<>();
+    private Map<String, ConfigEventListener> listeners = new HashMap<>();
+    private LinkedList<String> sourceOrder = new LinkedList<>();
+    private Map<String, ConfigSource> sources = new HashMap<>();
     private String host = null;
     private boolean jmxEnabled = DEFAULT_JMX_ENABLED;
     private String jmxMBeanName = DEFAULT_JMX_MBEAN_NAME;
@@ -116,6 +123,20 @@ public final class ConfigRegistrySettings {
     }
 
     public Builder addLastSource(String name, ConfigSource configSource) {
+      sourceOrder.addLast(name);
+      sources.put(name, configSource);
+      return this;
+    }
+
+    public Builder addFirstSource(String name, ConfigSource configSource) {
+      sourceOrder.addFirst(name);
+      sources.put(name, configSource);
+      return this;
+    }
+
+    public Builder addBeforeSource(String beforeName, String name, ConfigSource configSource) {
+      int ind = sourceOrder.indexOf(beforeName);
+      sourceOrder.add(ind, name);
       sources.put(name, configSource);
       return this;
     }

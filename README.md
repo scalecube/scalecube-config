@@ -50,7 +50,7 @@ After HTTP server is started explore configuration registry by browsing followin
 * [http://localhost:5050/configuration/properties](http://localhost:5050/configuration/properties)
 * [http://localhost:5050/configuration/sources](http://localhost:5050/configuration/sources)
 * [http://localhost:5050/configuration/events](http://localhost:5050/configuration/events)
-* [http://localhost:5050/configuration/events](http://localhost:5050/configuration/events)
+* [http://localhost:5050/configuration/settings](http://localhost:5050/configuration/settings)
 
 See more examples at [config-examples](https://github.com/scalecube/config/tree/master/config-examples/src/main/java/io/scalecube/config/examples) module.
 

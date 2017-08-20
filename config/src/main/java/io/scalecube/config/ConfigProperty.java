@@ -4,13 +4,13 @@ import java.util.Optional;
 
 public interface ConfigProperty {
 
-  String getName();
+  String name();
 
-  Optional<String> getSource();
+  Optional<String> source();
 
-  Optional<String> getOrigin();
+  Optional<String> origin();
 
-  Optional<String> getAsString();
+  Optional<String> valueAsString();
 
-  String getAsString(String defaultValue);
+  String valueAsString(String defaultValue);
 }

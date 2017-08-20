@@ -3,7 +3,9 @@ package io.scalecube.config;
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.source.ConfigSourceInfo;
 
+import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -110,6 +112,92 @@ public interface ConfigRegistry {
    * @return property value
    */
   int intValue(String name, int defaultValue);
+
+  /**
+   * Returns dynamic typed java8 duration property. See for details {@link Duration#parse(java.lang.CharSequence)}.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  DurationConfigProperty durationProperty(String name);
+
+  /**
+   * Returns current value of java8 duration property or defaults. See for details
+   * {@link Duration#parse(java.lang.CharSequence)}.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  Duration durationValue(String name, Duration defaultValue);
+
+  /**
+   * Returns dynamic generic-typed list property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  ListConfigProperty<String> stringListProperty(String name);
+
+  /**
+   * Returns current value of list property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  List<String> stringListValue(String name, List<String> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed list property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  ListConfigProperty<Double> doubleListProperty(String name);
+
+  /**
+   * Returns current value of list property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  List<Double> doubleListValue(String name, List<Double> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed list property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  ListConfigProperty<Long> longListProperty(String name);
+
+  /**
+   * Returns current value of list property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  List<Long> longListValue(String name, List<Long> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed list property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  ListConfigProperty<Integer> intListProperty(String name);
+
+  /**
+   * Returns current value of list property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  List<Integer> intListValue(String name, List<Integer> defaultValue);
 
   /**
    * Returns set of all loaded property keys.

@@ -10,7 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -22,7 +24,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -63,7 +66,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private volatile Map<String, ConfigProperty> propertyMap;
 
-  private final ConcurrentMap<String, BiConsumer> propertyCallbacks = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Collection<BiConsumer>> propertyCallbacks = new ConcurrentHashMap<>();
 
   private final LinkedHashMap<ConfigEvent, Object> recentConfigEvents = new LinkedHashMap<ConfigEvent, Object>() {
     @Override
@@ -107,78 +110,117 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   @Override
   public StringConfigProperty stringProperty(String name) {
-    StringConfigPropertyImpl configProperty = new StringConfigPropertyImpl();
-    configProperty.configure(name, String.class);
-    return configProperty;
+    return new StringConfigPropertyImpl(name);
   }
 
   @Override
   public String stringValue(String name, String defaultValue) {
-    return stringProperty(name).get(defaultValue);
+    return stringProperty(name).value(defaultValue);
   }
 
   @Override
   public DoubleConfigProperty doubleProperty(String name) {
-    DoubleConfigPropertyImpl configProperty = new DoubleConfigPropertyImpl();
-    configProperty.configure(name, Double.class);
-    return configProperty;
+    return new DoubleConfigPropertyImpl(name);
   }
 
   @Override
   public double doubleValue(String name, double defaultValue) {
-    return doubleProperty(name).get(defaultValue);
+    return doubleProperty(name).value(defaultValue);
   }
 
   @Override
   public LongConfigProperty longProperty(String name) {
-    LongConfigPropertyImpl configProperty = new LongConfigPropertyImpl();
-    configProperty.configure(name, Long.class);
-    return configProperty;
+    return new LongConfigPropertyImpl(name);
   }
 
   @Override
   public long longValue(String name, long defaultValue) {
-    return longProperty(name).get(defaultValue);
+    return longProperty(name).value(defaultValue);
   }
 
   @Override
   public BooleanConfigProperty booleanProperty(String name) {
-    BooleanConfigPropertyImpl configProperty = new BooleanConfigPropertyImpl();
-    configProperty.configure(name, Boolean.class);
-    return configProperty;
+    return new BooleanConfigPropertyImpl(name);
   }
 
   @Override
   public boolean booleanValue(String name, boolean defaultValue) {
-    return booleanProperty(name).get(defaultValue);
+    return booleanProperty(name).value(defaultValue);
   }
 
   @Override
   public IntConfigProperty intProperty(String name) {
-    IntConfigPropertyImpl configProperty = new IntConfigPropertyImpl();
-    configProperty.configure(name, Integer.class);
-    return configProperty;
+    return new IntConfigPropertyImpl(name);
   }
 
   @Override
   public int intValue(String name, int defaultValue) {
-    return intProperty(name).get(defaultValue);
+    return intProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public DurationConfigProperty durationProperty(String name) {
+    return new DurationConfigPropertyImpl(name);
+  }
+
+  @Override
+  public Duration durationValue(String name, Duration defaultValue) {
+    return durationProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public ListConfigProperty<String> stringListProperty(String name) {
+    return new ListConfigPropertyImpl<>(name, str -> str);
+  }
+
+  @Override
+  public List<String> stringListValue(String name, List<String> defaultValue) {
+    return stringListProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public ListConfigProperty<Double> doubleListProperty(String name) {
+    return new ListConfigPropertyImpl<>(name, Double::parseDouble);
+  }
+
+  @Override
+  public List<Double> doubleListValue(String name, List<Double> defaultValue) {
+    return doubleListProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public ListConfigProperty<Long> longListProperty(String name) {
+    return new ListConfigPropertyImpl<>(name, Long::parseLong);
+  }
+
+  @Override
+  public List<Long> longListValue(String name, List<Long> defaultValue) {
+    return longListProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public ListConfigProperty<Integer> intListProperty(String name) {
+    return new ListConfigPropertyImpl<>(name, Integer::parseInt);
+  }
+
+  @Override
+  public List<Integer> intListValue(String name, List<Integer> defaultValue) {
+    return intListProperty(name).value(defaultValue);
   }
 
   @Override
   public Set<String> allProperties() {
-    return propertyMap.values().stream().map(ConfigProperty::getName).collect(Collectors.toSet());
+    return propertyMap.values().stream().map(ConfigProperty::name).collect(Collectors.toSet());
   }
 
   @Override
   public Collection<ConfigPropertyInfo> getConfigProperties() {
-    // noinspection RedundantCast
-    return propertyMap.values().stream().map((Function<ConfigProperty, ConfigPropertyInfo>) property -> {
+    return propertyMap.values().stream().map(property -> {
       ConfigPropertyInfo info = new ConfigPropertyInfo();
-      info.setName(property.getName());
-      info.setValue(property.getAsString().orElse(null));
-      info.setSource(property.getSource().orElse(null));
-      info.setOrigin(property.getOrigin().orElse(null));
+      info.setName(property.name());
+      info.setValue(property.valueAsString().orElse(null));
+      info.setSource(property.source().orElse(null));
+      info.setOrigin(property.origin().orElse(null));
       info.setHost(settings.getHost());
       return info;
     }).collect(Collectors.toList());
@@ -268,7 +310,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         ConfigProperty newProp = loadedPropertyMap.get(propName); // not null
         ConfigProperty oldProp = propertyMap.get(propName); // not null
         // collect changes
-        if (!oldProp.getAsString().equals(newProp.getAsString())) {
+        if (!oldProp.valueAsString().equals(newProp.valueAsString())) {
           detectedChanges.add(ConfigEvent.createUpdated(propName, settings.getHost(), oldProp, newProp));
         }
       }
@@ -311,72 +353,61 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   private void invokeCallbacks(ConfigEvent event) {
-    BiConsumer callback = propertyCallbacks.get(event.getName());
-    if (callback != null) {
-      try {
-        // noinspection unchecked
-        callback.accept(event.getOldValue(), event.getNewValue());
-      } catch (Exception e) {
-        LOGGER.error("Exception occurred on property-change callback: {}, event: {}, cause: {}",
-            callback, event, e, e);
+    Collection<BiConsumer> collection = propertyCallbacks.get(event.getName());
+    if (collection != null && !collection.isEmpty()) {
+      for (BiConsumer callback : collection) {
+        try {
+          // noinspection unchecked
+          callback.accept(event.getOldValue(), event.getNewValue());
+        } catch (Exception e) {
+          LOGGER.error("Exception occurred on property-change callback: {}, event: {}, cause: {}",
+              callback, event, e, e);
+        }
       }
     }
   }
 
   private abstract class AbstractConfigProperty<T> implements ConfigProperty {
-    private String name;
-    private Function<String, Object> valueParser;
+    private final String name;
+    private final Function<String, Object> valueParser;
 
-    final void configure(String name, Class type) {
+    AbstractConfigProperty(String name, Function<String, Object> valueParser) {
       this.name = name;
-      // configure value parser
-      if (type == Boolean.class) {
-        valueParser = Boolean::parseBoolean;
-      } else if (type == Long.class) {
-        valueParser = Long::parseLong;
-      } else if (type == String.class) {
-        valueParser = str -> str;
-      } else if (type == Double.class) {
-        valueParser = Double::parseDouble;
-      } else if (type == Integer.class) {
-        valueParser = Integer::parseInt;
-      } else {
-        throw new IllegalArgumentException("Unsupported property type: " + type);
-      }
+      this.valueParser = valueParser;
     }
 
     @Override
-    public final String getName() {
+    public final String name() {
       return name;
     }
 
     @Override
-    public final Optional<String> getSource() {
-      return Optional.ofNullable(propertyMap.get(name)).flatMap(ConfigProperty::getSource);
+    public final Optional<String> source() {
+      return Optional.ofNullable(propertyMap.get(name)).flatMap(ConfigProperty::source);
     }
 
     @Override
-    public final Optional<String> getOrigin() {
-      return Optional.ofNullable(propertyMap.get(name)).flatMap(ConfigProperty::getOrigin);
+    public final Optional<String> origin() {
+      return Optional.ofNullable(propertyMap.get(name)).flatMap(ConfigProperty::origin);
     }
 
     @Override
-    public final Optional<String> getAsString() {
-      return Optional.ofNullable(propertyMap.get(name)).flatMap(ConfigProperty::getAsString);
+    public final Optional<String> valueAsString() {
+      return Optional.ofNullable(propertyMap.get(name)).flatMap(ConfigProperty::valueAsString);
     }
 
     @Override
-    public final String getAsString(String defaultValue) {
-      return getAsString().orElse(defaultValue);
+    public final String valueAsString(String defaultValue) {
+      return valueAsString().orElse(defaultValue);
     }
 
-    public final Optional<T> get() {
+    public final Optional<T> value() {
       // noinspection unchecked
-      return getAsString().map(str -> (T) valueParser.apply(str));
+      return valueAsString().map(str -> (T) valueParser.apply(str));
     }
 
     // used by subclass
-    public final void setCallback(BiConsumer<T, T> callback) {
+    public final void addCallback(BiConsumer<T, T> callback) {
       BiConsumer<String, String> callback1 = (oldValue, newValue) -> {
         // noinspection unchecked
         T oldValue1 = oldValue != null ? (T) valueParser.apply(oldValue) : null;
@@ -384,11 +415,12 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         T newValue1 = newValue != null ? (T) valueParser.apply(newValue) : null;
         callback.accept(oldValue1, newValue1);
       };
-      propertyCallbacks.put(name, callback1);
+      propertyCallbacks.computeIfAbsent(name, name -> new CopyOnWriteArrayList<>());
+      propertyCallbacks.get(name).add(callback1);
     }
 
     // used by subclass
-    public final void setCallback(ExecutorService executor, BiConsumer<T, T> callback) {
+    public final void addCallback(Executor executor, BiConsumer<T, T> callback) {
       BiConsumer<String, String> callback1 = (oldValue, newValue) -> {
         // noinspection unchecked
         T oldValue1 = oldValue != null ? (T) valueParser.apply(oldValue) : null;
@@ -396,42 +428,92 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         T newValue1 = newValue != null ? (T) valueParser.apply(newValue) : null;
         executor.execute(() -> callback.accept(oldValue1, newValue1));
       };
-      propertyCallbacks.put(name, callback1);
+      propertyCallbacks.computeIfAbsent(name, name -> new CopyOnWriteArrayList<>());
+      propertyCallbacks.get(name).add(callback1);
     }
   }
 
   private class DoubleConfigPropertyImpl extends AbstractConfigProperty<Double> implements DoubleConfigProperty {
+
+    public DoubleConfigPropertyImpl(String name) {
+      super(name, Double::parseDouble);
+    }
+
     @Override
-    public double get(double defaultValue) {
-      return get().orElse(defaultValue);
+    public double value(double defaultValue) {
+      return value().orElse(defaultValue);
     }
   }
 
   private class LongConfigPropertyImpl extends AbstractConfigProperty<Long> implements LongConfigProperty {
+
+    public LongConfigPropertyImpl(String name) {
+      super(name, Long::parseLong);
+    }
+
     @Override
-    public long get(long defaultValue) {
-      return get().orElse(defaultValue);
+    public long value(long defaultValue) {
+      return value().orElse(defaultValue);
     }
   }
 
   private class BooleanConfigPropertyImpl extends AbstractConfigProperty<Boolean> implements BooleanConfigProperty {
+
+    public BooleanConfigPropertyImpl(String name) {
+      super(name, Boolean::new);
+    }
+
     @Override
-    public boolean get(boolean defaultValue) {
-      return get().orElse(defaultValue);
+    public boolean value(boolean defaultValue) {
+      return value().orElse(defaultValue);
     }
   }
 
   private class IntConfigPropertyImpl extends AbstractConfigProperty<Integer> implements IntConfigProperty {
+
+    public IntConfigPropertyImpl(String name) {
+      super(name, Integer::parseInt);
+    }
+
     @Override
-    public int get(int defaultValue) {
-      return get().orElse(defaultValue);
+    public int value(int defaultValue) {
+      return value().orElse(defaultValue);
+    }
+  }
+
+  private class DurationConfigPropertyImpl extends AbstractConfigProperty<Duration> implements DurationConfigProperty {
+
+    public DurationConfigPropertyImpl(String name) {
+      super(name, Duration::parse);
+    }
+
+    @Override
+    public Duration value(Duration defaultValue) {
+      return value().orElse(defaultValue);
+    }
+  }
+
+  private class ListConfigPropertyImpl<T> extends AbstractConfigProperty<List<T>> implements ListConfigProperty<T> {
+
+    public ListConfigPropertyImpl(String name, Function<String, Object> valueParser) {
+      super(name, str -> Arrays.stream(str.split(",")).map(valueParser).collect(Collectors.toList()));
+    }
+
+    @Override
+    public List<T> value(List<T> defaultValue) {
+      return value().orElse(defaultValue);
     }
   }
 
   private class StringConfigPropertyImpl extends AbstractConfigProperty<String> implements StringConfigProperty {
+
+    public StringConfigPropertyImpl(String name) {
+      super(name, str -> str);
+    }
+
     @Override
-    public String get(String defaultValue) {
-      return super.getAsString(defaultValue);
+    public String value(String defaultValue) {
+      return super.valueAsString(defaultValue);
     }
   }
 }

@@ -27,7 +27,7 @@ public class LocalResourceConfigExample {
     StringConfigProperty prop1 = configRegistry.stringProperty("prop1");
     StringConfigProperty prop2 = configRegistry.stringProperty("prop2");
 
-    System.out.println("### Classpath property: prop1=" + prop1.get().get());
-    System.out.println("### Property existing only in filesystem: prop2=" + prop2.get().get());
+    System.out.println("### Classpath property: prop1=" + prop1.value().get());
+    System.out.println("### Property existing only in filesystem: prop2=" + prop2.value().get());
   }
 }

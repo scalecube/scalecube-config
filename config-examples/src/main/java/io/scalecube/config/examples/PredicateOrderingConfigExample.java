@@ -23,6 +23,6 @@ public class PredicateOrderingConfigExample {
 
     StringConfigProperty orderedProp1 = configRegistry.stringProperty("orderedProp1");
 
-    System.out.println("### Matched by first predicate orderedProp1=" + orderedProp1.get().get());
+    System.out.println("### Matched by first predicate orderedProp1=" + orderedProp1.value().get());
   }
 }

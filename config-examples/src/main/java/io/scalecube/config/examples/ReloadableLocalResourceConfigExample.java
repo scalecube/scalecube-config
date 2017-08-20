@@ -2,6 +2,8 @@ package io.scalecube.config.examples;
 
 import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
+import io.scalecube.config.DurationConfigProperty;
+import io.scalecube.config.ListConfigProperty;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.audit.Slf4JConfigEventListener;
 import io.scalecube.config.source.DirectoryConfigSource;
@@ -34,22 +36,31 @@ public class ReloadableLocalResourceConfigExample {
                 .build());
 
     StringConfigProperty prop1 = configRegistry.stringProperty("prop1");
-    System.out.println("### Initial filesystem config property: prop1=" + prop1.get().get());
-    prop1.setCallback((s1, s2) ->
-        System.out.println("### Callback called for 'prop1' and value updated from='" + s1 + "' to='" + s2 + "'"));
+    System.out.println("### Initial filesystem config property: prop1=" + prop1.value().get());
+    prop1.addCallback((s1, s2) -> System.out
+        .println("### Callback called for 'prop1' and value updated from='" + s1 + "' to='" + s2 + "'"));
 
     File file = createConfigFile(basePath);
     writeValueToProp1(file, "42");
     TimeUnit.SECONDS.sleep(2);
-    System.out.println("### Property reloaded: prop1=" + prop1.get().get());
+    System.out.println("### Property reloaded: prop1=" + prop1.value().get());
 
     writeValueToProp1(file, "");
     TimeUnit.SECONDS.sleep(2);
-    System.out.println("### Property reloaded again: prop1=" + prop1.get().get());
+    System.out.println("### Property reloaded again: prop1=" + prop1.value().get());
 
     file.delete();
     TimeUnit.SECONDS.sleep(2);
-    System.out.println("### Property reloaded again and back to its very intial value: prop1=" + prop1.get().get());
+    System.out.println("### Property reloaded again and back to its very intial value: prop1=" + prop1.value().get());
+
+    DurationConfigProperty propertyDuration = configRegistry.durationProperty("propertyDuration");
+    System.out.println("### Property duration (showing in millis): " + propertyDuration.value().get().toMillis());
+
+    ListConfigProperty<String> propertyList1 = configRegistry.stringListProperty("propertyList1");
+    System.out.println("### Property type-list (string): " + propertyList1.value().get());
+
+    ListConfigProperty<Double> propertyList2 = configRegistry.doubleListProperty("propertyList2");
+    System.out.println("### Property type-list (double): " + propertyList2.value().get());
   }
 
   private static void writeValueToProp1(File file, String value) throws IOException {

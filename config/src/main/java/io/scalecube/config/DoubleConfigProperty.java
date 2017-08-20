@@ -1,16 +1,16 @@
 package io.scalecube.config;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
 public interface DoubleConfigProperty extends ConfigProperty {
 
-  Optional<Double> get();
+  Optional<Double> value();
 
-  double get(double defaultValue);
+  double value(double defaultValue);
 
-  void setCallback(BiConsumer<Double, Double> callback);
+  void addCallback(BiConsumer<Double, Double> callback);
 
-  void setCallback(ExecutorService executor, BiConsumer<Double, Double> callback);
+  void addCallback(Executor executor, BiConsumer<Double, Double> callback);
 }

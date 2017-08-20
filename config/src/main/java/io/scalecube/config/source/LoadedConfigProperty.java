@@ -39,35 +39,35 @@ public final class LoadedConfigProperty implements ConfigProperty {
   }
 
   public static Builder withCopyFrom(@Nonnull ConfigProperty property) {
-    Builder builder = new Builder(property.getName(), Objects.requireNonNull(property.getAsString(null)));
-    builder.source = property.getSource().orElse(null);
-    builder.origin = property.getOrigin().orElse(null);
+    Builder builder = new Builder(property.name(), Objects.requireNonNull(property.valueAsString(null)));
+    builder.source = property.source().orElse(null);
+    builder.origin = property.origin().orElse(null);
     return builder;
   }
 
   @Override
-  public String getName() {
+  public String name() {
     return name;
   }
 
   @Override
-  public Optional<String> getSource() {
+  public Optional<String> source() {
     return Optional.ofNullable(source);
   }
 
   @Override
-  public Optional<String> getOrigin() {
+  public Optional<String> origin() {
     return Optional.ofNullable(origin);
   }
 
   @Override
-  public Optional<String> getAsString() {
+  public Optional<String> valueAsString() {
     return Optional.ofNullable(value);
   }
 
   @Override
-  public String getAsString(String defaultValue) {
-    return getAsString().orElse(defaultValue);
+  public String valueAsString(String defaultValue) {
+    return valueAsString().orElse(defaultValue);
   }
 
   @Override

@@ -39,16 +39,16 @@ public class MongoConfigExample {
             .build());
 
     StringConfigProperty prop1 = configRegistry.stringProperty("prop1");
-    System.out.println("### Initial mongo config property: prop1=" + prop1.get().get() +
-        ", group=" + prop1.getOrigin().get());
+    System.out.println("### Initial mongo config property: prop1=" + prop1.value().get() +
+        ", group=" + prop1.origin().get());
 
     StringConfigProperty prop2 = configRegistry.stringProperty("prop2");
-    System.out.println("### Initial mongo config property: prop2=" + prop2.get().get() +
-        ", group=" + prop2.getOrigin().get());
+    System.out.println("### Initial mongo config property: prop2=" + prop2.value().get() +
+        ", group=" + prop2.origin().get());
 
     StringConfigProperty propRoot = configRegistry.stringProperty("propRoot");
-    System.out.println("### Initial mongo config **root** property: propRoot=" + propRoot.get().get() +
-        ", group=" + propRoot.getOrigin().get());
+    System.out.println("### Initial mongo config **root** property: propRoot=" + propRoot.value().get() +
+        ", group=" + propRoot.origin().get());
   }
 
   private static void populateInitialConfigEntries(MongoConfigRepository repository) throws Exception {

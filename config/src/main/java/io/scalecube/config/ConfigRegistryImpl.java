@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -63,7 +63,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private volatile Map<String, ConfigProperty> propertyMap;
 
-  private final ConcurrentMap<String, Collection<BiConsumer>> propertyCallbacks = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, BiConsumer> propertyCallbacks = new ConcurrentHashMap<>();
 
   private final LinkedHashMap<ConfigEvent, Object> recentConfigEvents = new LinkedHashMap<ConfigEvent, Object>() {
     @Override
@@ -107,7 +107,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   @Override
   public StringConfigProperty stringProperty(String name) {
-    return new StringConfigPropertyImpl(name);
+    StringConfigPropertyImpl configProperty = new StringConfigPropertyImpl();
+    configProperty.configure(name, String.class);
+    return configProperty;
   }
 
   @Override
@@ -117,7 +119,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   @Override
   public DoubleConfigProperty doubleProperty(String name) {
-    return new DoubleConfigPropertyImpl(name);
+    DoubleConfigPropertyImpl configProperty = new DoubleConfigPropertyImpl();
+    configProperty.configure(name, Double.class);
+    return configProperty;
   }
 
   @Override
@@ -127,7 +131,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   @Override
   public LongConfigProperty longProperty(String name) {
-    return new LongConfigPropertyImpl(name);
+    LongConfigPropertyImpl configProperty = new LongConfigPropertyImpl();
+    configProperty.configure(name, Long.class);
+    return configProperty;
   }
 
   @Override
@@ -137,7 +143,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   @Override
   public BooleanConfigProperty booleanProperty(String name) {
-    return new BooleanConfigPropertyImpl(name);
+    BooleanConfigPropertyImpl configProperty = new BooleanConfigPropertyImpl();
+    configProperty.configure(name, Boolean.class);
+    return configProperty;
   }
 
   @Override
@@ -147,7 +155,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   @Override
   public IntConfigProperty intProperty(String name) {
-    return new IntConfigPropertyImpl(name);
+    IntConfigPropertyImpl configProperty = new IntConfigPropertyImpl();
+    configProperty.configure(name, Integer.class);
+    return configProperty;
   }
 
   @Override
@@ -157,14 +167,13 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   @Override
   public Set<String> allProperties() {
-    return propertyMap.values().stream()
-        .map(ConfigProperty::getName)
-        .collect(Collectors.toSet());
+    return propertyMap.values().stream().map(ConfigProperty::getName).collect(Collectors.toSet());
   }
 
   @Override
   public Collection<ConfigPropertyInfo> getConfigProperties() {
-    return propertyMap.values().stream().map(property -> {
+    // noinspection RedundantCast
+    return propertyMap.values().stream().map((Function<ConfigProperty, ConfigPropertyInfo>) property -> {
       ConfigPropertyInfo info = new ConfigPropertyInfo();
       info.setName(property.getName());
       info.setValue(property.getAsString().orElse(null));
@@ -213,9 +222,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     // calculate new load map
     Map<String, ConfigProperty> loadedPropertyMap = new ConcurrentHashMap<>();
 
-    settings.getSources().entrySet().forEach(entry -> {
-      String source = entry.getKey();
-      ConfigSource configSource = entry.getValue();
+    settings.getSources().forEach((source, configSource) -> {
 
       Map<String, ConfigProperty> configMap = null;
       Throwable loadConfigError = null;
@@ -228,16 +235,16 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       }
 
       // noinspection ThrowableResultOfMethodCallIgnored
-        configSourceHealthMap.put(source, loadConfigError);
+      configSourceHealthMap.put(source, loadConfigError);
 
-        if (loadConfigError != null) {
-          return;
-        }
+      if (loadConfigError != null) {
+        return;
+      }
 
-        // populate loaded properties with new field -- source
-        configMap.entrySet().forEach(entry1 -> loadedPropertyMap.putIfAbsent(entry1.getKey(),
-            LoadedConfigProperty.withCopyFrom(entry1.getValue()).source(source).build()));
-      });
+      // populate loaded properties with new field -- source
+      configMap.forEach((key, value) -> loadedPropertyMap.putIfAbsent(key,
+          LoadedConfigProperty.withCopyFrom(value).source(source).build()));
+    });
 
     List<ConfigEvent> detectedChanges = new ArrayList<>();
 
@@ -294,48 +301,53 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   private void reportChanges(ConfigEvent event) {
-    settings
-        .getListeners()
-        .entrySet()
-        .forEach(
-            entry -> {
-              try {
-                entry.getValue().onEvent(event);
-              } catch (Exception e) {
-                LOGGER.error("Exception occurred on configEventListener: {}, event: {}, cause: {}", entry.getKey(),
-                    event, e, e);
-              }
-            });
+    settings.getListeners().forEach((key, value) -> {
+      try {
+        value.onEvent(event);
+      } catch (Exception e) {
+        LOGGER.error("Exception occurred on configEventListener: {}, event: {}, cause: {}", key, event, e, e);
+      }
+    });
   }
 
   private void invokeCallbacks(ConfigEvent event) {
-    Collection<BiConsumer> collection = propertyCallbacks.get(event.getName());
-    if (collection != null && !collection.isEmpty()) {
-      for (BiConsumer callback : collection) {
-        try {
-          // noinspection unchecked
-          callback.accept(event.getOldValue(), event.getNewValue());
-        } catch (Exception e) {
-          LOGGER.error("Exception occurred on property-change callback: {}, event: {}, cause: {}", callback, event, e,
-              e);
-        }
+    BiConsumer callback = propertyCallbacks.get(event.getName());
+    if (callback != null) {
+      try {
+        // noinspection unchecked
+        callback.accept(event.getOldValue(), event.getNewValue());
+      } catch (Exception e) {
+        LOGGER.error("Exception occurred on property-change callback: {}, event: {}, cause: {}",
+            callback, event, e, e);
       }
     }
   }
 
-  // // ConfigProperty classes
+  private abstract class AbstractConfigProperty<T> implements ConfigProperty {
+    private String name;
+    private Function<String, Object> valueParser;
 
-  private class ConfigPropertyImpl implements ConfigProperty {
-    private final String name;
-    private final Function<String, ?> valueParser;
-
-    ConfigPropertyImpl(String name) {
-      this(name, str -> str);
+    final void configure(String name, Class type) {
+      this.name = name;
+      // configure value parser
+      if (type == Boolean.class) {
+        valueParser = Boolean::parseBoolean;
+      } else if (type == Long.class) {
+        valueParser = Long::parseLong;
+      } else if (type == String.class) {
+        valueParser = str -> str;
+      } else if (type == Double.class) {
+        valueParser = Double::parseDouble;
+      } else if (type == Integer.class) {
+        valueParser = Integer::parseInt;
+      } else {
+        throw new IllegalArgumentException("Unsupported property type: " + type);
+      }
     }
 
-    ConfigPropertyImpl(String name, Function<String, ?> valueParser) {
-      this.name = name;
-      this.valueParser = valueParser;
+    @Override
+    public final String getName() {
+      return name;
     }
 
     @Override
@@ -344,13 +356,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     }
 
     @Override
-    public Optional<String> getOrigin() {
+    public final Optional<String> getOrigin() {
       return Optional.ofNullable(propertyMap.get(name)).flatMap(ConfigProperty::getOrigin);
-    }
-
-    @Override
-    public final String getName() {
-      return name;
     }
 
     @Override
@@ -363,126 +370,68 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       return getAsString().orElse(defaultValue);
     }
 
-    private void addCallbackInternal(BiConsumer callback) {
+    public final Optional<T> get() {
+      // noinspection unchecked
+      return getAsString().map(str -> (T) valueParser.apply(str));
+    }
+
+    // used by subclass
+    public final void setCallback(BiConsumer<T, T> callback) {
       BiConsumer<String, String> callback1 = (oldValue, newValue) -> {
-        Object oldValue1 = oldValue != null ? valueParser.apply(oldValue) : null;
-        Object newValue1 = newValue != null ? valueParser.apply(newValue) : null;
         // noinspection unchecked
-          callback.accept(oldValue1, newValue1);
-        };
-      propertyCallbacks.computeIfAbsent(name, name -> new CopyOnWriteArrayList<>());
-      propertyCallbacks.get(name).add(callback1);
+        T oldValue1 = oldValue != null ? (T) valueParser.apply(oldValue) : null;
+        // noinspection unchecked
+        T newValue1 = newValue != null ? (T) valueParser.apply(newValue) : null;
+        callback.accept(oldValue1, newValue1);
+      };
+      propertyCallbacks.put(name, callback1);
+    }
+
+    // used by subclass
+    public final void setCallback(ExecutorService executor, BiConsumer<T, T> callback) {
+      BiConsumer<String, String> callback1 = (oldValue, newValue) -> {
+        // noinspection unchecked
+        T oldValue1 = oldValue != null ? (T) valueParser.apply(oldValue) : null;
+        // noinspection unchecked
+        T newValue1 = newValue != null ? (T) valueParser.apply(newValue) : null;
+        executor.execute(() -> callback.accept(oldValue1, newValue1));
+      };
+      propertyCallbacks.put(name, callback1);
     }
   }
 
-  private class DoubleConfigPropertyImpl extends ConfigPropertyImpl implements DoubleConfigProperty {
-
-    DoubleConfigPropertyImpl(String name) {
-      super(name, Double::parseDouble);
-    }
-
-    @Override
-    public Optional<Double> get() {
-      return super.getAsString().map(Double::parseDouble);
-    }
-
+  private class DoubleConfigPropertyImpl extends AbstractConfigProperty<Double> implements DoubleConfigProperty {
     @Override
     public double get(double defaultValue) {
       return get().orElse(defaultValue);
     }
-
-    @Override
-    public void addCallback(BiConsumer<Double, Double> callback) {
-      super.addCallbackInternal(callback);
-    }
   }
 
-  private class LongConfigPropertyImpl extends ConfigPropertyImpl implements LongConfigProperty {
-
-    LongConfigPropertyImpl(String name) {
-      super(name, Long::parseLong);
-    }
-
-    @Override
-    public Optional<Long> get() {
-      return super.getAsString().map(Long::parseLong);
-    }
-
+  private class LongConfigPropertyImpl extends AbstractConfigProperty<Long> implements LongConfigProperty {
     @Override
     public long get(long defaultValue) {
       return get().orElse(defaultValue);
     }
-
-    @Override
-    public void addCallback(BiConsumer<Long, Long> callback) {
-      super.addCallbackInternal(callback);
-    }
   }
 
-  private class BooleanConfigPropertyImpl extends ConfigPropertyImpl implements BooleanConfigProperty {
-
-    BooleanConfigPropertyImpl(String name) {
-      super(name, Boolean::parseBoolean);
-    }
-
-    @Override
-    public Optional<Boolean> get() {
-      return super.getAsString().map(Boolean::parseBoolean);
-    }
-
+  private class BooleanConfigPropertyImpl extends AbstractConfigProperty<Boolean> implements BooleanConfigProperty {
     @Override
     public boolean get(boolean defaultValue) {
       return get().orElse(defaultValue);
     }
-
-    @Override
-    public void addCallback(BiConsumer<Boolean, Boolean> callback) {
-      super.addCallbackInternal(callback);
-    }
   }
 
-  private class IntConfigPropertyImpl extends ConfigPropertyImpl implements IntConfigProperty {
-
-    IntConfigPropertyImpl(String name) {
-      super(name, Integer::parseInt);
-    }
-
-    @Override
-    public Optional<Integer> get() {
-      return super.getAsString().map(Integer::parseInt);
-    }
-
+  private class IntConfigPropertyImpl extends AbstractConfigProperty<Integer> implements IntConfigProperty {
     @Override
     public int get(int defaultValue) {
       return get().orElse(defaultValue);
     }
-
-    @Override
-    public void addCallback(BiConsumer<Integer, Integer> callback) {
-      super.addCallbackInternal(callback);
-    }
   }
 
-  private class StringConfigPropertyImpl extends ConfigPropertyImpl implements StringConfigProperty {
-
-    StringConfigPropertyImpl(String name) {
-      super(name);
-    }
-
-    @Override
-    public Optional<String> get() {
-      return super.getAsString();
-    }
-
+  private class StringConfigPropertyImpl extends AbstractConfigProperty<String> implements StringConfigProperty {
     @Override
     public String get(String defaultValue) {
       return super.getAsString(defaultValue);
     }
-
-    @Override
-    public void addCallback(BiConsumer<String, String> callback) {
-      super.addCallbackInternal(callback);
-    }
   }
-
 }

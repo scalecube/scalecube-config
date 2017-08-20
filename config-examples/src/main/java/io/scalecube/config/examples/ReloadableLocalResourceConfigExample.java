@@ -35,7 +35,7 @@ public class ReloadableLocalResourceConfigExample {
 
     StringConfigProperty prop1 = configRegistry.stringProperty("prop1");
     System.out.println("### Initial filesystem config property: prop1=" + prop1.get().get());
-    prop1.addCallback((s1, s2) ->
+    prop1.setCallback((s1, s2) ->
         System.out.println("### Callback called for 'prop1' and value updated from='" + s1 + "' to='" + s2 + "'"));
 
     File file = createConfigFile(basePath);

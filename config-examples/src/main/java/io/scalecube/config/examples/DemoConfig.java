@@ -60,7 +60,7 @@ public class DemoConfig {
 
     SomeComponent(ConfigRegistry cfgReg) {
       host = cfgReg.stringProperty("host");
-      host.addCallback((oldVal, newVal) -> System.out.println("###Property changed: " + oldVal + "->" + newVal));
+      host.setCallback((oldVal, newVal) -> System.out.println("###Property changed: " + oldVal + "->" + newVal));
     }
   }
 }

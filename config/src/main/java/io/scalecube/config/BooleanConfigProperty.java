@@ -1,6 +1,7 @@
 package io.scalecube.config;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 
 public interface BooleanConfigProperty extends ConfigProperty {
@@ -9,5 +10,7 @@ public interface BooleanConfigProperty extends ConfigProperty {
 
   boolean get(boolean defaultValue);
 
-  void addCallback(BiConsumer<Boolean, Boolean> callback);
+  void setCallback(BiConsumer<Boolean, Boolean> callback);
+
+  void setCallback(ExecutorService executor, BiConsumer<Boolean, Boolean> callback);
 }

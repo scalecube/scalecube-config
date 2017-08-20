@@ -1,6 +1,7 @@
 package io.scalecube.config;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 
 public interface LongConfigProperty extends ConfigProperty {
@@ -9,5 +10,7 @@ public interface LongConfigProperty extends ConfigProperty {
 
   long get(long defaultValue);
 
-  void addCallback(BiConsumer<Long, Long> callback);
+  void setCallback(BiConsumer<Long, Long> callback);
+
+  void setCallback(ExecutorService executor, BiConsumer<Long, Long> callback);
 }

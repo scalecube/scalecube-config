@@ -32,13 +32,13 @@ public final class ConfigEvent {
     this.type = type;
     this.host = host;
 
-    this.oldValue = oldProp != null ? oldProp.getAsString().orElse(null) : null;
-    this.oldSource = oldProp != null ? oldProp.getSource().orElse(null) : null;
-    this.oldOrigin = oldProp != null ? oldProp.getOrigin().orElse(null) : null;
+    this.oldValue = oldProp != null ? oldProp.valueAsString().orElse(null) : null;
+    this.oldSource = oldProp != null ? oldProp.source().orElse(null) : null;
+    this.oldOrigin = oldProp != null ? oldProp.origin().orElse(null) : null;
 
-    this.newValue = newProp != null ? newProp.getAsString().orElse(null) : null;
-    this.newSource = newProp != null ? newProp.getSource().orElse(null) : null;
-    this.newOrigin = newProp != null ? newProp.getOrigin().orElse(null) : null;
+    this.newValue = newProp != null ? newProp.valueAsString().orElse(null) : null;
+    this.newSource = newProp != null ? newProp.source().orElse(null) : null;
+    this.newOrigin = newProp != null ? newProp.origin().orElse(null) : null;
   }
 
   public static ConfigEvent createAdded(@Nonnull String propName, String host, @Nonnull ConfigProperty newProp) {

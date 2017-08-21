@@ -1,2 +1,5 @@
 prop1=from_filesystem
 prop2=from_filesystem_config_only
+propertyDuration=PT0.2S
+propertyList1=a,b,c
+propertyList2=1.0,2.0,3.0

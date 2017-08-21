@@ -30,7 +30,7 @@ public class ConfigRegistryExample {
 
     StringConfigProperty orderedProp1 = configRegistry.stringProperty("orderedProp1");
 
-    System.out.println("### Matched by first predicate orderedProp1=" + orderedProp1.get().get());
+    System.out.println("### Matched by first predicate orderedProp1=" + orderedProp1.value().get());
 
     // Start REST HTTP Server
     ConfigRegistryHttpServer.create(configRegistry, 5050);

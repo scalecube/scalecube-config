@@ -1,13 +1,16 @@
 package io.scalecube.config;
 
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
 public interface StringConfigProperty extends ConfigProperty {
 
-  Optional<String> get();
+  Optional<String> value();
 
-  String get(String defaultValue);
+  String value(String defaultValue);
 
   void addCallback(BiConsumer<String, String> callback);
+
+  void addCallback(Executor executor, BiConsumer<String, String> callback);
 }

@@ -1,5 +1,10 @@
 # Changes
 
+## 0.2.1
+
+* Improve internal implementation of callbacks mechanism
+* Use Jetty HTTP server instead of Netty-based
+
 ## 0.2.0 / 2017-08-21
 
 * Enhance ConfigProperty API 

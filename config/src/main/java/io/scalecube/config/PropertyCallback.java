@@ -30,27 +30,20 @@ class PropertyCallback<T> implements BiConsumer<String, String> {
   @Override
   public void accept(String s1, String s2) {
     T t1 = null;
-    Exception e1 = null;
     try {
       // noinspection unchecked
       t1 = s1 != null ? (T) valueParser.apply(s1) : null;
     } catch (Exception e) {
-      LOGGER.error("Exception occured on valueParser: '{}', cause: {}", s1, e);
-      e1 = e; // old value parsing error
+      LOGGER.error("Exception occured at valueParser on oldValue: '{}', cause: {}", s1, e);
     }
 
-    T t2 = null;
-    Exception e2 = null;
+    T t2;
     try {
       // noinspection unchecked
       t2 = s2 != null ? (T) valueParser.apply(s2) : null;
     } catch (Exception e) {
-      LOGGER.error("Exception occured at valueParser: '{}', cause: {}", s2, e);
-      e2 = e;
-    }
-
-    if (e1 != null || e2 != null) {
-      return; // parsing failed either on old value or on new value
+      LOGGER.error("Exception occured at valueParser on newValue: '{}', cause: {}", s2, e);
+      return; // parsing failed on new value
     }
 
     for (BiConsumer<T, T> callback : callbacks) {

@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
@@ -78,8 +77,8 @@ public class MongoConfigRepository {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try {
       objectMapper.writer().writeValue(baos, input);
-    } catch (IOException e) {
-      LOGGER.error("Exception occurred at converting obj: {} to bson, cause: {}", input, e);
+    } catch (Exception e) {
+      LOGGER.error("Exception at converting obj: {} to bson, cause: {}", input, e);
       throw ThrowableUtil.propagate(e);
     }
     getCollection().insertOne(new RawBsonDocument(baos.toByteArray()));
@@ -93,7 +92,7 @@ public class MongoConfigRepository {
         // noinspection unchecked
         return (T) objectMapper.readerFor(type).readValue(bin);
       } catch (Exception e) {
-        LOGGER.error("Exception occurred at parsing bson to obj of type: {}, cause: {}", type, e);
+        LOGGER.error("Exception at parsing bson to obj of type: {}, cause: {}", type, e);
         throw ThrowableUtil.propagate(e);
       }
     }).collect(Collectors.toList());

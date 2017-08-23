@@ -1,6 +1,7 @@
 package io.scalecube.config.mongo;
 
 import io.scalecube.config.ConfigProperty;
+import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.ConfigCollectorUtil;
@@ -18,7 +19,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -52,7 +55,7 @@ public class MongoConfigSource implements ConfigSource {
     Set<String> result = new LinkedHashSet<>();
     result.addAll(groupList);
     result.add(""); // by default 'root' group is always added
-    return result.stream().collect(Collectors.toList());
+    return new ArrayList<>(result);
   }
 
   private Predicate<String> getExactMatchPredicate(String group) {
@@ -66,7 +69,12 @@ public class MongoConfigSource implements ConfigSource {
     Stream<ConfigurationEntity> configEntityStream;
     try {
       configEntityStream = future.get(mongoTimeout, TimeUnit.SECONDS).stream();
-    } catch (Exception e) {
+    } catch (ExecutionException e) {
+      throw ThrowableUtil.propagate(e.getCause());
+    } catch (TimeoutException e) {
+      String message = String.format("TimeoutException on MongoConfigSource after '%s' seconds ", mongoTimeout);
+      throw new ConfigSourceNotAvailableException(message, e);
+    } catch (InterruptedException e) {
       throw ThrowableUtil.propagate(e);
     }
 

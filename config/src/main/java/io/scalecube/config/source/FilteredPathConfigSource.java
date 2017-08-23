@@ -40,7 +40,7 @@ public abstract class FilteredPathConfigSource implements ConfigSource {
       properties.load(is);
       return fromProperties(properties);
     } catch (Exception e) {
-      LOGGER.warn("Exception occurred at loading props from '{}', cause: {}", input, e);
+      LOGGER.error("Exception at loading props from '{}', cause: {}", input, e);
       throw ThrowableUtil.propagate(e);
     }
   }

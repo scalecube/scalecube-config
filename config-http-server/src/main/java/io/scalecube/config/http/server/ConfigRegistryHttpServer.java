@@ -2,10 +2,9 @@ package io.scalecube.config.http.server;
 
 import io.scalecube.config.ConfigRegistry;
 
-import io.netty.channel.Channel;
-
+import org.eclipse.jetty.server.Server;
 import org.glassfish.jersey.jackson.JacksonFeature;
-import org.glassfish.jersey.netty.httpserver.NettyHttpContainerProvider;
+import org.glassfish.jersey.jetty.JettyHttpContainerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.slf4j.Logger;
@@ -37,8 +36,14 @@ public class ConfigRegistryHttpServer {
       ResourceConfig resourceConfig = new ResourceConfig(JacksonFeature.class, ObjectMapperProvider.class);
       resourceConfig.register(RolesAllowedDynamicFeature.class);
       resourceConfig.register(new ConfigRegistryResource(configRegistry));
-      Channel server = NettyHttpContainerProvider.createHttp2Server(uri, resourceConfig, null);
-      Runtime.getRuntime().addShutdownHook(new Thread(server::close));
+      Server server = JettyHttpContainerFactory.createServer(uri, resourceConfig, true /* start */);
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+		  try {
+			  server.stop();
+		  } catch (Exception e) {
+			  LOGGER.warn("Exception occurred on stop of {}, cause: {}", toString(), e);
+		  }
+	  }));
       LOGGER.info("Started: {}", toString());
     } catch (Exception e) {
       LOGGER.warn("Exception occurred on start of {}, cause: {}", toString(), e);

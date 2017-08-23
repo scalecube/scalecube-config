@@ -20,7 +20,7 @@ class PropertyCallback<T> implements BiConsumer<String, String> {
   }
 
   void addCallback(BiConsumer<T, T> callback) {
-    callbacks.add((t1, t2) -> invokeCallback(callback, t1, t2));
+    callbacks.add(callback);
   }
 
   void addCallback(Executor executor, BiConsumer<T, T> callback) {
@@ -47,7 +47,7 @@ class PropertyCallback<T> implements BiConsumer<String, String> {
     }
 
     for (BiConsumer<T, T> callback : callbacks) {
-      callback.accept(t1, t2);
+      invokeCallback(callback, t1, t2);
     }
   }
 

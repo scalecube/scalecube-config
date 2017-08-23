@@ -4,6 +4,7 @@
 
 * Improve internal implementation of callbacks mechanism
 * Use Jetty HTTP server instead of Netty-based
+* DirectoryConfigSource do not throw exceptions if can't find base directory
 
 ## 0.2.0 / 2017-08-21
 

@@ -393,8 +393,15 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     }
 
     public final Optional<T> value() {
-      // noinspection unchecked
-      return valueAsString().map(str -> (T) valueParser.apply(str));
+      return valueAsString().flatMap(str -> {
+        try {
+          // noinspection unchecked
+          return Optional.of((T) valueParser.apply(str));
+        } catch (Exception e) {
+          LOGGER.error("Exception at valueParser on property: '{}', string value: '{}', cause: {}", name, str, e);
+          return Optional.empty();
+        }
+      });
     }
 
     // used by subclass

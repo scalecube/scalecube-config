@@ -37,13 +37,12 @@ class PropertyCallback<T> implements BiConsumer<String, String> {
       LOGGER.error("Exception occured at valueParser on oldValue: '{}', cause: {}", s1, e);
     }
 
-    T t2;
+    T t2 = null;
     try {
       // noinspection unchecked
       t2 = s2 != null ? (T) valueParser.apply(s2) : null;
     } catch (Exception e) {
       LOGGER.error("Exception occured at valueParser on newValue: '{}', cause: {}", s2, e);
-      return; // parsing failed on new value
     }
 
     for (BiConsumer<T, T> callback : callbacks) {

@@ -1,11 +1,13 @@
 package io.scalecube.config.source;
 
 import io.scalecube.config.ConfigProperty;
+import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.utils.ConfigCollectorUtil;
-import io.scalecube.config.utils.ThrowableUtil;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,8 +40,16 @@ public class DirectoryConfigSource extends FilteredPathConfigSource {
     Path basePath1;
     try {
       basePath1 = basePath.toRealPath(LinkOption.NOFOLLOW_LINKS);
+    } catch (FileNotFoundException e) {
+      String message = String.format("DirectoryConfigSource.basePath='%s' can not be found", basePath);
+      throw new ConfigSourceNotAvailableException(message, e);
+    } catch (FileSystemException e) {
+      String message =
+          String.format("FileSystemException on DirectoryConfigSource.basePath='%s', cause: %s", basePath, e);
+      throw new ConfigSourceNotAvailableException(message, e);
     } catch (IOException e) {
-      throw ThrowableUtil.propagate(e);
+      String message = String.format("IOException on DirectoryConfigSource.basePath='%s', cause: %s", basePath, e);
+      throw new ConfigSourceNotAvailableException(message, e);
     }
 
     File[] files = Optional.ofNullable(basePath1.toFile().listFiles()).orElse(new File[0]);

@@ -46,7 +46,7 @@ public class ConfigRegistryHttpServer {
 	  }));
       LOGGER.info("Started: {}", toString());
     } catch (Exception e) {
-      LOGGER.warn("Exception occurred on start of {}, cause: {}", toString(), e);
+      LOGGER.warn("Exception on start of {}, cause: {}", toString(), e);
     }
   }
 

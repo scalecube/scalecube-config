@@ -86,7 +86,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       try {
         loadAndNotify();
       } catch (Exception e) {
-        LOGGER.error("Exception occurred on config reload, cause: {}", e, e);
+        LOGGER.error("Exception on config reload, cause: {}", e, e);
       }
     }, settings.getReloadIntervalSec(), settings.getReloadIntervalSec(), TimeUnit.SECONDS);
 
@@ -266,19 +266,22 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     settings.getSources().forEach((source, configSource) -> {
 
       Map<String, ConfigProperty> configMap = null;
-      Throwable loadConfigError = null;
+      Throwable configError = null;
       try {
         configMap = configSource.loadConfig();
+      } catch (ConfigSourceNotAvailableException e) {
+        configError = e; // save error occurence
+        LOGGER.warn("ConfigSource: {} failed on loadConfig, cause: ", configSource, e.getMessage());
       } catch (Throwable throwable) {
-        LOGGER.error("Exception occurred on loading config from configSource: {}, source: {}, cause: {}",
+        configError = throwable; // save error occurence
+        LOGGER.error("Exception on loading config from configSource: {}, source: {}, cause: {}",
             configSource, source, throwable, throwable);
-        loadConfigError = throwable;
       }
 
       // noinspection ThrowableResultOfMethodCallIgnored
-      configSourceHealthMap.put(source, loadConfigError);
+      configSourceHealthMap.put(source, configError);
 
-      if (loadConfigError != null) {
+      if (configError != null) {
         return;
       }
 
@@ -346,7 +349,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       try {
         value.onEvent(event);
       } catch (Exception e) {
-        LOGGER.error("Exception occurred on configEventListener: {}, event: {}, cause: {}", key, event, e, e);
+        LOGGER.error("Exception on configEventListener: {}, event: {}, cause: {}", key, event, e, e);
       }
     });
   }

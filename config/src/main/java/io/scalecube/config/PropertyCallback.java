@@ -20,25 +20,11 @@ class PropertyCallback<T> implements BiConsumer<String, String> {
   }
 
   void addCallback(BiConsumer<T, T> callback) {
-    callbacks.add((t1, t2) -> {
-      try {
-        callback.accept(t1, t2);
-      } catch (Exception e) {
-        LOGGER.error("Exception occurred on property-change callback: {}, oldValue={}, newValue={}, cause: {}",
-            callback, t1, t2, e, e);
-      }
-    });
+    callbacks.add((t1, t2) -> invokeCallback(callback, t1, t2));
   }
 
   void addCallback(Executor executor, BiConsumer<T, T> callback) {
-    callbacks.add((t1, t2) -> executor.execute(() -> {
-      try {
-        callback.accept(t1, t2);
-      } catch (Exception e) {
-        LOGGER.error("Exception occurred on property-change callback: {}, oldValue={}, newValue={}, cause: {}",
-            callback, t1, t2, e, e);
-      }
-    }));
+    callbacks.add((t1, t2) -> executor.execute(() -> invokeCallback(callback, t1, t2)));
   }
 
   @Override
@@ -69,6 +55,15 @@ class PropertyCallback<T> implements BiConsumer<String, String> {
 
     for (BiConsumer<T, T> callback : callbacks) {
       callback.accept(t1, t2);
+    }
+  }
+
+  private void invokeCallback(BiConsumer<T, T> callback, T t1, T t2) {
+    try {
+      callback.accept(t1, t2);
+    } catch (Exception e) {
+      LOGGER.error("Exception occurred on property-change callback: {}, oldValue={}, newValue={}, cause: {}",
+          callback, t1, t2, e, e);
     }
   }
 }

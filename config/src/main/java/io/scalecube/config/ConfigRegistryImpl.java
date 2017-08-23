@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -66,7 +65,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private volatile Map<String, ConfigProperty> propertyMap;
 
-  private final ConcurrentMap<String, Collection<BiConsumer>> propertyCallbacks = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, PropertyCallback> propertyCallbacks = new ConcurrentHashMap<>();
 
   private final LinkedHashMap<ConfigEvent, Object> recentConfigEvents = new LinkedHashMap<ConfigEvent, Object>() {
     @Override
@@ -353,17 +352,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   private void invokeCallbacks(ConfigEvent event) {
-    Collection<BiConsumer> collection = propertyCallbacks.get(event.getName());
-    if (collection != null && !collection.isEmpty()) {
-      for (BiConsumer callback : collection) {
-        try {
-          // noinspection unchecked
-          callback.accept(event.getOldValue(), event.getNewValue());
-        } catch (Exception e) {
-          LOGGER.error("Exception occurred on property-change callback: {}, event: {}, cause: {}",
-              callback, event, e, e);
-        }
-      }
+    PropertyCallback propertyCallback = propertyCallbacks.get(event.getName());
+    if (propertyCallback != null) {
+      propertyCallback.accept(event.getOldValue(), event.getNewValue());
     }
   }
 
@@ -402,40 +393,35 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     }
 
     public final Optional<T> value() {
-      // noinspection unchecked
-      return valueAsString().map(str -> (T) valueParser.apply(str));
+      return valueAsString().flatMap(str -> {
+        try {
+          // noinspection unchecked
+          return Optional.of((T) valueParser.apply(str));
+        } catch (Exception e) {
+          LOGGER.error("Exception at valueParser on property: '{}', string value: '{}', cause: {}", name, str, e);
+          return Optional.empty();
+        }
+      });
     }
 
     // used by subclass
     public final void addCallback(BiConsumer<T, T> callback) {
-      BiConsumer<String, String> callback1 = (oldValue, newValue) -> {
-        // noinspection unchecked
-        T oldValue1 = oldValue != null ? (T) valueParser.apply(oldValue) : null;
-        // noinspection unchecked
-        T newValue1 = newValue != null ? (T) valueParser.apply(newValue) : null;
-        callback.accept(oldValue1, newValue1);
-      };
-      propertyCallbacks.computeIfAbsent(name, name -> new CopyOnWriteArrayList<>());
-      propertyCallbacks.get(name).add(callback1);
+      propertyCallbacks.computeIfAbsent(name, name -> new PropertyCallback<T>(valueParser));
+      // noinspection unchecked
+      propertyCallbacks.get(name).addCallback(callback);
     }
 
     // used by subclass
     public final void addCallback(Executor executor, BiConsumer<T, T> callback) {
-      BiConsumer<String, String> callback1 = (oldValue, newValue) -> {
-        // noinspection unchecked
-        T oldValue1 = oldValue != null ? (T) valueParser.apply(oldValue) : null;
-        // noinspection unchecked
-        T newValue1 = newValue != null ? (T) valueParser.apply(newValue) : null;
-        executor.execute(() -> callback.accept(oldValue1, newValue1));
-      };
-      propertyCallbacks.computeIfAbsent(name, name -> new CopyOnWriteArrayList<>());
-      propertyCallbacks.get(name).add(callback1);
+      propertyCallbacks.computeIfAbsent(name, name -> new PropertyCallback<T>(valueParser));
+      // noinspection unchecked
+      propertyCallbacks.get(name).addCallback(executor, callback);
     }
   }
 
   private class DoubleConfigPropertyImpl extends AbstractConfigProperty<Double> implements DoubleConfigProperty {
 
-    public DoubleConfigPropertyImpl(String name) {
+    DoubleConfigPropertyImpl(String name) {
       super(name, Double::parseDouble);
     }
 
@@ -447,7 +433,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private class LongConfigPropertyImpl extends AbstractConfigProperty<Long> implements LongConfigProperty {
 
-    public LongConfigPropertyImpl(String name) {
+    LongConfigPropertyImpl(String name) {
       super(name, Long::parseLong);
     }
 
@@ -459,7 +445,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private class BooleanConfigPropertyImpl extends AbstractConfigProperty<Boolean> implements BooleanConfigProperty {
 
-    public BooleanConfigPropertyImpl(String name) {
+    BooleanConfigPropertyImpl(String name) {
       super(name, Boolean::new);
     }
 
@@ -471,7 +457,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private class IntConfigPropertyImpl extends AbstractConfigProperty<Integer> implements IntConfigProperty {
 
-    public IntConfigPropertyImpl(String name) {
+    IntConfigPropertyImpl(String name) {
       super(name, Integer::parseInt);
     }
 
@@ -483,7 +469,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private class DurationConfigPropertyImpl extends AbstractConfigProperty<Duration> implements DurationConfigProperty {
 
-    public DurationConfigPropertyImpl(String name) {
+    DurationConfigPropertyImpl(String name) {
       super(name, Duration::parse);
     }
 
@@ -495,7 +481,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private class ListConfigPropertyImpl<T> extends AbstractConfigProperty<List<T>> implements ListConfigProperty<T> {
 
-    public ListConfigPropertyImpl(String name, Function<String, Object> valueParser) {
+    ListConfigPropertyImpl(String name, Function<String, Object> valueParser) {
       super(name, str -> Arrays.stream(str.split(",")).map(valueParser).collect(Collectors.toList()));
     }
 
@@ -507,7 +493,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private class StringConfigPropertyImpl extends AbstractConfigProperty<String> implements StringConfigProperty {
 
-    public StringConfigPropertyImpl(String name) {
+    StringConfigPropertyImpl(String name) {
       super(name, str -> str);
     }
 

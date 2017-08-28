@@ -1,6 +1,6 @@
 # Changes
 
-## 0.2.1
+## 0.2.1 / 2017-08-28
 
 * Improve internal implementation of callbacks mechanism
 * Use Jetty HTTP server instead of Netty-based

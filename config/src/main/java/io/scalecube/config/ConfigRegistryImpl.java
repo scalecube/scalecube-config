@@ -34,7 +34,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.PostConstruct;
 import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -79,7 +78,6 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     this.settings = settings;
   }
 
-  @PostConstruct
   void init() {
     loadAndNotify();
     reloadExecutor.scheduleAtFixedRate(() -> {
@@ -271,7 +269,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         configMap = configSource.loadConfig();
       } catch (ConfigSourceNotAvailableException e) {
         configError = e; // save error occurence
-        LOGGER.warn("ConfigSource: {} failed on loadConfig, cause: ", configSource, e.getMessage());
+        LOGGER.warn("ConfigSource: {} failed on loadConfig, cause: {}", configSource, e);
       } catch (Throwable throwable) {
         configError = throwable; // save error occurence
         LOGGER.error("Exception on loading config from configSource: {}, source: {}, cause: {}",

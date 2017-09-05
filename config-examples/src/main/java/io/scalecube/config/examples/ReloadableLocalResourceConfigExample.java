@@ -56,6 +56,10 @@ public class ReloadableLocalResourceConfigExample {
     DurationConfigProperty propertyDuration = configRegistry.durationProperty("propertyDuration");
     System.out.println("### Property duration (showing in millis): " + propertyDuration.value().get().toMillis());
 
+    DurationConfigProperty propertyEnhancedDuration = configRegistry.durationProperty("propertyEnhancedDuration");
+    System.out.println(
+        "### Property enhanced duration (showing in millis): " + propertyEnhancedDuration.value().get().toMillis());
+
     ListConfigProperty<String> propertyList1 = configRegistry.stringListProperty("propertyList1");
     System.out.println("### Property type-list (string): " + propertyList1.value().get());
 

@@ -37,14 +37,14 @@ public final class ConfigRegistrySettings {
       sourcesTmp.put(name, builder.sources.get(name));
     }
     this.sources = Collections.unmodifiableMap(sourcesTmp);
-    this.host = builder.host != null ? builder.host : resolveHost();
+    this.host = builder.host != null ? builder.host : resolveLocalHost();
     this.jmxEnabled = builder.jmxEnabled;
     this.jmxMBeanName = builder.jmxMBeanName;
   }
 
-  private static String resolveHost() {
+  private static String resolveLocalHost() {
     try {
-      return InetAddress.getLocalHost().getCanonicalHostName();
+      return InetAddress.getLocalHost().getHostAddress();
     } catch (Exception e) {
       return "unresolved";
     }

@@ -5,6 +5,7 @@ import io.scalecube.config.jmx.JmxConfigRegistry;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.ConfigSourceInfo;
 import io.scalecube.config.source.LoadedConfigProperty;
+import io.scalecube.config.utils.DurationParser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -471,7 +472,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   private class DurationConfigPropertyImpl extends AbstractConfigProperty<Duration> implements DurationConfigProperty {
 
     DurationConfigPropertyImpl(String name) {
-      super(name, Duration::parse);
+      super(name, DurationParser::parse);
     }
 
     @Override

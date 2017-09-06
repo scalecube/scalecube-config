@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -406,6 +407,10 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       });
     }
 
+    protected final NoSuchElementException newValueIsNullException() {
+      return new NoSuchElementException("Value is null for property '" + name + "'");
+    }
+
     // used by subclass
     public final void addCallback(BiConsumer<T, T> callback) {
       propertyCallbacks.computeIfAbsent(name, name -> new PropertyCallback<T>(valueParser));
@@ -431,6 +436,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     public double value(double defaultValue) {
       return value().orElse(defaultValue);
     }
+
+    @Override
+    public double valueOrThrow() {
+      return value().orElseThrow(this::newValueIsNullException);
+    }
   }
 
   private class LongConfigPropertyImpl extends AbstractConfigProperty<Long> implements LongConfigProperty {
@@ -442,6 +452,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     @Override
     public long value(long defaultValue) {
       return value().orElse(defaultValue);
+    }
+
+    @Override
+    public long valueOrThrow() {
+      return value().orElseThrow(this::newValueIsNullException);
     }
   }
 
@@ -455,6 +470,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     public boolean value(boolean defaultValue) {
       return value().orElse(defaultValue);
     }
+
+    @Override
+    public boolean valueOrThrow() {
+      return value().orElseThrow(this::newValueIsNullException);
+    }
   }
 
   private class IntConfigPropertyImpl extends AbstractConfigProperty<Integer> implements IntConfigProperty {
@@ -466,6 +486,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     @Override
     public int value(int defaultValue) {
       return value().orElse(defaultValue);
+    }
+
+    @Override
+    public int valueOrThrow() {
+      return value().orElseThrow(this::newValueIsNullException);
     }
   }
 
@@ -479,6 +504,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     public Duration value(Duration defaultValue) {
       return value().orElse(defaultValue);
     }
+
+    @Override
+    public Duration valueOrThrow() {
+      return value().orElseThrow(this::newValueIsNullException);
+    }
   }
 
   private class ListConfigPropertyImpl<T> extends AbstractConfigProperty<List<T>> implements ListConfigProperty<T> {
@@ -491,6 +521,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     public List<T> value(List<T> defaultValue) {
       return value().orElse(defaultValue);
     }
+
+    @Override
+    public List<T> valueOrThrow() {
+      return value().orElseThrow(this::newValueIsNullException);
+    }
   }
 
   private class StringConfigPropertyImpl extends AbstractConfigProperty<String> implements StringConfigProperty {
@@ -502,6 +537,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     @Override
     public String value(String defaultValue) {
       return super.valueAsString(defaultValue);
+    }
+
+    @Override
+    public String valueOrThrow() {
+      return value().orElseThrow(this::newValueIsNullException);
     }
   }
 }

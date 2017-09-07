@@ -1,5 +1,12 @@
 # Changes
 
+## 0.2.2 / 2017-09-07
+
+* Fixed issue with PostConstruct calls twice init method with Spring
+* Fixed issue for getting address for localhost at Docker container
+* Enhanced duration parser to support more convenient Duration format
+* Added new API method `valueOrThrow`
+
 ## 0.2.1 / 2017-08-29
 
 * Improve internal implementation of callbacks mechanism

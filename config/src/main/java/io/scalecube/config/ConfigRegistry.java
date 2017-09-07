@@ -6,6 +6,7 @@ import io.scalecube.config.source.ConfigSourceInfo;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -26,6 +27,14 @@ public interface ConfigRegistry {
     configRegistry.init();
     return configRegistry;
   }
+
+  <T> ObjectConfigProperty<T> objectProperty(Class<T> objClass);
+
+  <T> ObjectConfigProperty<T> objectProperty(Map<String, String> bindingMap, Class<T> objClass);
+
+  <T> T objectValue(Class<T> objClass, T defaultValue);
+
+  <T> T objectValue(Map<String, String> bindingMap, Class<T> objClass, T defaultValue);
 
   /**
    * Returns dynamic typed string property. String property is a base type for all properties and each type can be

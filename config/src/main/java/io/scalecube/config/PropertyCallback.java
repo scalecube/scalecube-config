@@ -1,21 +1,24 @@
 package io.scalecube.config;
 
+import io.scalecube.config.utils.NameAndValue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-class PropertyCallback<T> implements BiConsumer<String, String> {
+class PropertyCallback<T> implements BiConsumer<List<NameAndValue>, List<NameAndValue>> {
   private static final Logger LOGGER = LoggerFactory.getLogger(PropertyCallback.class);
 
-  private final Function<String, Object> valueParser;
-  private final Collection<BiConsumer<T, T>> callbacks = new CopyOnWriteArrayList<>();
+  private final Function<List<NameAndValue>, Object> valueParser;
+  private final Collection<BiConsumer<T, T>> callbacks = new CopyOnWriteArraySet<>();
 
-  PropertyCallback(Function<String, Object> valueParser) {
+  PropertyCallback(Function<List<NameAndValue>, Object> valueParser) {
     this.valueParser = valueParser;
   }
 
@@ -28,21 +31,25 @@ class PropertyCallback<T> implements BiConsumer<String, String> {
   }
 
   @Override
-  public void accept(String s1, String s2) {
+  public void accept(List<NameAndValue> oldValues, List<NameAndValue> newValues) {
     T t1 = null;
-    try {
-      // noinspection unchecked
-      t1 = s1 != null ? (T) valueParser.apply(s1) : null;
-    } catch (Exception e) {
-      LOGGER.error("Exception occured at valueParser on oldValue: '{}', cause: {}", s1, e);
+    if (!oldValues.isEmpty()) {
+      try {
+        // noinspection unchecked
+        t1 = (T) valueParser.apply(oldValues);
+      } catch (Exception e) {
+        LOGGER.error("Exception occured at valueParser on oldValue: {}, cause: {}", oldValues, e);
+      }
     }
 
     T t2 = null;
-    try {
-      // noinspection unchecked
-      t2 = s2 != null ? (T) valueParser.apply(s2) : null;
-    } catch (Exception e) {
-      LOGGER.error("Exception occured at valueParser on newValue: '{}', cause: {}", s2, e);
+    if (!newValues.isEmpty()) {
+      try {
+        // noinspection unchecked
+        t2 = (T) valueParser.apply(newValues);
+      } catch (Exception e) {
+        LOGGER.error("Exception occured at valueParser on newValue: {}, cause: {}", newValues, e);
+      }
     }
 
     for (BiConsumer<T, T> callback : callbacks) {
@@ -54,7 +61,7 @@ class PropertyCallback<T> implements BiConsumer<String, String> {
     try {
       callback.accept(t1, t2);
     } catch (Exception e) {
-      LOGGER.error("Exception occurred on property-change callback: {}, oldValue={}, newValue={}, cause: {}",
+      LOGGER.error("Exception occurred on property-change callback: {}, oldValue: {}, newValue: {}, cause: {}",
           callback, t1, t2, e, e);
     }
   }

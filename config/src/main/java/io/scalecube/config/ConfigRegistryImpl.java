@@ -6,15 +6,21 @@ import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.ConfigSourceInfo;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.DurationParser;
+import io.scalecube.config.utils.NameAndValue;
+import io.scalecube.config.utils.ObjectPropertyField;
+import io.scalecube.config.utils.ObjectPropertyParser;
+import io.scalecube.config.utils.ThrowableUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -105,6 +111,29 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     } catch (Exception e) {
       LOGGER.warn("Failed to register JMX MBean '{}', cause: {}", settings.getJmxMBeanName(), e);
     }
+  }
+
+  @Override
+  public <T> ObjectConfigProperty<T> objectProperty(Class<T> objClass) {
+    String prefix = objClass.getName();
+    Map<String, String> bindingMap = Arrays.stream(objClass.getDeclaredFields())
+        .collect(Collectors.toMap(Field::getName, field -> prefix + '.' + field.getName()));
+    return new ObjectConfigPropertyImpl<>(bindingMap, objClass);
+  }
+
+  @Override
+  public <T> ObjectConfigProperty<T> objectProperty(Map<String, String> bindingMap, Class<T> objClass) {
+    return new ObjectConfigPropertyImpl<>(bindingMap, objClass);
+  }
+
+  @Override
+  public <T> T objectValue(Class<T> objClass, T defaultValue) {
+    return objectProperty(objClass).value(defaultValue);
+  }
+
+  @Override
+  public <T> T objectValue(Map<String, String> bindingMap, Class<T> objClass, T defaultValue) {
+    return objectProperty(bindingMap, objClass).value(defaultValue);
   }
 
   @Override
@@ -264,7 +293,6 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     Map<String, ConfigProperty> loadedPropertyMap = new ConcurrentHashMap<>();
 
     settings.getSources().forEach((source, configSource) -> {
-
       Map<String, ConfigProperty> configMap = null;
       Throwable configError = null;
       try {
@@ -286,8 +314,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       }
 
       // populate loaded properties with new field -- source
-      configMap.forEach((key, value) -> loadedPropertyMap.putIfAbsent(key,
-          LoadedConfigProperty.withCopyFrom(value).source(source).build()));
+      configMap.forEach((key, configProperty) -> loadedPropertyMap.putIfAbsent(key,
+          LoadedConfigProperty.withCopyFrom(configProperty).source(source).build()));
     });
 
     List<ConfigEvent> detectedChanges = new ArrayList<>();
@@ -341,33 +369,43 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
     detectedChanges.forEach(input -> recentConfigEvents.put(input, null)); // keep recent changes
     detectedChanges.forEach(this::reportChanges); // report changes
-    detectedChanges.forEach(this::invokeCallbacks); // invoke callbacks on changed values
+
+    // invoke callbacks on changed values
+    detectedChanges.stream()
+        .filter(configEvent -> propertyCallbacks.containsKey(configEvent.getName()))
+        .collect(Collectors.groupingBy(configEvent -> propertyCallbacks.get(configEvent.getName())))
+        .forEach((propertyCallback, configEvents) -> {
+          List<NameAndValue> oldValues = new ArrayList<>();
+          List<NameAndValue> newValues = new ArrayList<>();
+
+          for (ConfigEvent configEvent : configEvents) {
+            oldValues.add(new NameAndValue(configEvent.getName(), configEvent.getOldValue()));
+            newValues.add(new NameAndValue(configEvent.getName(), configEvent.getNewValue()));
+          }
+
+          propertyCallback.accept(oldValues, newValues);
+        });
   }
 
   private void reportChanges(ConfigEvent event) {
-    settings.getListeners().forEach((key, value) -> {
+    settings.getListeners().forEach((key, eventListener) -> {
       try {
-        value.onEvent(event);
+        eventListener.onEvent(event);
       } catch (Exception e) {
         LOGGER.error("Exception on configEventListener: {}, event: {}, cause: {}", key, event, e, e);
       }
     });
   }
 
-  private void invokeCallbacks(ConfigEvent event) {
-    PropertyCallback propertyCallback = propertyCallbacks.get(event.getName());
-    if (propertyCallback != null) {
-      propertyCallback.accept(event.getOldValue(), event.getNewValue());
-    }
-  }
-
   private abstract class AbstractConfigProperty<T> implements ConfigProperty {
     private final String name;
-    private final Function<String, Object> valueParser;
+    private final Function<List<NameAndValue>, Object> valueParser;
+    private final PropertyCallback<T> propertyCallback;
 
-    AbstractConfigProperty(String name, Function<String, Object> valueParser) {
+    AbstractConfigProperty(String name, Function<List<NameAndValue>, Object> valueParser) {
       this.name = name;
       this.valueParser = valueParser;
+      this.propertyCallback = new PropertyCallback<>(valueParser);
     }
 
     @Override
@@ -396,12 +434,12 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     }
 
     public final Optional<T> value() {
-      return valueAsString().flatMap(str -> {
+      return valueAsString().flatMap(value -> {
         try {
           // noinspection unchecked
-          return Optional.of((T) valueParser.apply(str));
+          return Optional.ofNullable((T) valueParser.apply(Collections.singletonList(new NameAndValue(name, value))));
         } catch (Exception e) {
-          LOGGER.error("Exception at valueParser on property: '{}', string value: '{}', cause: {}", name, str, e);
+          LOGGER.error("Exception at valueParser on property: '{}', string value: '{}', cause: {}", name, value, e);
           return Optional.empty();
         }
       });
@@ -413,23 +451,21 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
     // used by subclass
     public final void addCallback(BiConsumer<T, T> callback) {
-      propertyCallbacks.computeIfAbsent(name, name -> new PropertyCallback<T>(valueParser));
-      // noinspection unchecked
-      propertyCallbacks.get(name).addCallback(callback);
+      propertyCallback.addCallback(callback);
+      propertyCallbacks.computeIfAbsent(name, name -> propertyCallback);
     }
 
     // used by subclass
     public final void addCallback(Executor executor, BiConsumer<T, T> callback) {
-      propertyCallbacks.computeIfAbsent(name, name -> new PropertyCallback<T>(valueParser));
-      // noinspection unchecked
-      propertyCallbacks.get(name).addCallback(executor, callback);
+      propertyCallback.addCallback(executor, callback);
+      propertyCallbacks.computeIfAbsent(name, name -> propertyCallback);
     }
   }
 
   private class DoubleConfigPropertyImpl extends AbstractConfigProperty<Double> implements DoubleConfigProperty {
 
     DoubleConfigPropertyImpl(String name) {
-      super(name, Double::parseDouble);
+      super(name, list -> list.get(0).getValue().map(Double::parseDouble).orElse(null));
     }
 
     @Override
@@ -446,7 +482,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   private class LongConfigPropertyImpl extends AbstractConfigProperty<Long> implements LongConfigProperty {
 
     LongConfigPropertyImpl(String name) {
-      super(name, Long::parseLong);
+      super(name, list -> list.get(0).getValue().map(Long::parseLong).orElse(null));
     }
 
     @Override
@@ -463,7 +499,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   private class BooleanConfigPropertyImpl extends AbstractConfigProperty<Boolean> implements BooleanConfigProperty {
 
     BooleanConfigPropertyImpl(String name) {
-      super(name, Boolean::new);
+      super(name, list -> list.get(0).getValue().map(Boolean::parseBoolean).orElse(null));
     }
 
     @Override
@@ -480,7 +516,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   private class IntConfigPropertyImpl extends AbstractConfigProperty<Integer> implements IntConfigProperty {
 
     IntConfigPropertyImpl(String name) {
-      super(name, Integer::parseInt);
+      super(name, list -> list.get(0).getValue().map(Integer::parseInt).orElse(null));
     }
 
     @Override
@@ -497,7 +533,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   private class DurationConfigPropertyImpl extends AbstractConfigProperty<Duration> implements DurationConfigProperty {
 
     DurationConfigPropertyImpl(String name) {
-      super(name, DurationParser::parse);
+      super(name, list -> list.get(0).getValue().map(DurationParser::parse).orElse(null));
     }
 
     @Override
@@ -514,7 +550,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   private class ListConfigPropertyImpl<T> extends AbstractConfigProperty<List<T>> implements ListConfigProperty<T> {
 
     ListConfigPropertyImpl(String name, Function<String, Object> valueParser) {
-      super(name, str -> Arrays.stream(str.split(",")).map(valueParser).collect(Collectors.toList()));
+      super(name, list -> list.get(0).getValue()
+          .map(str -> Arrays.stream(str.split(",")).map(valueParser).collect(Collectors.toList()))
+          .orElse(null));
     }
 
     @Override
@@ -531,7 +569,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   private class StringConfigPropertyImpl extends AbstractConfigProperty<String> implements StringConfigProperty {
 
     StringConfigPropertyImpl(String name) {
-      super(name, str -> str);
+      super(name, list -> list.get(0).getValue().orElse(null));
     }
 
     @Override
@@ -542,6 +580,76 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     @Override
     public String valueOrThrow() {
       return value().orElseThrow(this::newValueIsNullException);
+    }
+  }
+
+  private class ObjectConfigPropertyImpl<T> implements ObjectConfigProperty<T> {
+    private final List<ObjectPropertyField> fields;
+    private final Class<T> objClass;
+    private final Function<List<NameAndValue>, Object> valueParser;
+    private final PropertyCallback<T> propertyCallback;
+
+    ObjectConfigPropertyImpl(Map<String, String> bindingMap, Class<T> objClass) {
+      this.objClass = objClass;
+
+      // populate and prepare fields map
+      fields = new ArrayList<>(bindingMap.size());
+      for (String fieldName : bindingMap.keySet()) {
+        Field field;
+        try {
+          field = objClass.getDeclaredField(fieldName);
+        } catch (NoSuchFieldException e) {
+          throw ThrowableUtil.propagate(e);
+        }
+        fields.add(new ObjectPropertyField(field, bindingMap.get(fieldName)));
+      }
+
+      this.valueParser = list -> ObjectPropertyParser.parse(list, fields, objClass);
+      this.propertyCallback = new PropertyCallback<>(valueParser);
+    }
+
+    @Override
+    public String name() {
+      return objClass.getName();
+    }
+
+    @Override
+    public Optional<T> value() {
+      Map<String, ConfigProperty> propertyMap = ConfigRegistryImpl.this.propertyMap; // save the ref to temp variable
+
+      List<NameAndValue> nameAndValueList = fields.stream()
+          .map(ObjectPropertyField::getPropertyName)
+          .filter(propertyMap::containsKey)
+          .map(propertyMap::get)
+          .map(configProperty -> new NameAndValue(configProperty.name(), configProperty.valueAsString(null)))
+          .collect(Collectors.toList());
+
+      try {
+        // noinspection unchecked
+        return Optional.ofNullable((T) valueParser.apply(nameAndValueList));
+      } catch (Exception e) {
+        LOGGER.error("Exception at valueParser on objectProperty: '{}', cause: {}", name(), e);
+        return Optional.empty();
+      }
+    }
+
+    @Override
+    public T value(T defaultValue) {
+      return value().orElse(defaultValue);
+    }
+
+    public void addCallback(BiConsumer<T, T> callback) {
+      propertyCallback.addCallback(callback);
+      fields.stream()
+          .map(ObjectPropertyField::getPropertyName)
+          .forEach(propName -> propertyCallbacks.computeIfAbsent(propName, name -> propertyCallback));
+    }
+
+    public void addCallback(Executor executor, BiConsumer<T, T> callback) {
+      propertyCallback.addCallback(executor, callback);
+      fields.stream()
+          .map(ObjectPropertyField::getPropertyName)
+          .forEach(propName -> propertyCallbacks.computeIfAbsent(propName, name -> propertyCallback));
     }
   }
 }

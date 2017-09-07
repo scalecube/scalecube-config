@@ -4,6 +4,7 @@ import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.DurationConfigProperty;
 import io.scalecube.config.ListConfigProperty;
+import io.scalecube.config.ObjectConfigProperty;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.audit.Slf4JConfigEventListener;
 import io.scalecube.config.source.DirectoryConfigSource;
@@ -13,6 +14,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -37,17 +41,44 @@ public class ReloadableLocalResourceConfigExample {
 
     StringConfigProperty prop1 = configRegistry.stringProperty("prop1");
     System.out.println("### Initial filesystem config property: prop1=" + prop1.value().get());
-    prop1.addCallback((s1, s2) -> System.out
-        .println("### Callback called for 'prop1' and value updated from='" + s1 + "' to='" + s2 + "'"));
+    prop1.addCallback((s1, s2) -> System.out.println(
+        "### Callback called for 'prop1' and value updated from='" + s1 + "' to='" + s2 + "'"));
+
+    ObjectConfigProperty<ObjectConfig> objectProperty =
+        configRegistry.objectProperty(new HashMap<String, String>() {
+          {
+            put("anInt", "reloadable.config.test.intProp");
+            put("theList", "reloadable.config.test.listProp");
+          }
+        }, ObjectConfig.class);
+    objectProperty.addCallback((config1, config2) -> System.out.println(
+        "### Callback called for objectProperty and value updated from='" + config1 + "' to='" + config2 + "'"));
 
     File file = createConfigFile(basePath);
-    writeValueToProp1(file, "42");
+    writeProperties(file, new HashMap<String, String>() {
+      {
+        put("prop1", "42");
+      }
+    });
     TimeUnit.SECONDS.sleep(2);
     System.out.println("### Property reloaded: prop1=" + prop1.value().get());
 
-    writeValueToProp1(file, "");
+    writeProperties(file, new HashMap<String, String>() {
+      {
+        put("prop1", "");
+      }
+    });
     TimeUnit.SECONDS.sleep(2);
     System.out.println("### Property reloaded again: prop1=" + prop1.value().get());
+
+    writeProperties(file, new HashMap<String, String>() {
+      {
+        put("reloadable.config.test.intProp", "1");
+        put("reloadable.config.test.listProp", "a,b,c");
+      }
+    });
+    TimeUnit.SECONDS.sleep(2);
+    System.out.println("### Object property reloaded: " + objectProperty.value().get());
 
     file.delete();
     TimeUnit.SECONDS.sleep(2);
@@ -67,9 +98,15 @@ public class ReloadableLocalResourceConfigExample {
     System.out.println("### Property type-list (double): " + propertyList2.value().get());
   }
 
-  private static void writeValueToProp1(File file, String value) throws IOException {
+  private static void writeProperties(File file, Map<String, String> props) throws IOException {
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-      writer.write("prop1=" + value);
+      props.forEach((key, value) -> {
+        try {
+          writer.write(key + "=" + value + "\n");
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
       writer.flush();
     }
   }
@@ -78,5 +115,26 @@ public class ReloadableLocalResourceConfigExample {
     File file = new File(basePath + "/config.reloadableProps");
     file.deleteOnExit();
     return file;
+  }
+
+  public static class ObjectConfig {
+    private int anInt;
+    private List<String> theList;
+
+    public int getAnInt() {
+      return anInt;
+    }
+
+    public List<String> getTheList() {
+      return theList;
+    }
+
+    @Override
+    public String toString() {
+      return "ObjectConfig{" +
+          "anInt=" + anInt +
+          ", theList=" + theList +
+          '}';
+    }
   }
 }

@@ -5,7 +5,9 @@ import java.time.temporal.ChronoUnit;
 
 public class DurationParser {
 
-  private DurationParser() {}
+  private DurationParser() {
+    // Do not instantiate
+  }
 
   // adapted from
   // https://github.com/typesafehub/config/blob/v1.3.0/config/src/main/java/com/typesafe/config/impl/SimpleConfig.java#L551-L624

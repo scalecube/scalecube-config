@@ -1,5 +1,9 @@
 # Changes
 
+## 0.3.0 / 2017-09-11
+
+* Support generic object property type (property groups)
+
 ## 0.2.2 / 2017-09-07
 
 * Fixed issue with PostConstruct calls twice init method with Spring

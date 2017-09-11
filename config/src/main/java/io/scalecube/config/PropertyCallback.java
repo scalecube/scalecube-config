@@ -1,7 +1,5 @@
 package io.scalecube.config;
 
-import io.scalecube.config.utils.NameAndValue;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,13 +10,19 @@ import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-class PropertyCallback<T> implements BiConsumer<List<NameAndValue>, List<NameAndValue>> {
+/**
+ * BiConsumer of list of {@link PropertyNameAndValue}. Implements generic logic of callback mechanism for all config
+ * property types.
+ *
+ * @param <T> type parameter for {@link #valueParser} function
+ */
+class PropertyCallback<T> implements BiConsumer<List<PropertyNameAndValue>, List<PropertyNameAndValue>> {
   private static final Logger LOGGER = LoggerFactory.getLogger(PropertyCallback.class);
 
-  private final Function<List<NameAndValue>, Object> valueParser;
-  private final Collection<BiConsumer<T, T>> callbacks = new CopyOnWriteArraySet<>();
+  private final Function<List<PropertyNameAndValue>, T> valueParser;
+  private final Collection<BiConsumer<T, T>> callbacks = new CopyOnWriteArraySet<>(); // Set based structure
 
-  PropertyCallback(Function<List<NameAndValue>, Object> valueParser) {
+  PropertyCallback(Function<List<PropertyNameAndValue>, T> valueParser) {
     this.valueParser = valueParser;
   }
 
@@ -31,24 +35,24 @@ class PropertyCallback<T> implements BiConsumer<List<NameAndValue>, List<NameAnd
   }
 
   @Override
-  public void accept(List<NameAndValue> oldValues, List<NameAndValue> newValues) {
+  public void accept(List<PropertyNameAndValue> oldList, List<PropertyNameAndValue> newList) {
     T t1 = null;
-    if (!oldValues.isEmpty()) {
+    if (!oldList.isEmpty()) {
       try {
         // noinspection unchecked
-        t1 = (T) valueParser.apply(oldValues);
+        t1 = valueParser.apply(oldList);
       } catch (Exception e) {
-        LOGGER.error("Exception occured at valueParser on oldValue: {}, cause: {}", oldValues, e);
+        LOGGER.error("Exception occured at valueParser on oldValue: {}, cause: {}", oldList, e);
       }
     }
 
     T t2 = null;
-    if (!newValues.isEmpty()) {
+    if (!newList.isEmpty()) {
       try {
         // noinspection unchecked
-        t2 = (T) valueParser.apply(newValues);
+        t2 = valueParser.apply(newList);
       } catch (Exception e) {
-        LOGGER.error("Exception occured at valueParser on newValue: {}, cause: {}", newValues, e);
+        LOGGER.error("Exception occured at valueParser on newValue: {}, cause: {}", newList, e);
       }
     }
 

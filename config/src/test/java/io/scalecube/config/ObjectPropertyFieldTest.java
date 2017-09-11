@@ -1,4 +1,4 @@
-package io.scalecube.config.utils;
+package io.scalecube.config;
 
 import static org.junit.Assert.assertEquals;
 

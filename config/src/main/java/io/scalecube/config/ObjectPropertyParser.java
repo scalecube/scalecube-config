@@ -1,17 +1,19 @@
-package io.scalecube.config.utils;
+package io.scalecube.config;
+
+import io.scalecube.config.utils.ThrowableUtil;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class ObjectPropertyParser {
+class ObjectPropertyParser {
 
   private ObjectPropertyParser() {
     // Do not instantiate
   }
 
-  public static <T> T parse(List<NameAndValue> nameAndValueList, List<ObjectPropertyField> fields, Class<T> objClass) {
+  static <T> T parse(List<PropertyNameAndValue> nameValueList, List<ObjectPropertyField> fields, Class<T> objClass) {
     T instance;
     try {
       instance = objClass.newInstance();
@@ -19,11 +21,11 @@ public class ObjectPropertyParser {
       throw ThrowableUtil.propagate(e);
     }
 
-    Map<String, Optional<String>> nameAndValueMap = nameAndValueList.stream()
-        .collect(Collectors.toMap(NameAndValue::getName, NameAndValue::getValue));
+    Map<String, Optional<String>> nameValueMap = nameValueList.stream()
+        .collect(Collectors.toMap(PropertyNameAndValue::getName, PropertyNameAndValue::getValue));
 
     for (ObjectPropertyField propertyField : fields) {
-      Optional<String> valueOptional = nameAndValueMap.get(propertyField.getPropertyName());
+      Optional<String> valueOptional = nameValueMap.get(propertyField.getPropertyName());
       if (valueOptional != null && valueOptional.isPresent()) {
         propertyField.applyValue(instance, valueOptional.get());
       }

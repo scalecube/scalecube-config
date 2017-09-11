@@ -5,10 +5,6 @@ import io.scalecube.config.jmx.JmxConfigRegistry;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.ConfigSourceInfo;
 import io.scalecube.config.source.LoadedConfigProperty;
-import io.scalecube.config.utils.DurationParser;
-import io.scalecube.config.utils.NameAndValue;
-import io.scalecube.config.utils.ObjectPropertyField;
-import io.scalecube.config.utils.ObjectPropertyParser;
 import io.scalecube.config.utils.ThrowableUtil;
 
 import org.slf4j.Logger;
@@ -375,15 +371,15 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         .filter(configEvent -> propertyCallbacks.containsKey(configEvent.getName()))
         .collect(Collectors.groupingBy(configEvent -> propertyCallbacks.get(configEvent.getName())))
         .forEach((propertyCallback, configEvents) -> {
-          List<NameAndValue> oldValues = new ArrayList<>();
-          List<NameAndValue> newValues = new ArrayList<>();
+          List<PropertyNameAndValue> oldList = new ArrayList<>();
+          List<PropertyNameAndValue> newList = new ArrayList<>();
 
           for (ConfigEvent configEvent : configEvents) {
-            oldValues.add(new NameAndValue(configEvent.getName(), configEvent.getOldValue()));
-            newValues.add(new NameAndValue(configEvent.getName(), configEvent.getNewValue()));
+            oldList.add(new PropertyNameAndValue(configEvent.getName(), configEvent.getOldValue()));
+            newList.add(new PropertyNameAndValue(configEvent.getName(), configEvent.getNewValue()));
           }
 
-          propertyCallback.accept(oldValues, newValues);
+          propertyCallback.accept(oldList, newList);
         });
   }
 
@@ -399,10 +395,10 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private abstract class AbstractConfigProperty<T> implements ConfigProperty {
     private final String name;
-    private final Function<List<NameAndValue>, Object> valueParser;
+    private final Function<List<PropertyNameAndValue>, T> valueParser;
     private final PropertyCallback<T> propertyCallback;
 
-    AbstractConfigProperty(String name, Function<List<NameAndValue>, Object> valueParser) {
+    AbstractConfigProperty(String name, Function<List<PropertyNameAndValue>, T> valueParser) {
       this.name = name;
       this.valueParser = valueParser;
       this.propertyCallback = new PropertyCallback<>(valueParser);
@@ -436,8 +432,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     public final Optional<T> value() {
       return valueAsString().flatMap(value -> {
         try {
+          List<PropertyNameAndValue> nameValueList = Collections.singletonList(new PropertyNameAndValue(name, value));
           // noinspection unchecked
-          return Optional.ofNullable((T) valueParser.apply(Collections.singletonList(new NameAndValue(name, value))));
+          return Optional.ofNullable((T) valueParser.apply(nameValueList));
         } catch (Exception e) {
           LOGGER.error("Exception at valueParser on property: '{}', string value: '{}', cause: {}", name, value, e);
           return Optional.empty();
@@ -549,7 +546,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private class ListConfigPropertyImpl<T> extends AbstractConfigProperty<List<T>> implements ListConfigProperty<T> {
 
-    ListConfigPropertyImpl(String name, Function<String, Object> valueParser) {
+    ListConfigPropertyImpl(String name, Function<String, T> valueParser) {
       super(name, list -> list.get(0).getValue()
           .map(str -> Arrays.stream(str.split(",")).map(valueParser).collect(Collectors.toList()))
           .orElse(null));
@@ -586,7 +583,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   private class ObjectConfigPropertyImpl<T> implements ObjectConfigProperty<T> {
     private final List<ObjectPropertyField> fields;
     private final Class<T> objClass;
-    private final Function<List<NameAndValue>, Object> valueParser;
+    private final Function<List<PropertyNameAndValue>, T> valueParser;
     private final PropertyCallback<T> propertyCallback;
 
     ObjectConfigPropertyImpl(Map<String, String> bindingMap, Class<T> objClass) {
@@ -617,16 +614,16 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     public Optional<T> value() {
       Map<String, ConfigProperty> propertyMap = ConfigRegistryImpl.this.propertyMap; // save the ref to temp variable
 
-      List<NameAndValue> nameAndValueList = fields.stream()
+      List<PropertyNameAndValue> nameValueList = fields.stream()
           .map(ObjectPropertyField::getPropertyName)
           .filter(propertyMap::containsKey)
           .map(propertyMap::get)
-          .map(configProperty -> new NameAndValue(configProperty.name(), configProperty.valueAsString(null)))
+          .map(configProperty -> new PropertyNameAndValue(configProperty.name(), configProperty.valueAsString(null)))
           .collect(Collectors.toList());
 
       try {
         // noinspection unchecked
-        return Optional.ofNullable((T) valueParser.apply(nameAndValueList));
+        return Optional.ofNullable((T) valueParser.apply(nameValueList));
       } catch (Exception e) {
         LOGGER.error("Exception at valueParser on objectProperty: '{}', cause: {}", name(), e);
         return Optional.empty();

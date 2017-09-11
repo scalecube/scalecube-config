@@ -1,4 +1,6 @@
-package io.scalecube.config.utils;
+package io.scalecube.config;
+
+import io.scalecube.config.utils.ThrowableUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -9,12 +11,16 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class ObjectPropertyField {
+/**
+ * Helper holder class. Contains parsed field of the corresponding object class, associated property name and computed
+ * {@link #valueParser} function.
+ */
+class ObjectPropertyField {
   private final Field field;
   private final String propertyName;
   private final Function<String, Object> valueParser;
 
-  public ObjectPropertyField(Field field, String propertyName) {
+  ObjectPropertyField(Field field, String propertyName) {
     this.field = field;
     field.setAccessible(true);
     this.propertyName = propertyName;
@@ -52,7 +58,7 @@ public class ObjectPropertyField {
     }
   }
 
-  public String getPropertyName() {
+  String getPropertyName() {
     return propertyName;
   }
 

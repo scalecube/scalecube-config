@@ -1,15 +1,17 @@
-package io.scalecube.config.utils;
+package io.scalecube.config;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-public class DurationParser {
+class DurationParser {
 
-  private DurationParser() {}
+  private DurationParser() {
+    // Do not instantiate
+  }
 
   // adapted from
   // https://github.com/typesafehub/config/blob/v1.3.0/config/src/main/java/com/typesafe/config/impl/SimpleConfig.java#L551-L624
-  public static Object parse(String input) {
+  static Duration parse(String input) {
     if (input.startsWith("P") || input.startsWith("-P") || input.startsWith("+P")) {
       return Duration.parse(input);
     }

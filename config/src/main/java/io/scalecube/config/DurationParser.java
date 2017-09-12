@@ -3,6 +3,13 @@ package io.scalecube.config;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
+/**
+ * {@link java.time.Duration} parser. Recognizes string format from
+ * <a href="https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-" target=
+ * "_blank">official java8 documentation</a> and more convenient string form with integer value followed by time_unit
+ * string (which is one of: <b>ns</b> - nanos, <b>us</b> - micros, <b>ms</b> - millis, <b>s</b> - seconds, <b>m</b> -
+ * minutes, <b>h</b> - hours, <b>d</b> - days).
+ */
 class DurationParser {
 
   private DurationParser() {

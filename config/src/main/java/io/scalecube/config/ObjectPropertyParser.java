@@ -7,6 +7,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Parser for {@link ObjectConfigProperty}. Returns object instance of the given class by the list of
+ * {@link PropertyNameAndValue}-s and list of {@link ObjectPropertyField}-s. The class must contain default constructor.
+ */
 class ObjectPropertyParser {
 
   private ObjectPropertyParser() {

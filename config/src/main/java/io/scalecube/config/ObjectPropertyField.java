@@ -3,6 +3,7 @@ package io.scalecube.config;
 import io.scalecube.config.utils.ThrowableUtil;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
@@ -21,8 +22,14 @@ class ObjectPropertyField {
   private final Function<String, Object> valueParser;
 
   ObjectPropertyField(Field field, String propertyName) {
+    int modifiers = field.getModifiers();
+    if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers)) {
+      throw new IllegalArgumentException(
+          "ObjectPropertyField: 'static' or 'final' declaration is not supported (field: " + field + ")");
+    }
+
     this.field = field;
-    field.setAccessible(true);
+    field.setAccessible(true); // set accessible to overcome 'private' declaration
     this.propertyName = propertyName;
 
     if (field.getGenericType() instanceof ParameterizedType) {

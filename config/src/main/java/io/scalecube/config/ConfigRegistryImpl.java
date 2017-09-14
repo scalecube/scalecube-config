@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -598,7 +599,10 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         } catch (NoSuchFieldException e) {
           throw ThrowableUtil.propagate(e);
         }
-        fields.add(new ObjectPropertyField(field, bindingMap.get(fieldName)));
+        int modifiers = field.getModifiers();
+        if (!Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
+          fields.add(new ObjectPropertyField(field, bindingMap.get(fieldName)));
+        }
       }
 
       this.valueParser = list -> ObjectPropertyParser.parse(list, fields, objClass);

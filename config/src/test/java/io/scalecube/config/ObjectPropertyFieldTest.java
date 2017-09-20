@@ -1,6 +1,9 @@
 package io.scalecube.config;
 
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -79,6 +82,23 @@ public class ObjectPropertyFieldTest {
     field_list.applyValue(instance, "1,2,3");
   }
 
+  @Test
+  public void testStaticOrFinalFieldsInConfigClassNotSupported() throws Exception {
+    Class<ConfigClassWithStaticOrFinalField> clazz = ConfigClassWithStaticOrFinalField.class;
+    try {
+      new ObjectPropertyField(clazz.getDeclaredField("defaultInstance"), propName);
+      fail("Expect fail here with IllegalArgumentException");
+    } catch (IllegalArgumentException e) {
+      assertThat(e.getMessage(), startsWith("ObjectPropertyField: 'static' or 'final' declaration is not supported"));
+    }
+    try {
+      new ObjectPropertyField(clazz.getDeclaredField("finalInt"), propName);
+      fail("Expect fail here with IllegalArgumentException");
+    } catch (IllegalArgumentException e) {
+      assertThat(e.getMessage(), startsWith("ObjectPropertyField: 'static' or 'final' declaration is not supported"));
+    }
+  }
+
   static class PrimitiveClass {
     private int iii = 0;
     private double ddd = 0;
@@ -97,5 +117,11 @@ public class ObjectPropertyFieldTest {
 
   static class UntypedListConfigClass {
     private List list = new ArrayList<>();
+  }
+
+  static class ConfigClassWithStaticOrFinalField {
+    static final ConfigClassWithStaticOrFinalField defaultInstance = new ConfigClassWithStaticOrFinalField();
+
+    private final int finalInt = 1;
   }
 }

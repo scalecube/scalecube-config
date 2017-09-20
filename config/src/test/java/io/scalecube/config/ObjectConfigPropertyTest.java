@@ -9,6 +9,8 @@ import io.scalecube.config.source.ClassPathConfigSource;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -79,6 +81,16 @@ public class ObjectConfigPropertyTest {
     assertEquals(Stream.of(1L, 2L, 3L).collect(Collectors.toList()), config.longList);
   }
 
+  @Test
+  public void testSkipStaticOrFinalFieldInObjectPropertryClass() throws Exception {
+    ConfigClassWithStaticOrFinalField config =
+        configRegistry.objectProperty(ConfigClassWithStaticOrFinalField.class).value().get();
+
+    assertEquals(42, config.anInt);
+    // fields with modifier 'final' are not taken into account, even if defined in config source
+    assertEquals(1, config.finalInt);
+  }
+
   public static class TestConfig {
     private int maxCount;
     private Duration timeout;
@@ -101,5 +113,13 @@ public class ObjectConfigPropertyTest {
 
   public static class NotDefinedObjectPropertyConfig {
     private int iii = 42;
+  }
+
+  public static class ConfigClassWithStaticOrFinalField {
+    static final Logger LOGGER = LoggerFactory.getLogger("logger");
+    static final ConfigClassWithStaticOrFinalField defaultInstance = new ConfigClassWithStaticOrFinalField();
+
+    private int anInt = 1;
+    private final int finalInt = 1;
   }
 }

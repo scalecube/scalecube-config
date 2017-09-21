@@ -61,7 +61,7 @@ ObjectConfigProperty<MyConfig> config = configRegistry.objectProperty("myapp.con
 // Get current config values
 MyConfig currentConfig = config.value(MyConfig.defaultValue() /* or default */);
 
-// Register callback (called once per config reload even when many properties changed)
+// Register callback (called only once per config reload even when several properties changed)
 config.addCallback((oldConfig, newConfig) -> 
         System.out.println("Config was changed to: " + newConfig)); 
 ```

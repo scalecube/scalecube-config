@@ -22,7 +22,7 @@ Configure and xreate configuration registry instance:
 Predicate<Path> predicate = path -> path.toString().endsWith(".props"); // match by .props extension
 ConfigRegistrySettings settings = ConfigRegistrySettings.builder()
         .addLastSource("classpath", new ClassPathConfigSource(predicate))
-        .addLastSource("configDirectory", new DirectoryConfigSource("." /* base path */, predicate))
+        .addLastSource("configDirectory", new DirectoryConfigSource("conf" /* base path */, predicate))
         .addListener(new Slf4JConfigEventListener()) // print all property changes to log
         .build();
 ConfigRegistry configRegistry = ConfigRegistry.create(settings);

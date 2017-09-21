@@ -1,5 +1,9 @@
 # Changes
 
+## 0.3.1 / 2017-09-21
+
+* Enhancements of object properties support
+
 ## 0.3.0 / 2017-09-11
 
 * Support generic object property type (property groups)

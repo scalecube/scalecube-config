@@ -111,8 +111,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
-  public <T> ObjectConfigProperty<T> objectProperty(Class<T> objClass) {
-    String prefix = objClass.getName();
+  public <T> ObjectConfigProperty<T> objectProperty(String prefix, Class<T> objClass) {
     Map<String, String> bindingMap = Arrays.stream(objClass.getDeclaredFields())
         .collect(Collectors.toMap(Field::getName, field -> prefix + '.' + field.getName()));
     return new ObjectConfigPropertyImpl<>(bindingMap, objClass);
@@ -124,8 +123,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
-  public <T> T objectValue(Class<T> objClass, T defaultValue) {
-    return objectProperty(objClass).value(defaultValue);
+  public <T> T objectValue(String prefix, Class<T> objClass, T defaultValue) {
+    return objectProperty(prefix, objClass).value(defaultValue);
   }
 
   @Override
@@ -435,7 +434,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         try {
           List<PropertyNameAndValue> nameValueList = Collections.singletonList(new PropertyNameAndValue(name, value));
           // noinspection unchecked
-          return Optional.ofNullable((T) valueParser.apply(nameValueList));
+          return Optional.ofNullable(valueParser.apply(nameValueList));
         } catch (Exception e) {
           LOGGER.error("Exception at valueParser on property: '{}', string value: '{}', cause: {}", name, value, e);
           return Optional.empty();
@@ -443,20 +442,20 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       });
     }
 
-    protected final NoSuchElementException newValueIsNullException() {
+    final NoSuchElementException newValueIsNullException() {
       return new NoSuchElementException("Value is null for property '" + name + "'");
     }
 
     // used by subclass
     public final void addCallback(BiConsumer<T, T> callback) {
       propertyCallback.addCallback(callback);
-      propertyCallbacks.computeIfAbsent(name, name -> propertyCallback);
+      propertyCallbacks.putIfAbsent(name, propertyCallback);
     }
 
     // used by subclass
     public final void addCallback(Executor executor, BiConsumer<T, T> callback) {
       propertyCallback.addCallback(executor, callback);
-      propertyCallbacks.computeIfAbsent(name, name -> propertyCallback);
+      propertyCallbacks.putIfAbsent(name, propertyCallback);
     }
   }
 
@@ -627,7 +626,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
       try {
         // noinspection unchecked
-        return Optional.ofNullable((T) valueParser.apply(nameValueList));
+        return Optional.ofNullable(valueParser.apply(nameValueList));
       } catch (Exception e) {
         LOGGER.error("Exception at valueParser on objectProperty: '{}', cause: {}", name(), e);
         return Optional.empty();

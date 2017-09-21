@@ -31,11 +31,12 @@ public interface ConfigRegistry {
   /**
    * Returns dynamic typed object property.
    *
+   * @param prefix prefix of property keys extended with field names as prefix.fieldName to resolve full property keys
    * @param objClass a class of config object instance
    * @param <T> a type of config object
    * @return property instance
    */
-  <T> ObjectConfigProperty<T> objectProperty(Class<T> objClass);
+  <T> ObjectConfigProperty<T> objectProperty(String prefix, Class<T> objClass);
 
   /**
    * Returns dynamic typed object property.
@@ -55,7 +56,7 @@ public interface ConfigRegistry {
    * @param <T> a type of returned config object
    * @return property value
    */
-  <T> T objectValue(Class<T> objClass, T defaultValue);
+  <T> T objectValue(String prefix, Class<T> objClass, T defaultValue);
 
   /**
    * Returns current value of object property or defaults.

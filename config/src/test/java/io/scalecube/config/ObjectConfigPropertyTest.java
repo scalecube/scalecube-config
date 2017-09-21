@@ -37,7 +37,7 @@ public class ObjectConfigPropertyTest {
 
   @Test
   public void testObjectProperty() throws Exception {
-    TestConfig config = configRegistry.objectProperty(TestConfig.class).value(null);
+    TestConfig config = configRegistry.objectProperty(TestConfig.class.getName(), TestConfig.class).value(null);
 
     assertNotNull(config);
     assertEquals(42, config.maxCount);
@@ -48,7 +48,7 @@ public class ObjectConfigPropertyTest {
   @Test
   public void testObjectPropertyNotDefinedInConfigSource() throws Exception {
     Optional<NotDefinedObjectPropertyConfig> configOptional =
-        configRegistry.objectProperty(NotDefinedObjectPropertyConfig.class).value();
+        configRegistry.objectProperty(NotDefinedObjectPropertyConfig.class.getName(), NotDefinedObjectPropertyConfig.class).value();
 
     assertTrue(configOptional.isPresent());
     assertEquals(42, configOptional.get().iii); // value not changed since nothing resets it
@@ -57,7 +57,7 @@ public class ObjectConfigPropertyTest {
   @Test
   public void testFailedValueParsingOnObjectProperty() throws Exception {
     Optional<IncorrectIntegerValueConfig> configOptional =
-        configRegistry.objectProperty(IncorrectIntegerValueConfig.class).value();
+        configRegistry.objectProperty(IncorrectIntegerValueConfig.class.getName(), IncorrectIntegerValueConfig.class).value();
 
     assertFalse(configOptional.isPresent());
   }
@@ -65,7 +65,7 @@ public class ObjectConfigPropertyTest {
   @Test
   public void testPartiallyDefinedValueConfig() throws Exception {
     PartiallyDefinedValueConfig config =
-        configRegistry.objectProperty(PartiallyDefinedValueConfig.class).value().get();
+        configRegistry.objectProperty(PartiallyDefinedValueConfig.class.getName(), PartiallyDefinedValueConfig.class).value().get();
 
     assertEquals(1e7, config.d1, 0); // default value not reset
     assertEquals(42, config.d2, 0);
@@ -84,7 +84,7 @@ public class ObjectConfigPropertyTest {
   @Test
   public void testSkipStaticOrFinalFieldInObjectPropertryClass() throws Exception {
     ConfigClassWithStaticOrFinalField config =
-        configRegistry.objectProperty(ConfigClassWithStaticOrFinalField.class).value().get();
+        configRegistry.objectProperty(ConfigClassWithStaticOrFinalField.class.getName(), ConfigClassWithStaticOrFinalField.class).value().get();
 
     assertEquals(42, config.anInt);
     // fields with modifier 'final' are not taken into account, even if defined in config source

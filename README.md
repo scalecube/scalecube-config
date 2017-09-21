@@ -7,6 +7,7 @@ ScaleCube Config is a configuration management library for JVM based distributed
 It provides the following functionality:
 * Dynamic typed properties
 * Register callbacks on property changes
+* Object binding for grouping properties
 * Extensible range of supported property sources (environment variables, program arguments, classpath, property files, mongodb, git repository, zookeeper etc.)
 * Support centralized hierarchical property sources
 * Control over order of applying different property sources
@@ -15,7 +16,7 @@ It provides the following functionality:
 
 ## Usage
 
-Create configuration registry instance:
+Configure and xreate configuration registry instance:
 
 ``` java
 Predicate<Path> predicate = path -> path.toString().endsWith(".props"); // match by .props extension
@@ -34,11 +35,35 @@ LongConfigProperty timeoutProperty = configRegistry.longProperty("http.request-t
 long timeout = timeoutProperty.get(30 /* default value */);
 ```
 
-Register callback on property changes:
+Register callbacks on property modifications:
  
 ``` java
 timeoutProperty.addCallback((oldValue, newValue) -> 
         System.out.println("Timeout value changed to " + newValue));
+```
+
+Utilize object binding:
+
+``` java
+// Define configuration class
+public interface MyConfig {
+  private boolean featureFlag;
+  private int someValue;
+  private double realValue;
+  ...
+}
+
+// myapp.config.featureFlag=true
+// myapp.config.someValue=42
+// myapp.config.realValue=36.6
+ObjectConfigProperty<MyConfig> configProperty = configRegistry.objectProperty("myapp.config", MyConfig.class);
+
+// Get current config values
+MyConfig currentConfig = configProperty.value(MyConfig.defaultValue() /* or default */);
+
+// Register callback (called once per config reload even when many properties changed)
+configProperty.addCallback((oldConfig, newConfig) -> 
+        System.out.println("Config was changed to: " + newConfig)); 
 ```
 
 Start embedded HTTP server which exposes configuration endpoints:

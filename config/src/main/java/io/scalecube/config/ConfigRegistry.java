@@ -28,12 +28,44 @@ public interface ConfigRegistry {
     return configRegistry;
   }
 
+  /**
+   * Returns dynamic typed object property.
+   *
+   * @param objClass a class of config object instance
+   * @param <T> a type of config object
+   * @return property instance
+   */
   <T> ObjectConfigProperty<T> objectProperty(Class<T> objClass);
 
+  /**
+   * Returns dynamic typed object property.
+   *
+   * @param bindingMap custom mapping between class field names and property names
+   * @param objClass a class of config object instance
+   * @param <T> a type of config object
+   * @return property instance
+   */
   <T> ObjectConfigProperty<T> objectProperty(Map<String, String> bindingMap, Class<T> objClass);
 
+  /**
+   * Returns current value of object property or defaults.
+   *
+   * @param objClass a class of config object instance
+   * @param defaultValue default config object
+   * @param <T> a type of returned config object
+   * @return property value
+   */
   <T> T objectValue(Class<T> objClass, T defaultValue);
 
+  /**
+   * Returns current value of object property or defaults.
+   *
+   * @param bindingMap custom mapping between class field names and property names
+   * @param objClass a class of config object instance
+   * @param defaultValue default config object
+   * @param <T> a type of returned config object
+   * @return property value
+   */
   <T> T objectValue(Map<String, String> bindingMap, Class<T> objClass, T defaultValue);
 
   /**

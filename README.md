@@ -56,13 +56,13 @@ public interface MyConfig {
 // myapp.config.featureFlag=true
 // myapp.config.someValue=42
 // myapp.config.realValue=36.6
-ObjectConfigProperty<MyConfig> configProperty = configRegistry.objectProperty("myapp.config", MyConfig.class);
+ObjectConfigProperty<MyConfig> config = configRegistry.objectProperty("myapp.config", MyConfig.class);
 
 // Get current config values
-MyConfig currentConfig = configProperty.value(MyConfig.defaultValue() /* or default */);
+MyConfig currentConfig = config.value(MyConfig.defaultValue() /* or default */);
 
 // Register callback (called once per config reload even when many properties changed)
-configProperty.addCallback((oldConfig, newConfig) -> 
+config.addCallback((oldConfig, newConfig) -> 
         System.out.println("Config was changed to: " + newConfig)); 
 ```
 

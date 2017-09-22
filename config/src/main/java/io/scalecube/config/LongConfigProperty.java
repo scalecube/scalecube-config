@@ -4,6 +4,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 public interface LongConfigProperty extends ConfigProperty {
 
@@ -19,4 +20,6 @@ public interface LongConfigProperty extends ConfigProperty {
   void addCallback(BiConsumer<Long, Long> callback);
 
   void addCallback(Executor executor, BiConsumer<Long, Long> callback);
+
+  void addValidator(Predicate<Long> validator);
 }

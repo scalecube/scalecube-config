@@ -5,6 +5,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 public interface DurationConfigProperty extends ConfigProperty {
 
@@ -20,4 +21,6 @@ public interface DurationConfigProperty extends ConfigProperty {
   void addCallback(BiConsumer<Duration, Duration> callback);
 
   void addCallback(Executor executor, BiConsumer<Duration, Duration> callback);
+
+  void addValidator(Predicate<Duration> validator);
 }

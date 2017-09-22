@@ -18,7 +18,7 @@ class DurationParser {
 
   // adapted from
   // https://github.com/typesafehub/config/blob/v1.3.0/config/src/main/java/com/typesafe/config/impl/SimpleConfig.java#L551-L624
-  static Duration parse(String input) {
+  static Duration parseDuration(String input) {
     if (input.startsWith("P") || input.startsWith("-P") || input.startsWith("+P")) {
       return Duration.parse(input);
     }

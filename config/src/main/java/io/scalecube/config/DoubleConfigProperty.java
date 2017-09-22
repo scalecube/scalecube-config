@@ -4,6 +4,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 public interface DoubleConfigProperty extends ConfigProperty {
 
@@ -19,4 +20,6 @@ public interface DoubleConfigProperty extends ConfigProperty {
   void addCallback(BiConsumer<Double, Double> callback);
 
   void addCallback(Executor executor, BiConsumer<Double, Double> callback);
+
+  void addValidator(Predicate<Double> validator);
 }

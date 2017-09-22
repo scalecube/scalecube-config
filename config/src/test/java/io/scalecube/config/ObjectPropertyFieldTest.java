@@ -31,10 +31,10 @@ public class ObjectPropertyFieldTest {
     ObjectPropertyField field_bbb = new ObjectPropertyField(clazz.getDeclaredField("bbb"), propName);
     ObjectPropertyField field_lll = new ObjectPropertyField(clazz.getDeclaredField("lll"), propName);
 
-    field_iii.applyValue(instance, "1");
-    field_ddd.applyValue(instance, "1E+7");
-    field_bbb.applyValue(instance, "false");
-    field_lll.applyValue(instance, "1");
+    field_iii.applyValueParser(instance, "1");
+    field_ddd.applyValueParser(instance, "1E+7");
+    field_bbb.applyValueParser(instance, "false");
+    field_lll.applyValueParser(instance, "1");
 
     assertEquals(1, instance.iii);
     assertEquals(1e7, instance.ddd, 0);
@@ -50,8 +50,8 @@ public class ObjectPropertyFieldTest {
     ObjectPropertyField field_string = new ObjectPropertyField(clazz.getDeclaredField("str"), propName);
     ObjectPropertyField field_duration = new ObjectPropertyField(clazz.getDeclaredField("duration"), propName);
 
-    field_string.applyValue(instance, "just str");
-    field_duration.applyValue(instance, "100ms");
+    field_string.applyValueParser(instance, "just str");
+    field_duration.applyValueParser(instance, "100ms");
 
     assertEquals("just str", instance.str);
     assertEquals(Duration.ofMillis(100), instance.duration);
@@ -64,7 +64,7 @@ public class ObjectPropertyFieldTest {
     Class<TypedListConfigClass> clazz = TypedListConfigClass.class;
     ObjectPropertyField field_integerList = new ObjectPropertyField(clazz.getDeclaredField("integerList"), propName);
 
-    field_integerList.applyValue(instance, "1,2,3");
+    field_integerList.applyValueParser(instance, "1,2,3");
 
     assertEquals(Stream.of(1, 2, 3).collect(Collectors.toList()), instance.integerList);
   }
@@ -79,7 +79,7 @@ public class ObjectPropertyFieldTest {
     Class<UntypedListConfigClass> clazz = UntypedListConfigClass.class;
     ObjectPropertyField field_list = new ObjectPropertyField(clazz.getDeclaredField("list"), propName);
 
-    field_list.applyValue(instance, "1,2,3");
+    field_list.applyValueParser(instance, "1,2,3");
   }
 
   @Test

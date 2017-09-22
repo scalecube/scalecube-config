@@ -4,6 +4,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 public interface StringConfigProperty extends ConfigProperty {
 
@@ -19,4 +20,6 @@ public interface StringConfigProperty extends ConfigProperty {
   void addCallback(BiConsumer<String, String> callback);
 
   void addCallback(Executor executor, BiConsumer<String, String> callback);
+
+  void addValidator(Predicate<String> validator);
 }

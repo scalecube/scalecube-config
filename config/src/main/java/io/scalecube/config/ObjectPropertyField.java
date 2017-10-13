@@ -51,7 +51,7 @@ class ObjectPropertyField {
     if (type == String.class) {
       return str -> str;
     } else if (type == Duration.class) {
-      return DurationParser::parse;
+      return DurationParser::parseDuration;
     } else if (type == Integer.TYPE || type == Integer.class) {
       return Integer::parseInt;
     } else if (type == Double.TYPE || type == Double.class) {
@@ -69,7 +69,7 @@ class ObjectPropertyField {
     return propertyName;
   }
 
-  void applyValue(Object instance, String value) {
+  void applyValueParser(Object instance, String value) {
     try {
       field.set(instance, valueParser.apply(value));
     } catch (IllegalAccessException e) {

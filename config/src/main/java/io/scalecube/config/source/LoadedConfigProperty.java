@@ -3,10 +3,7 @@ package io.scalecube.config.source;
 import io.scalecube.config.ConfigProperty;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-
-import javax.annotation.Nonnull;
 
 public final class LoadedConfigProperty implements ConfigProperty {
   private final String name; // not null
@@ -21,25 +18,20 @@ public final class LoadedConfigProperty implements ConfigProperty {
     this.value = builder.value;
   }
 
-  public static LoadedConfigProperty forNameAndValue(@Nonnull String name, @Nonnull String value) {
-    Objects.requireNonNull(name);
-    Objects.requireNonNull(value);
-    return new Builder(name, value).build();
+  public static LoadedConfigProperty forNameAndValue(String name, String value) {
+    return withNameAndValue(name, value).build();
   }
 
-  public static Builder withNameAndValue(@Nonnull Map.Entry<String, String> entry) {
-    Objects.requireNonNull(entry);
+  public static Builder withNameAndValue(Map.Entry<String, String> entry) {
     return withNameAndValue(entry.getKey(), entry.getValue());
   }
 
-  public static Builder withNameAndValue(@Nonnull String name, @Nonnull String value) {
-    Objects.requireNonNull(name);
-    Objects.requireNonNull(value);
+  public static Builder withNameAndValue(String name, String value) {
     return new Builder(name, value);
   }
 
-  public static Builder withCopyFrom(@Nonnull ConfigProperty property) {
-    Builder builder = new Builder(property.name(), Objects.requireNonNull(property.valueAsString(null)));
+  public static Builder withCopyFrom(ConfigProperty property) {
+    Builder builder = new Builder(property.name(), property.valueAsString(null));
     builder.source = property.source().orElse(null);
     builder.origin = property.origin().orElse(null);
     return builder;
@@ -85,10 +77,6 @@ public final class LoadedConfigProperty implements ConfigProperty {
     private final String value;
     private String source;
     private String origin;
-
-    public Builder(String name) {
-      this(name, null);
-    }
 
     public Builder(String name, String value) {
       this.name = name;

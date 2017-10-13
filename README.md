@@ -42,20 +42,25 @@ timeoutProperty.addCallback((oldValue, newValue) ->
         System.out.println("Timeout value changed to " + newValue));
 ```
 
+Register validators on property values (only values which passed all validators will be applied):
+``` java
+timeoutProperty.addValidator(val -> val >= 0); // timeout can't be negative
+```
+
 Utilize object binding:
 
 ``` java
 // Define configuration class
 public interface MyConfig {
-  private boolean featureFlag;
-  private int someValue;
-  private double realValue;
+  private boolean meaning;
+  private int answer;
+  private double realAnswer;
   ...
 }
 
-// myapp.config.featureFlag=true
-// myapp.config.someValue=42
-// myapp.config.realValue=36.6
+// myapp.config.meaning=true
+// myapp.config.answer=42
+// myapp.config.realAnswer=42.000000000000001
 ObjectConfigProperty<MyConfig> config = configRegistry.objectProperty("myapp.config", MyConfig.class);
 
 // Get current config values
@@ -63,7 +68,11 @@ MyConfig currentConfig = config.value(MyConfig.defaultValue() /* or default */);
 
 // Register callback (called only once per config reload even when several properties changed)
 config.addCallback((oldConfig, newConfig) -> 
-        System.out.println("Config was changed to: " + newConfig)); 
+        System.out.println("MyConfig updated from " + oldConfig + " to " + newConfig)); 
+        
+// Register validator
+// If meaning is present, an answer should be at least as big as the answer  
+config.addValidator(val -> val.meaning && val.answer >= 42);     
 ```
 
 Start embedded HTTP server which exposes configuration endpoints:

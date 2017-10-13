@@ -16,7 +16,7 @@ It provides the following functionality:
 
 ## Usage
 
-Configure and xreate configuration registry instance:
+Configure and create configuration registry instance:
 
 ``` java
 Predicate<Path> predicate = path -> path.toString().endsWith(".props"); // match by .props extension

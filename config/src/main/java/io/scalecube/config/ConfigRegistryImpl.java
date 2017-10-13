@@ -295,10 +295,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       try {
         configMap = configSource.loadConfig();
       } catch (ConfigSourceNotAvailableException e) {
-        configError = e; // save error occurence
-        LOGGER.warn("ConfigSource: {} failed on loadConfig, cause: {}", configSource, e);
+        configError = e; // save error occurrence
+        // TODO: Should be handled according to: https://github.com/scalecube/config/issues/26
+        //LOGGER.warn("ConfigSource: {} failed on loadConfig, cause: {}", configSource, e);
       } catch (Throwable throwable) {
-        configError = throwable; // save error occurence
+        configError = throwable; // save error occurrence
         LOGGER.error("Exception on loading config from configSource: {}, source: {}, cause: {}",
             configSource, source, throwable, throwable);
       }

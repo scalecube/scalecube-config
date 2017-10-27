@@ -5,6 +5,7 @@ import io.scalecube.config.ConfigProperty;
 import java.util.Map;
 import java.util.Optional;
 
+// Helper class
 public final class LoadedConfigProperty implements ConfigProperty {
   private final String name; // not null
   private final String source; // nullable

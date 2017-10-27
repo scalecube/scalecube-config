@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,6 +48,8 @@ public class ObjectConfigPropertyTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
+
+  // Normal scenarios
 
   @Test
   public void testObjectProperty() throws Exception {
@@ -349,6 +352,80 @@ public class ObjectConfigPropertyTest {
     assertEquals(1, config.finalInt);
   }
 
+  // Failure scenarios
+
+  @Test
+  public void testValueAbsentAndValidationNotPassed() throws Exception {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Validation failed");
+
+    ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
+
+    ObjectConfigProperty<ConnectorSettings> objectProperty =
+        configRegistry.objectProperty("connector", ConnectorSettings.class);
+    objectProperty.addValidator(Objects::nonNull);
+    objectProperty.addValidator(settings -> settings.user != null && settings.password != null);
+  }
+
+  @Test
+  public void testValueRemovedOnReloadValidationNotPassed() throws Exception {
+    when(configSource.loadConfig())
+        .thenReturn(toConfigProps(mapBuilder().put("connector.user", "yada").put("connector.password", "yada").build()))
+        .thenReturn(toConfigProps(mapBuilder().build())); // -> prorperties gone
+    ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
+
+    ObjectConfigProperty<ConnectorSettings> objectProperty =
+        configRegistry.objectProperty("connector", ConnectorSettings.class);
+    objectProperty.addValidator(Objects::nonNull);
+    objectProperty.addValidator(settings -> settings.user != null && settings.password != null);
+    objectProperty.addCallback((i1, i2) -> sideEffect.apply(i1, i2));
+
+    assertEquals("yada", objectProperty.value().get().user);
+    assertEquals("yada", objectProperty.value().get().password);
+
+    TimeUnit.MILLISECONDS.sleep(WAIT_FOR_RELOAD_PERIOD_MILLIS);
+
+    assertTrue(objectProperty.value().isPresent());
+    assertEquals("yada", objectProperty.value().get().user);
+    assertEquals("yada", objectProperty.value().get().password);
+    verify(sideEffect, never()).apply(any(), any());
+  }
+
+  @Test
+  public void testValueParserFailingOnReload() throws Exception {
+    when(configSource.loadConfig())
+        .thenReturn(toConfigProps(mapBuilder().put("com.acme.anInt", "1").build()))
+        .thenReturn(toConfigProps(mapBuilder().put("com.acme.anInt", "not an int").build()));
+    ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
+
+    ObjectConfigProperty<IntObjectSettings> objectProperty =
+        configRegistry.objectProperty("com.acme", IntObjectSettings.class);
+    objectProperty.addValidator(Objects::nonNull);
+    objectProperty.addValidator(settings -> settings.anInt >= 1);
+    objectProperty.addCallback((i1, i2) -> sideEffect.apply(i1, i2));
+
+    assertEquals(1, objectProperty.value().get().anInt);
+
+    TimeUnit.MILLISECONDS.sleep(WAIT_FOR_RELOAD_PERIOD_MILLIS);
+
+    assertTrue(objectProperty.value().isPresent());
+    assertEquals(1, objectProperty.value().get().anInt);
+    verify(sideEffect, never()).apply(any(), any());
+  }
+
+  @Test
+  public void testValidationNotPassed() throws Exception {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Validation failed");
+
+    when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("com.acme.anInt", "1").build()));
+    ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
+
+    ObjectConfigProperty<IntObjectSettings> objectProperty =
+        configRegistry.objectProperty("com.acme", IntObjectSettings.class);
+    objectProperty.addValidator(settings -> settings.anInt >= 42);
+  }
+
   public static class TestConfig {
     private int maxCount;
     private Duration timeout;
@@ -405,5 +482,14 @@ public class ObjectConfigPropertyTest {
   public interface SideEffect {
 
     boolean apply(Object t1, Object t2);
+  }
+
+  public static class ConnectorSettings {
+    String user;
+    String password;
+  }
+
+  public static class IntObjectSettings {
+    int anInt;
   }
 }

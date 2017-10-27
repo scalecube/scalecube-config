@@ -48,7 +48,7 @@ class ListConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<List<T>> im
       result = Duration.class;
     }
     if (result == null) {
-      throw new IllegalArgumentException();
+      throw new IllegalArgumentException("ListConfigPropertyImpl: unsupported list valueParser " + valueParser);
     }
     return result;
   }

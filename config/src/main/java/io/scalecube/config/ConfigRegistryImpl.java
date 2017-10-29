@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -66,9 +67,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private final ConfigRegistrySettings settings;
 
-  private final Map<String, Throwable> configSourceHealthMap = new HashMap<>();
+  private final Map<String, Integer> configSourceStatusMap = new HashMap<>();
 
-  private volatile Map<String, LoadedConfigProperty> propertyMap;
+  private volatile Map<String, LoadedConfigProperty> propertyMap; // being reset on reload
 
   private final Map<String, Map<Class, PropertyCallback>> propertyCallbackMap = new ConcurrentHashMap<>();
 
@@ -86,6 +87,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   void init() {
     loadAndNotify();
+
     reloadExecutor.scheduleAtFixedRate(() -> {
       try {
         loadAndNotify();
@@ -257,17 +259,16 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     int order = 0;
     for (Map.Entry<String, ConfigSource> entry : settings.getSources().entrySet()) {
       int priorityOrder = order++;
-      String configSourceName = entry.getKey();
+      String sourceName = entry.getKey();
       ConfigSource configSource = entry.getValue();
 
       ConfigSourceInfo info = new ConfigSourceInfo();
-      info.setSourceName(configSourceName);
+      info.setSourceName(sourceName);
       info.setPriorityOrder(priorityOrder);
       info.setConfigSourceString(configSource.toString());
 
-      // noinspection ThrowableResultOfMethodCallIgnored
-      Throwable throwable = configSourceHealthMap.get(configSourceName);
-      info.setHealthString(throwable != null ? "error: " + throwable.toString() : "ok");
+      Integer status = configSourceStatusMap.get(sourceName);
+      info.setHealthString(Optional.ofNullable(status).map(i -> i == 1 ? "error" : "ok").orElse("null"));
 
       info.setHost(settings.getHost());
       result.add(info);
@@ -289,31 +290,27 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     // calculate new load map
     Map<String, LoadedConfigProperty> loadedPropertyMap = new ConcurrentHashMap<>();
 
-    settings.getSources().forEach((source, configSource) -> {
+    // load config from sources
+    Map<String, ConfigSource> sources = settings.getSources();
+    for (String name : sources.keySet()) {
+      ConfigSource source = sources.get(name);
+
+      Throwable loadException = null;
       Map<String, ConfigProperty> configMap = null;
-      Throwable configError = null;
       try {
-        configMap = configSource.loadConfig();
-      } catch (ConfigSourceNotAvailableException e) {
-        configError = e; // save error occurrence
-        // TODO: Should be handled according to: https://github.com/scalecube/config/issues/26
-        //LOGGER.warn("ConfigSource: {} failed on loadConfig, cause: {}", configSource, e);
-      } catch (Throwable throwable) {
-        configError = throwable; // save error occurrence
-        LOGGER.error("Exception on loading config from configSource: {}, source: {}, cause: {}",
-            configSource, source, throwable, throwable);
+        configMap = source.loadConfig();
+      } catch (Exception e) {
+        loadException = e; // save error occurrence
       }
 
-      configSourceHealthMap.put(source, configError);
+      computeConfigLoadStatus(name, source, loadException);
 
-      if (configError != null) {
-        return;
+      if (loadException == null) {
+        // populate loaded properties with new field 'source'
+        configMap.forEach((key, configProperty) -> loadedPropertyMap.putIfAbsent(key,
+            LoadedConfigProperty.withCopyFrom(configProperty).source(name).build()));
       }
-
-      // populate loaded properties with new field 'source'
-      configMap.forEach((key, configProperty) -> loadedPropertyMap.putIfAbsent(key,
-          LoadedConfigProperty.withCopyFrom(configProperty).source(source).build()));
-    });
+    }
 
     List<ConfigEvent> detectedChanges = new ArrayList<>();
 
@@ -383,5 +380,17 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         LOGGER.error("Exception on configEventListener: {}, event: {}, cause: {}", key, event, e, e);
       }
     });
+  }
+
+  private void computeConfigLoadStatus(String name, ConfigSource source, Throwable throwable) {
+    int status = throwable != null ? 1 : 0;
+    Integer status0 = configSourceStatusMap.put(name, status);
+    if (status0 == null || (status0 ^ status) == 1) {
+      if (status == 1) {
+        LOGGER.error("Exception at loadConfig on {}, source: {}, cause: {}", source, name, throwable);
+      } else {
+        LOGGER.debug("Loaded config properties from {}, source: {}", source, name);
+      }
+    }
   }
 }

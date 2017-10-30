@@ -25,9 +25,9 @@ public class SimpleConfigPropertyManyInstancesTest {
   @Mock
   ConfigSource configSource;
   @Mock
-  SimpleConfigPropertyManyInstancesFailureTest.SideEffect sideEffect1;
+  SideEffect sideEffect1;
   @Mock
-  SimpleConfigPropertyManyInstancesFailureTest.SideEffect sideEffect2;
+  SideEffect sideEffect2;
 
   @Test
   public void testManyInstancesValueNullInitially() throws Exception {

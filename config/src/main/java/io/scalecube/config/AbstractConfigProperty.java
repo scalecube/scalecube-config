@@ -28,6 +28,9 @@ import java.util.stream.Collectors;
 abstract class AbstractConfigProperty<T> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractConfigProperty.class);
 
+  private static final String ERROR_VALIDATION_FAILED =
+      "Validation failed on config property: '%s', failed value: %s";
+
   final String name;
   final Class<?> propertyClass;
   final Collection<Predicate<T>> validators = new CopyOnWriteArraySet<>(); // of type Set for a reason
@@ -50,34 +53,17 @@ abstract class AbstractConfigProperty<T> {
     return Optional.ofNullable(value);
   }
 
-  /**
-   * Adds validator to the list of validators. Validators will be invoked in the order they were added.
-   * 
-   * @throws IllegalArgumentException in case existing value fails against passed {@code validator}.
-   */
   public final void addValidator(Predicate<T> validator) {
     if (!validator.test(value)) {
-      throw new IllegalArgumentException("Validation failed");
+      throw new IllegalArgumentException(String.format(ERROR_VALIDATION_FAILED, name, value));
     }
     validators.add(validator);
   }
 
-  /**
-   * Adds reload callback to the list. Callbacks will be invoked in the order they were added.
-   *
-   * @param callback reload callback; though callback may throw exception, this wouldn't stop other callbacks from
-   *        execution.
-   */
   public final void addCallback(BiConsumer<T, T> callback) {
     callbacks.add((t1, t2) -> invokeCallback(callback, t1, t2));
   }
 
-  /**
-   * Adds reload callback to the list.
-   *
-   * @param executor executor where reload callback will be executed.
-   * @param callback reload callback; may throw exception, this wouldn't stop other callbacks from execution.
-   */
   public final void addCallback(Executor executor, BiConsumer<T, T> callback) {
     callbacks.add((t1, t2) -> executor.execute(() -> invokeCallback(callback, t1, t2)));
   }
@@ -116,7 +102,7 @@ abstract class AbstractConfigProperty<T> {
     }
 
     if (!validators.stream().allMatch(input -> input.test(value1))) {
-      throw new IllegalArgumentException("Validation failed");
+      throw new IllegalArgumentException(String.format(ERROR_VALIDATION_FAILED, name, value));
     }
 
     T t1 = value;
@@ -143,8 +129,9 @@ abstract class AbstractConfigProperty<T> {
     try {
       callback.accept(t1, t2);
     } catch (Exception e) {
-      LOGGER.error("Exception occurred on property-change callback: {}, oldValue: {}, newValue: {}, cause: {}",
-          callback, t1, t2, e, e);
+      LOGGER.error(
+          "Exception occurred on property-change callback: {}, property name: '{}', oldValue: {}, newValue: {}, cause: {}",
+          callback, name, t1, t2, e, e);
     }
   }
 

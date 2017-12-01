@@ -98,6 +98,14 @@ public final class ConfigEvent {
     return newOrigin;
   }
 
+  public boolean isChanged() {
+    if (type == Type.ADDED || type == Type.REMOVED) {
+      return true;
+    }
+    return !Objects.equals(this.oldSource, this.newSource) || !Objects.equals(this.oldOrigin, this.newOrigin)
+        || !Objects.equals(this.oldValue, this.newValue);
+  }
+
   @Override
   public String toString() {
     return "ConfigEvent{" +

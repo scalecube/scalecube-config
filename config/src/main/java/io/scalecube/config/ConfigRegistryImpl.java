@@ -1,5 +1,6 @@
 package io.scalecube.config;
 
+import io.scalecube.config.RangeConfigProperty.Range;
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.jmx.JmxConfigRegistry;
 import io.scalecube.config.source.ConfigSource;
@@ -233,6 +234,46 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   @Override
   public List<Integer> intListValue(String name, List<Integer> defaultValue) {
     return intListProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public RangeConfigProperty<Double> doubleRangeProperty(String name) {
+    return new RangeConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, DOUBLE_PARSER);
+  }
+
+  @Override
+  public Range<Double> doubleRangeValue(String name, Range<Double> defaultValue) {
+    return doubleRangeProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public RangeConfigProperty<Long> longRangeProperty(String name) {
+    return new RangeConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, LONG_PARSER);
+  }
+
+  @Override
+  public Range<Long> longRangeValue(String name, Range<Long> defaultValue) {
+    return longRangeProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public RangeConfigProperty<Integer> intRangeProperty(String name) {
+    return new RangeConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, INT_PARSER);
+  }
+
+  @Override
+  public Range<Integer> intRangeValue(String name, Range<Integer> defaultValue) {
+    return intRangeProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public RangeConfigProperty<Duration> durationRangeProperty(String name) {
+    return new RangeConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, DURATION_PARSER);
+  }
+
+  @Override
+  public Range<Duration> durationRangeValue(String name, Range<Duration> defaultValue) {
+    return durationRangeProperty(name).value(defaultValue);
   }
 
   @Override

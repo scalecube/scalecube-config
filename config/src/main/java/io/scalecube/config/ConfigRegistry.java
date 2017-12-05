@@ -1,5 +1,6 @@
 package io.scalecube.config;
 
+import io.scalecube.config.RangeConfigProperty.Range;
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.source.ConfigSourceInfo;
 
@@ -240,6 +241,74 @@ public interface ConfigRegistry {
    * @return property value
    */
   List<Integer> intListValue(String name, List<Integer> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed range property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  RangeConfigProperty<Double> doubleRangeProperty(String name);
+
+  /**
+   * Returns current value of range property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  Range<Double> doubleRangeValue(String name, Range<Double> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed range property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  RangeConfigProperty<Long> longRangeProperty(String name);
+
+  /**
+   * Returns current value of range property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  Range<Long> longRangeValue(String name, Range<Long> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed range property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  RangeConfigProperty<Integer> intRangeProperty(String name);
+
+  /**
+   * Returns current value of range property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  Range<Integer> intRangeValue(String name, Range<Integer> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed range property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  RangeConfigProperty<Duration> durationRangeProperty(String name);
+
+  /**
+   * Returns current value of range property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  Range<Duration> durationRangeValue(String name, Range<Duration> defaultValue);
 
   /**
    * Returns set of all loaded property keys.

@@ -2,38 +2,78 @@ package io.scalecube.config.mongo;
 
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.audit.ConfigEventListener;
+import io.scalecube.config.utils.ThrowableUtil;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.MongoCollection;
+
+import org.bson.RawBsonDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
 import java.util.Date;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import javax.annotation.Nonnull;
 
 public class MongoConfigEventListener implements ConfigEventListener {
-  private static final String DEFAULT_COLLECTION_NAME = "ConfigurationAuditLog";
+  private static final Logger LOGGER = LoggerFactory.getLogger(MongoConfigEventListener.class);
 
-  private final MongoConfigRepository repository;
-
-  public MongoConfigEventListener(@Nonnull MongoConfigConnector connector) {
-    this(connector, DEFAULT_COLLECTION_NAME);
+  private static ThreadFactory threadFactory;
+  static {
+    threadFactory = r -> {
+      Thread thread = new Thread(r);
+      thread.setDaemon(true);
+      thread.setName("mongo-config-auditor");
+      thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
+      return thread;
+    };
   }
 
+  private static final Executor executor = Executors.newSingleThreadExecutor(threadFactory);
+
+  private final MongoConfigConnector connector;
+  private final String collectionName;
+
   public MongoConfigEventListener(@Nonnull MongoConfigConnector connector, @Nonnull String collectionName) {
-    this.repository = new MongoConfigRepository(connector, collectionName);
+    this.connector = connector;
+    this.collectionName = collectionName;
   }
 
   @Override
   public void onEvent(ConfigEvent event) {
-    AuditLogEntity entity = new AuditLogEntity();
-    entity.setName(event.getName());
-    entity.setTimestamp(event.getTimestamp());
-    entity.setHost(event.getHost());
-    entity.setType(event.getType().toString());
-    entity.setNewSource(event.getNewSource());
-    entity.setNewOrigin(event.getNewOrigin());
-    entity.setNewValue(event.getNewValue());
-    entity.setOldSource(event.getOldSource());
-    entity.setOldOrigin(event.getOldOrigin());
-    entity.setOldValue(event.getOldValue());
-    repository.insertOneAsync(entity);
+    CompletableFuture.runAsync(() -> {
+      AuditLogEntity entity = new AuditLogEntity();
+      entity.setName(event.getName());
+      entity.setTimestamp(event.getTimestamp());
+      entity.setHost(event.getHost());
+      entity.setType(event.getType().toString());
+      entity.setNewSource(event.getNewSource());
+      entity.setNewOrigin(event.getNewOrigin());
+      entity.setNewValue(event.getNewValue());
+      entity.setOldSource(event.getOldSource());
+      entity.setOldOrigin(event.getOldOrigin());
+      entity.setOldValue(event.getOldValue());
+      insertOne(entity);
+    }, executor);
+  }
+
+  private void insertOne(AuditLogEntity input) {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    try {
+      ObjectMapper objectMapper = MongoConfigObjectMapper.getInstance();
+      objectMapper.writer().writeValue(baos, input);
+    } catch (Exception e) {
+      LOGGER.error("Exception at converting obj: {} to bson, cause: {}", input, e);
+      throw ThrowableUtil.propagate(e);
+    }
+    MongoCollection<RawBsonDocument> collection =
+        connector.getDatabase().getCollection(collectionName, RawBsonDocument.class);
+    collection.insertOne(new RawBsonDocument(baos.toByteArray()));
   }
 
   private static class AuditLogEntity {

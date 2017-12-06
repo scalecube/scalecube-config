@@ -1,109 +1,76 @@
 package io.scalecube.config.mongo;
 
+import io.scalecube.config.keyvalue.KeyValueConfigEntity;
+import io.scalecube.config.keyvalue.KeyValueConfigRepository;
 import io.scalecube.config.utils.ThrowableUtil;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 
 import org.bson.RawBsonDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import de.undercouch.bson4jackson.BsonFactory;
-import de.undercouch.bson4jackson.BsonModule;
-import de.undercouch.bson4jackson.BsonParser;
-
-public class MongoConfigRepository {
+public class MongoConfigRepository implements KeyValueConfigRepository {
   private static final Logger LOGGER = LoggerFactory.getLogger(MongoConfigRepository.class);
 
-  private static ThreadFactory threadFactory;
-  static {
-    threadFactory = r -> {
-      Thread thread = new Thread(r);
-      thread.setDaemon(true);
-      thread.setName("mongo-config-repository");
-      thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
-      return thread;
-    };
-  }
-
-  private static final Executor mongoExecutor = Executors.newCachedThreadPool(threadFactory);
-
-  private static final ObjectMapper objectMapper = new ObjectMapper(new BsonFactory()
-      .enable(BsonParser.Feature.HONOR_DOCUMENT_LENGTH));
-
-  static {
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false); // gives mongo type date in db
-    objectMapper.registerModule(new BsonModule()); // gives mongo types in db
-  }
-
   private final MongoConfigConnector connector;
-  private final String collectionName;
 
-  public MongoConfigRepository(@Nonnull MongoConfigConnector connector, @Nonnull String collectionName) {
-    this.connector = Objects.requireNonNull(connector, "MongoConfigRepository: connector is required");
-    this.collectionName = Objects.requireNonNull(collectionName, "MongoConfigRepository: collectionName is required");
+  public MongoConfigRepository(@Nonnull MongoConfigConnector connector) {
+    this.connector = Objects.requireNonNull(connector);
   }
 
-  public final <T> CompletableFuture<Void> insertOneAsync(T input) {
-    return CompletableFuture.runAsync(() -> insertOne(input), mongoExecutor);
-  }
+  @Override
+  public List<KeyValueConfigEntity> findAll(@Nullable String groupName, @Nonnull String collectionName) {
+    Objects.requireNonNull(collectionName);
+    String collectionNameWithGroup = groupName != null ? groupName + '.' + collectionName : collectionName;
 
-  public final <T> CompletableFuture<Collection<T>> findAllAsync(@Nonnull Class<T> type) {
-    return CompletableFuture.supplyAsync(() -> findAll(type), mongoExecutor);
-  }
+    MongoCollection<RawBsonDocument> collection =
+        connector.getDatabase().getCollection(collectionNameWithGroup, RawBsonDocument.class);
 
-  private <T> void insertOne(T input) {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    MongoCursor<RawBsonDocument> it = collection.find().iterator();
+    if (!it.hasNext()) {
+      return Collections.emptyList();
+    }
+
+    List<KeyValueConfigEntity> result;
+    RawBsonDocument document = it.next();
     try {
-      objectMapper.writer().writeValue(baos, input);
+      ByteArrayInputStream bin = new ByteArrayInputStream(document.getByteBuffer().array());
+      ObjectMapper objectMapper = MongoConfigObjectMapper.getInstance();
+      ObjectReader objectReader = objectMapper.readerFor(MongoConfigEntity.class);
+      result = ((MongoConfigEntity) objectReader.readValue(bin)).getConfig();
     } catch (Exception e) {
-      LOGGER.error("Exception at converting obj: {} to bson, cause: {}", input, e);
+      LOGGER.error("Exception at parsing bson to obj, cause: {}", e, e);
       throw ThrowableUtil.propagate(e);
     }
-    getCollection().insertOne(new RawBsonDocument(baos.toByteArray()));
+
+    // set groupName on returned config key-value pairs
+    return result.stream().map(input -> new KeyValueConfigEntity(groupName, input)).collect(Collectors.toList());
   }
 
-  private <T> Collection<T> findAll(@Nonnull Class<T> type) {
-    Objects.requireNonNull(type);
-    return stream(getCollection().find().iterator()).map(doc -> {
-      try {
-        ByteArrayInputStream bin = new ByteArrayInputStream(doc.getByteBuffer().array());
-        // noinspection unchecked
-        return (T) objectMapper.readerFor(type).readValue(bin);
-      } catch (Exception e) {
-        LOGGER.error("Exception at parsing bson to obj of type: {}, cause: {}", type, e);
-        throw ThrowableUtil.propagate(e);
-      }
-    }).collect(Collectors.toList());
-  }
+  private static class MongoConfigEntity {
+    private List<KeyValueConfigEntity> config;
 
-  private <T> Stream<T> stream(Iterator<T> iterator) {
-    return StreamSupport
-        .stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.IMMUTABLE), false/* parallel */);
-  }
+    public MongoConfigEntity() {}
 
-  private MongoCollection<RawBsonDocument> getCollection() {
-    return connector.getDatabase().getCollection(collectionName, RawBsonDocument.class);
+    public List<KeyValueConfigEntity> getConfig() {
+      return config;
+    }
+
+    public void setConfig(List<KeyValueConfigEntity> config) {
+      this.config = config;
+    }
   }
 }

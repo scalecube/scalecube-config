@@ -268,7 +268,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       info.setConfigSourceString(configSource.toString());
 
       Integer status = configSourceStatusMap.get(sourceName);
-      info.setHealthString(Optional.ofNullable(status).map(i -> i == 1 ? "error" : "ok").orElse("null"));
+      info.setHealthString(Optional.ofNullable(status).map(i -> i == 1 ? "Error" : "Ok").orElse("Unknown"));
 
       info.setHost(settings.getHost());
       result.add(info);

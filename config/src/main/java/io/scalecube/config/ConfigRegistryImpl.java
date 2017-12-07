@@ -360,7 +360,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     propertyMap = loadedPropertyMap;
 
     detectedChanges.forEach(input -> recentConfigEvents.put(input, null)); // keep recent changes
-    detectedChanges.forEach(this::reportChanges); // report changes
+    detectedChanges.stream().filter(ConfigEvent::isChanged).forEach(this::reportChanges); // report changes
 
     // re-compute values and invoke callbacks
     detectedChanges.stream()

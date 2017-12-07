@@ -35,7 +35,7 @@ import javax.annotation.Nullable;
 public class KeyValueConfigSource implements ConfigSource {
   private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueConfigSource.class);
 
-  private static ThreadFactory threadFactory;
+  private static final ThreadFactory threadFactory;
   static {
     threadFactory = r -> {
       Thread thread = new Thread(r);
@@ -101,7 +101,7 @@ public class KeyValueConfigSource implements ConfigSource {
         .collect(Collector.of(
             (Supplier<TreeMap<String, ConfigProperty>>) TreeMap::new,
             (map, i) -> {
-              String origin = Optional.ofNullable(i.getGroupName()).orElse("root");
+              String origin = i.getGroupName().orElse("root");
               String name = i.getPropName();
               String value = i.getPropValue();
               map.putIfAbsent(name, LoadedConfigProperty.withNameAndValue(name, value).origin(origin).build());

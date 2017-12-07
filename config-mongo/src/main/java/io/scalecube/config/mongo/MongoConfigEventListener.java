@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
 public class MongoConfigEventListener implements ConfigEventListener {
   private static final Logger LOGGER = LoggerFactory.getLogger(MongoConfigEventListener.class);
 
-  private static ThreadFactory threadFactory;
+  private static final ThreadFactory threadFactory;
   static {
     threadFactory = r -> {
       Thread thread = new Thread(r);

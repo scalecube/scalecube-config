@@ -57,7 +57,7 @@ public class MongoConfigRepository implements KeyValueConfigRepository {
     }
 
     // set groupName on returned config key-value pairs
-    return result.stream().map(input -> new KeyValueConfigEntity(groupName, input)).collect(Collectors.toList());
+    return result.stream().map(input -> input.createWithGroup(groupName)).collect(Collectors.toList());
   }
 
   private static class MongoConfigEntity {

@@ -1,26 +1,53 @@
 package io.scalecube.config.keyvalue;
 
+import java.util.Optional;
+
+import javax.annotation.Nullable;
+
+/**
+ * Generic entity class for key-value config storage.
+ */
 public final class KeyValueConfigEntity {
-  private String groupName; // nullable
-  private String propName; // not null
-  private String propValue; // not null
-  private boolean disabled; // nullable
+  /**
+   * A group name. Non persistent nullable field. See {@link #createWithGroup(String)}.
+   */
+  private String groupName;
+
+  /**
+   * Property name. Persistent not-nullable field.
+   */
+  private String propName;
+
+  /**
+   * Property value. Persistent not-nullable field.
+   */
+  private String propValue;
+
+  /**
+   * Persistent indicator flag denoting intent to have actually the property key-value pair in data source but have it
+   * in disabled state.
+   */
+  private boolean disabled;
 
   public KeyValueConfigEntity() {}
 
-  public KeyValueConfigEntity(String groupName, KeyValueConfigEntity other) {
-    this.groupName = groupName;
-    this.propName = other.propName;
-    this.propValue = other.propValue;
-    this.disabled = other.disabled;
+  /**
+   * Enhances this object entity with non-persistent groupName.
+   *
+   * @param groupName group name; may be null.
+   * @return new object with groupName.
+   */
+  public KeyValueConfigEntity createWithGroup(@Nullable String groupName) {
+    KeyValueConfigEntity entity = new KeyValueConfigEntity();
+    entity.propName = this.propName;
+    entity.propValue = this.propValue;
+    entity.disabled = this.disabled;
+    entity.groupName = groupName;
+    return entity;
   }
 
-  public String getGroupName() {
-    return groupName;
-  }
-
-  public void setGroupName(String groupName) {
-    this.groupName = groupName;
+  public Optional<String> getGroupName() {
+    return Optional.ofNullable(groupName);
   }
 
   public String getPropName() {

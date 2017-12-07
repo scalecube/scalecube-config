@@ -13,10 +13,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -30,8 +30,11 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
+/**
+ * Generic key-value config source. Communicates with concrete config data source (mongodb, redis, zookeeper) using
+ * injectable {@link #repository}.
+ */
 public class KeyValueConfigSource implements ConfigSource {
   private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueConfigSource.class);
 
@@ -50,31 +53,33 @@ public class KeyValueConfigSource implements ConfigSource {
 
   private final KeyValueConfigRepository repository;
   private final Duration repositoryTimeout;
-  private final List<CollectionWithGroup> collections;
+  private final List<KeyValueConfigName> configNames; // calculated field
 
   private KeyValueConfigSource(Builder builder) {
     this.repository = builder.repository;
     this.repositoryTimeout = builder.repositoryTimeout;
-    this.collections = configureCollections(builder.groupList, builder.collectionName);
+    this.configNames = configureConfigNames(builder.groupList, builder.collectionName);
   }
 
-  private List<CollectionWithGroup> configureCollections(List<String> groupList, String collectionName) {
+  private List<KeyValueConfigName> configureConfigNames(List<String> groupList, String collectionName) {
     List<String> result = new ArrayList<>();
     result.addAll(groupList);
     result.add(null); // by default 'root' group is always added
-    return result.stream().map(input -> new CollectionWithGroup(input, collectionName)).collect(Collectors.toList());
+    return result.stream().map(input -> new KeyValueConfigName(input, collectionName)).collect(Collectors.toList());
   }
 
-  public static Builder withRepository(KeyValueConfigRepository repository) {
+  public static Builder withRepository(@Nonnull KeyValueConfigRepository repository) {
     return new Builder(repository);
+  }
+
+  public static Builder withRepository(@Nonnull KeyValueConfigRepository repository, @Nonnull String collectionName) {
+    return new Builder(repository, collectionName);
   }
 
   @Override
   public Map<String, ConfigProperty> loadConfig() {
-    List<CompletableFuture<List<KeyValueConfigEntity>>> futureList = collections.stream()
-        .map(input -> CompletableFuture.supplyAsync(
-            () -> repository.findAll(input.getGroupName().orElse(null), input.getCollectionName()), executor))
-        .collect(Collectors.toList());
+    List<CompletableFuture<List<KeyValueConfigEntity>>> futureList =
+        configNames.stream().map(this::loadConfig).collect(Collectors.toList());
 
     CompletableFuture<Void> allResults =
         CompletableFuture.allOf(futureList.toArray(new CompletableFuture[futureList.size()]));
@@ -101,7 +106,7 @@ public class KeyValueConfigSource implements ConfigSource {
         .collect(Collector.of(
             (Supplier<TreeMap<String, ConfigProperty>>) TreeMap::new,
             (map, i) -> {
-              String origin = i.getGroupName().orElse("root");
+              String origin = i.getConfigName().getQualifiedName();
               String name = i.getPropName();
               String value = i.getPropValue();
               map.putIfAbsent(name, LoadedConfigProperty.withNameAndValue(name, value).origin(origin).build());
@@ -109,16 +114,35 @@ public class KeyValueConfigSource implements ConfigSource {
             (map1, map2) -> map1));
   }
 
+  private CompletableFuture<List<KeyValueConfigEntity>> loadConfig(KeyValueConfigName configName) {
+    return CompletableFuture.supplyAsync(() -> {
+      List<KeyValueConfigEntity> result;
+      try {
+        result = repository.findAll(configName);
+      } catch (Exception e) {
+        LOGGER.warn("Exception at {}.findAll({}), cause: {}", repository.getClass().getSimpleName(), configName, e);
+        result = Collections.emptyList();
+      }
+      return result;
+    }, executor);
+  }
+
   public static class Builder {
     private static final Duration DEFAULT_REPOSITORY_TIMEOUT = Duration.ofSeconds(3);
+    private static final String DEFAULT_COLLECTION_NAME = "KeyValueConfigSource";
 
     private final KeyValueConfigRepository repository;
+    private final String collectionName;
     private List<String> groupList = new ArrayList<>();
     private Duration repositoryTimeout = DEFAULT_REPOSITORY_TIMEOUT;
-    private String collectionName;
 
     private Builder(KeyValueConfigRepository repository) {
-      this.repository = repository;
+      this(repository, DEFAULT_COLLECTION_NAME);
+    }
+
+    private Builder(KeyValueConfigRepository repository, String collectionName) {
+      this.repository = Objects.requireNonNull(repository);
+      this.collectionName = Objects.requireNonNull(collectionName);
     }
 
     public Builder groups(String... groups) {
@@ -136,31 +160,8 @@ public class KeyValueConfigSource implements ConfigSource {
       return this;
     }
 
-    public Builder collectionName(String collectionName) {
-      this.collectionName = collectionName;
-      return this;
-    }
-
     public KeyValueConfigSource build() {
       return new KeyValueConfigSource(this);
-    }
-  }
-
-  private static class CollectionWithGroup {
-    private final String groupName;
-    private final String collectionName;
-
-    public CollectionWithGroup(@Nullable String groupName, @Nonnull String collectionName) {
-      this.groupName = groupName;
-      this.collectionName = Objects.requireNonNull(collectionName);
-    }
-
-    public Optional<String> getGroupName() {
-      return Optional.ofNullable(groupName);
-    }
-
-    public String getCollectionName() {
-      return collectionName;
     }
   }
 }

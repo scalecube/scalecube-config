@@ -1,17 +1,17 @@
 package io.scalecube.config.keyvalue;
 
-import java.util.Optional;
+import java.util.Objects;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 
 /**
- * Generic entity class for key-value config storage.
+ * Generic entity class for key-value config data source.
  */
 public final class KeyValueConfigEntity {
   /**
-   * A group name. Non persistent nullable field. See {@link #createWithGroup(String)}.
+   * A config name. Non-persistent field. Being set in method {@link #setConfigName(KeyValueConfigName)}.
    */
-  private String groupName;
+  private KeyValueConfigName configName;
 
   /**
    * Property name. Persistent not-nullable field.
@@ -32,22 +32,23 @@ public final class KeyValueConfigEntity {
   public KeyValueConfigEntity() {}
 
   /**
-   * Enhances this object entity with non-persistent groupName.
+   * Enhances this entity object with non-persistent configName, returns a copy.
    *
-   * @param groupName group name; may be null.
-   * @return new object with groupName.
+   * @param configName config name from where this entity object was loaded.
+   * @return copy of this object with configName.
    */
-  public KeyValueConfigEntity createWithGroup(@Nullable String groupName) {
+  public KeyValueConfigEntity setConfigName(@Nonnull KeyValueConfigName configName) {
+    Objects.requireNonNull(configName);
     KeyValueConfigEntity entity = new KeyValueConfigEntity();
+    entity.configName = configName;
     entity.propName = this.propName;
     entity.propValue = this.propValue;
     entity.disabled = this.disabled;
-    entity.groupName = groupName;
     return entity;
   }
 
-  public Optional<String> getGroupName() {
-    return Optional.ofNullable(groupName);
+  public KeyValueConfigName getConfigName() {
+    return configName;
   }
 
   public String getPropName() {
@@ -77,7 +78,7 @@ public final class KeyValueConfigEntity {
   @Override
   public String toString() {
     return "KeyValueConfigEntity{" +
-        "groupName='" + groupName + '\'' +
+        "configName=" + configName +
         ", propName='" + propName + '\'' +
         ", propValue='" + propValue + '\'' +
         ", disabled=" + disabled +

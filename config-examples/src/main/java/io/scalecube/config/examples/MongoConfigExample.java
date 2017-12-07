@@ -22,18 +22,18 @@ import io.scalecube.config.mongo.MongoConfigRepository;
  * 
  * <pre>
  *   {
- *     "config" : 
+ *     "config" :
  *     [ {
-           "propName" : "prop_name_1",
-           "propValue" : "prop_value_1"
-         },
-         ...
-         {
-           "propName" : "prop_name_N",
-           "propValue" : "prop_value_N"
-         }
-       ]
-     }
+ *         "propName" : "prop_name_1",
+ *         "propValue" : "prop_value_1"
+ *       },
+ *       ...
+ *       {
+ *         "propName" : "prop_name_N",
+ *         "propValue" : "prop_value_N"
+ *       }
+ *     ]
+ *   }
  * </pre>
  */
 public class MongoConfigExample {
@@ -47,8 +47,7 @@ public class MongoConfigExample {
     MongoConfigConnector connector = MongoConfigConnector.builder().forUri(uri).build();
 
     KeyValueConfigSource mongoConfigSource = KeyValueConfigSource
-        .withRepository(new MongoConfigRepository(connector))
-        .collectionName(configSourceCollectionName)
+        .withRepository(new MongoConfigRepository(connector), configSourceCollectionName)
         .groups("group1", "group2", "group3")
         .build();
 

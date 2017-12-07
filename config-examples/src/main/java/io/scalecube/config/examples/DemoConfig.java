@@ -27,8 +27,7 @@ public class DemoConfig {
     MongoConfigConnector connector = MongoConfigConnector.builder().forUri(uri).build();
 
     KeyValueConfigSource mongoConfigSource = KeyValueConfigSource
-        .withRepository(new MongoConfigRepository(connector))
-        .collectionName(configSourceCollectionName)
+        .withRepository(new MongoConfigRepository(connector), configSourceCollectionName)
         .groups("group2", "group1", "root")
         .build();
 

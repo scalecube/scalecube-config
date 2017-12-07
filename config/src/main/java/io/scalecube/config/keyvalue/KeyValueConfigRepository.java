@@ -3,19 +3,18 @@ package io.scalecube.config.keyvalue;
 import java.util.List;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
- * Generic key-value data access interface.
+ * Generic key-value config data access interface.
  */
 public interface KeyValueConfigRepository {
 
   /**
-   * Retrieves all key-value objects under given group name in given collection.
+   * Retrieves all key-value pairs under given config name.
    *
-   * @param groupName group name; may be null.
-   * @param collectionName data source collection name.
-   * @return list of key-value entity objects.
+   * @param configName a config name.
+   * @return list of key-value entries.
+   * @throws Exception in case of any issue happened when accessing config data source.
    */
-  List<KeyValueConfigEntity> findAll(@Nullable String groupName, @Nonnull String collectionName);
+  List<KeyValueConfigEntity> findAll(@Nonnull KeyValueConfigName configName) throws Exception;
 }

@@ -1,8 +1,8 @@
 package io.scalecube.config.mongo;
 
 import io.scalecube.config.keyvalue.KeyValueConfigEntity;
+import io.scalecube.config.keyvalue.KeyValueConfigName;
 import io.scalecube.config.keyvalue.KeyValueConfigRepository;
-import io.scalecube.config.utils.ThrowableUtil;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -10,8 +10,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 
 import org.bson.RawBsonDocument;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.Collections;
@@ -20,11 +18,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class MongoConfigRepository implements KeyValueConfigRepository {
-  private static final Logger LOGGER = LoggerFactory.getLogger(MongoConfigRepository.class);
-
   private final MongoConfigConnector connector;
 
   public MongoConfigRepository(@Nonnull MongoConfigConnector connector) {
@@ -32,34 +27,29 @@ public class MongoConfigRepository implements KeyValueConfigRepository {
   }
 
   @Override
-  public List<KeyValueConfigEntity> findAll(@Nullable String groupName, @Nonnull String collectionName) {
-    Objects.requireNonNull(collectionName);
-    String collectionNameWithGroup = groupName != null ? groupName + '.' + collectionName : collectionName;
+  public List<KeyValueConfigEntity> findAll(@Nonnull KeyValueConfigName configName) throws Exception {
+    Objects.requireNonNull(configName);
 
+    String collectionName = configName.getQualifiedName();
     MongoCollection<RawBsonDocument> collection =
-        connector.getDatabase().getCollection(collectionNameWithGroup, RawBsonDocument.class);
+        connector.getDatabase().getCollection(collectionName, RawBsonDocument.class);
 
     MongoCursor<RawBsonDocument> it = collection.find().iterator();
     if (!it.hasNext()) {
       return Collections.emptyList();
     }
 
-    List<KeyValueConfigEntity> result;
     RawBsonDocument document = it.next();
-    try {
-      ByteArrayInputStream bin = new ByteArrayInputStream(document.getByteBuffer().array());
-      ObjectMapper objectMapper = MongoConfigObjectMapper.getInstance();
-      ObjectReader objectReader = objectMapper.readerFor(MongoConfigEntity.class);
-      result = ((MongoConfigEntity) objectReader.readValue(bin)).getConfig();
-    } catch (Exception e) {
-      LOGGER.error("Exception at parsing bson to obj, cause: {}", e, e);
-      throw ThrowableUtil.propagate(e);
-    }
+    ByteArrayInputStream bin = new ByteArrayInputStream(document.getByteBuffer().array());
+    ObjectMapper objectMapper = MongoConfigObjectMapper.getInstance();
+    ObjectReader objectReader = objectMapper.readerFor(MongoConfigEntity.class);
+    List<KeyValueConfigEntity> result = ((MongoConfigEntity) objectReader.readValue(bin)).getConfig();
 
     // set groupName on returned config key-value pairs
-    return result.stream().map(input -> input.createWithGroup(groupName)).collect(Collectors.toList());
+    return result.stream().map(input -> input.setConfigName(configName)).collect(Collectors.toList());
   }
 
+  // Helper class for mapping bson document
   private static class MongoConfigEntity {
     private List<KeyValueConfigEntity> config;
 

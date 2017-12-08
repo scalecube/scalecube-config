@@ -7,10 +7,9 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Helper holder class. Contains parsed field of the corresponding object class, associated property name and computed
@@ -19,7 +18,7 @@ import java.util.stream.Collectors;
 class ObjectPropertyField {
   private final Field field;
   private final String propertyName;
-  private final Function<String, Object> valueParser;
+  private final Function<String, ?> valueParser;
 
   ObjectPropertyField(Field field, String propertyName) {
     int modifiers = field.getModifiers();
@@ -34,20 +33,43 @@ class ObjectPropertyField {
 
     if (field.getGenericType() instanceof ParameterizedType) {
       ParameterizedType paramType = (ParameterizedType) field.getGenericType();
-      // check that only List type supported
-      if (paramType.getRawType() != List.class) {
+      if (isList(paramType)) {
+        Type type = paramType.getActualTypeArguments()[0];
+        this.valueParser = ListConfigPropertyImpl.toListPropertyParser(getValueParser(type));
+      } else if (isMultimap(paramType)) {
+        Type[] typeArguments = paramType.getActualTypeArguments();
+        ParameterizedType valueType = ((ParameterizedType) typeArguments[1]);
+        Type type = valueType.getActualTypeArguments()[0];
+        this.valueParser = MultimapConfigPropertyImpl.toMultimapPropertyParser(getValueParser(type));
+      } else {
         throw new IllegalArgumentException("ObjectPropertyField: unsupported type on field: " + field);
       }
-      // determine value parser for element type of the list
-      Type type1 = paramType.getActualTypeArguments()[0];
-      Function<String, Object> valueParser = getValueParser(type1);
-      this.valueParser = str -> Arrays.stream(str.split(",")).map(valueParser).collect(Collectors.toList());
     } else {
       this.valueParser = getValueParser(field.getType());
     }
   }
 
-  private Function<String, Object> getValueParser(Type type) {
+  private boolean isList(ParameterizedType paramType) {
+    return paramType.getRawType() == List.class;
+  }
+
+  private boolean isMultimap(ParameterizedType paramType) {
+    boolean result = false;
+    if (paramType.getRawType() == Map.class) {
+      Type[] typeArguments = paramType.getActualTypeArguments();
+      Type keyType = typeArguments[0];
+      Type valueType = typeArguments[1];
+      if (keyType == String.class && valueType instanceof ParameterizedType) {
+        ParameterizedType parameterizedValueType = ((ParameterizedType) valueType);
+        if (parameterizedValueType.getRawType() == List.class) {
+          result = true;
+        }
+      }
+    }
+    return result;
+  }
+
+  private Function<String, ?> getValueParser(Type type) {
     if (type == String.class) {
       return str -> str;
     } else if (type == Duration.class) {

@@ -11,6 +11,10 @@ import java.util.stream.Collectors;
 
 class ListConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<List<T>> implements ListConfigProperty<T> {
 
+  static <T> Function<String, List<T>> toListPropertyParser(Function<String, T> valueParser) {
+    return str -> Arrays.stream(str.split(",")).map(valueParser).collect(Collectors.toList());
+  }
+
   ListConfigPropertyImpl(String name,
       Map<String, LoadedConfigProperty> propertyMap,
       Map<String, Map<Class, PropertyCallback>> propertyCallbackMap,
@@ -28,10 +32,6 @@ class ListConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<List<T>> im
     return value().orElseThrow(this::newNoSuchElementException);
   }
 
-  private static <T> Function<String, List<T>> toListPropertyParser(Function<String, T> valueParser) {
-    return str -> Arrays.stream(str.split(",")).map(valueParser).collect(Collectors.toList());
-  }
-
   private static <T> Class<?> getListPropertyClass(Function<String, T> valueParser) {
     Class<?> result = null;
     if (ConfigRegistryImpl.STRING_PARSER == valueParser) {
@@ -40,8 +40,6 @@ class ListConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<List<T>> im
       result = Double.class;
     } else if (ConfigRegistryImpl.LONG_PARSER == valueParser) {
       result = Long.class;
-    } else if (ConfigRegistryImpl.BOOLEAN_PARSER == valueParser) {
-      result = Boolean.class;
     } else if (ConfigRegistryImpl.INT_PARSER == valueParser) {
       result = Integer.class;
     } else if (ConfigRegistryImpl.DURATION_PARSER == valueParser) {

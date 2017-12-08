@@ -242,6 +242,108 @@ public interface ConfigRegistry {
   List<Integer> intListValue(String name, List<Integer> defaultValue);
 
   /**
+   * Returns dynamic generic-typed list property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  ListConfigProperty<Duration> durationListProperty(String name);
+
+  /**
+   * Returns current value of list property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  List<Duration> durationListValue(String name, List<Duration> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed multimap property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  MultimapConfigProperty<String> stringMultimapProperty(String name);
+
+  /**
+   * Returns current value of multimap property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  Map<String, List<String>> stringMultimapValue(String name, Map<String, List<String>> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed multimap property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  MultimapConfigProperty<Double> doubleMultimapProperty(String name);
+
+  /**
+   * Returns current value of multimap property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  Map<String, List<Double>> doubleMultimapValue(String name, Map<String, List<Double>> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed multimap property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  MultimapConfigProperty<Long> longMultimapProperty(String name);
+
+  /**
+   * Returns current value of multimap property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  Map<String, List<Long>> longMultimapValue(String name, Map<String, List<Long>> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed multimap property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  MultimapConfigProperty<Integer> intMultimapProperty(String name);
+
+  /**
+   * Returns current value of multimap property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  Map<String, List<Integer>> intMultimapValue(String name, Map<String, List<Integer>> defaultValue);
+
+  /**
+   * Returns dynamic generic-typed multimap property.
+   *
+   * @param name property name
+   * @return property instance
+   */
+  MultimapConfigProperty<Duration> durationMultimapProperty(String name);
+
+  /**
+   * Returns current value of multimap property or defaults.
+   *
+   * @param name property name
+   * @param defaultValue default property value
+   * @return property value
+   */
+  Map<String, List<Duration>> durationMultimapValue(String name, Map<String, List<Duration>> defaultValue);
+
+  /**
    * Returns set of all loaded property keys.
    */
   Set<String> allProperties();

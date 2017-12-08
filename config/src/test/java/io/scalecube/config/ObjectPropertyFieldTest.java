@@ -5,13 +5,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -70,6 +75,23 @@ public class ObjectPropertyFieldTest {
   }
 
   @Test
+  public void testMultimapObjectPropertyField() throws Exception {
+    Map<String, List<Integer>> expectedMultimap = ImmutableMap.<String, List<Integer>>builder()
+        .put("key1", ImmutableList.of(1))
+        .put("key2", ImmutableList.of(2, 3, 4))
+        .put("key3", ImmutableList.of(5))
+        .build();
+    TypedMultimapConfigClass instance = new TypedMultimapConfigClass();
+
+    Field target = instance.getClass().getDeclaredField("integerMultimap");
+    ObjectPropertyField fieldIntegerMultimap = new ObjectPropertyField(target, propName);
+
+    fieldIntegerMultimap.applyValueParser(instance, "key1=1,key2=2,3,4,key3=5");
+
+    assertEquals(expectedMultimap, instance.integerMultimap);
+  }
+
+  @Test
   public void testUntypedListNotSupported() throws Exception {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("ObjectPropertyField: unsupported type on field");
@@ -113,6 +135,10 @@ public class ObjectPropertyFieldTest {
 
   static class TypedListConfigClass {
     private List<Integer> integerList = new ArrayList<>();
+  }
+
+  static class TypedMultimapConfigClass {
+    private Map<String, List<Integer>> integerMultimap = new HashMap<>();
   }
 
   static class UntypedListConfigClass {

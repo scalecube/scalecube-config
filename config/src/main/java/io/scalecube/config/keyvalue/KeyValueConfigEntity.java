@@ -32,6 +32,15 @@ public final class KeyValueConfigEntity {
   public KeyValueConfigEntity() {}
 
   /**
+   * <b>NOTE:</b> this constructor exposed for test purpose only.
+   */
+  KeyValueConfigEntity(String propName, String propValue, KeyValueConfigName configName) {
+    this.configName = configName;
+    this.propName = propName;
+    this.propValue = propValue;
+  }
+
+  /**
    * Enhances this entity object with non-persistent configName, returns a copy.
    *
    * @param configName config name from where this entity object was loaded.

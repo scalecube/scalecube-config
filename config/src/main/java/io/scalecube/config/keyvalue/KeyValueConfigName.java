@@ -38,6 +38,27 @@ public final class KeyValueConfigName {
   }
 
   @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+
+    KeyValueConfigName that = (KeyValueConfigName) o;
+
+    if (groupName != null ? !groupName.equals(that.groupName) : that.groupName != null)
+      return false;
+    return collectionName.equals(that.collectionName);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = groupName != null ? groupName.hashCode() : 0;
+    result = 31 * result + collectionName.hashCode();
+    return result;
+  }
+
+  @Override
   public String toString() {
     return "KeyValueConfigName{" +
         "groupName='" + groupName + '\'' +

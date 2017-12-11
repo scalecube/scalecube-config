@@ -2,7 +2,6 @@ package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,19 +54,35 @@ class MultimapConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<Map<Str
   private static <T> Class<?> getMapPropertyClass(Function<String, T> valueParser) {
     Class<?> result = null;
     if (ConfigRegistryImpl.STRING_PARSER == valueParser) {
-      result = String.class;
+      result = StringMultimap.class;
     } else if (ConfigRegistryImpl.DOUBLE_PARSER == valueParser) {
-      result = Double.class;
+      result = DoubleMultimap.class;
     } else if (ConfigRegistryImpl.LONG_PARSER == valueParser) {
-      result = Long.class;
+      result = LongMultimap.class;
     } else if (ConfigRegistryImpl.INT_PARSER == valueParser) {
-      result = Integer.class;
+      result = IntMultimap.class;
     } else if (ConfigRegistryImpl.DURATION_PARSER == valueParser) {
-      result = Duration.class;
+      result = DurationMultimap.class;
     }
     if (result == null) {
       throw new IllegalArgumentException("MultimapConfigPropertyImpl: unsupported multimap valueParser " + valueParser);
     }
     return result;
   }
+
+  private static class StringMultimap {
+  }
+
+  private static class DoubleMultimap {
+  }
+
+  private static class LongMultimap {
+  }
+
+  private static class IntMultimap {
+  }
+
+  private static class DurationMultimap {
+  }
+
 }

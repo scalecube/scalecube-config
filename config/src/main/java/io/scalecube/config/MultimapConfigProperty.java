@@ -1,6 +1,7 @@
 package io.scalecube.config;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -8,26 +9,23 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 /**
- * List config property for comma separated values. Parsable types supported: string, int, double, long, duration.
- * 
- * @param <T> type of list element
+ * Multimap config property. Parsable value types supported: string, int, double, long, duration.
  */
-public interface ListConfigProperty<T> extends ConfigProperty {
-
+public interface MultimapConfigProperty<V> extends ConfigProperty {
   /**
-   * @return optional list value.
+   * @return optional multimap value.
    */
-  Optional<List<T>> value();
+  Optional<Map<String, List<V>>> value();
 
   /**
    * Shortcut on {@code value().orElse(defaultValue)}
    */
-  List<T> value(List<T> defaultValue);
+  Map<String, List<V>> value(Map<String, List<V>> defaultValue);
 
   /**
    * @throws NoSuchElementException if value is null
    */
-  List<T> valueOrThrow();
+  Map<String, List<V>> valueOrThrow();
 
   /**
    * Adds reload callback to the list. Callbacks will be invoked in the order they were added, and only after validation
@@ -36,7 +34,7 @@ public interface ListConfigProperty<T> extends ConfigProperty {
    * @param callback reload callback, 1st argument is old value 2nd one is new value, both are nullable; though callback
    *        may throw exception, this wouldn't stop other callbacks from execution.
    */
-  void addCallback(BiConsumer<List<T>, List<T>> callback);
+  void addCallback(BiConsumer<Map<String, List<V>>, Map<String, List<V>>> callback);
 
   /**
    * Adds reload callback to the list. Callbacks will be invoked in the order they were added, and only after validation
@@ -46,7 +44,7 @@ public interface ListConfigProperty<T> extends ConfigProperty {
    * @param callback reload callback, 1st argument is old value 2nd one is new value, both are nullable; though callback
    *        may throw exception, this wouldn't stop other callbacks from execution.
    */
-  void addCallback(Executor executor, BiConsumer<List<T>, List<T>> callback);
+  void addCallback(Executor executor, BiConsumer<Map<String, List<V>>, Map<String, List<V>>> callback);
 
   /**
    * Adds validator to the list of validators. Validators will be invoked in the order they were added. An argument to
@@ -54,5 +52,5 @@ public interface ListConfigProperty<T> extends ConfigProperty {
    *
    * @throws IllegalArgumentException in case existing value fails against passed {@code validator}.
    */
-  void addValidator(Predicate<List<T>> validator);
+  void addValidator(Predicate<Map<String, List<V>>> validator);
 }

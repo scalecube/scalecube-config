@@ -236,6 +236,66 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
+  public ListConfigProperty<Duration> durationListProperty(String name) {
+    return new ListConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, DURATION_PARSER);
+  }
+
+  @Override
+  public List<Duration> durationListValue(String name, List<Duration> defaultValue) {
+    return durationListProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public MultimapConfigProperty<String> stringMultimapProperty(String name) {
+    return new MultimapConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, STRING_PARSER);
+  }
+
+  @Override
+  public Map<String, List<String>> stringMultimapValue(String name, Map<String, List<String>> defaultValue) {
+    return stringMultimapProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public MultimapConfigProperty<Double> doubleMultimapProperty(String name) {
+    return new MultimapConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, DOUBLE_PARSER);
+  }
+
+  @Override
+  public Map<String, List<Double>> doubleMultimapValue(String name, Map<String, List<Double>> defaultValue) {
+    return doubleMultimapProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public MultimapConfigProperty<Long> longMultimapProperty(String name) {
+    return new MultimapConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, LONG_PARSER);
+  }
+
+  @Override
+  public Map<String, List<Long>> longMultimapValue(String name, Map<String, List<Long>> defaultValue) {
+    return longMultimapProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public MultimapConfigProperty<Integer> intMultimapProperty(String name) {
+    return new MultimapConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, INT_PARSER);
+  }
+
+  @Override
+  public Map<String, List<Integer>> intMultimapValue(String name, Map<String, List<Integer>> defaultValue) {
+    return intMultimapProperty(name).value(defaultValue);
+  }
+
+  @Override
+  public MultimapConfigProperty<Duration> durationMultimapProperty(String name) {
+    return new MultimapConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, DURATION_PARSER);
+  }
+
+  @Override
+  public Map<String, List<Duration>> durationMultimapValue(String name, Map<String, List<Duration>> defaultValue) {
+    return durationMultimapProperty(name).value(defaultValue);
+  }
+
+  @Override
   public Set<String> allProperties() {
     return propertyMap.values().stream().map(LoadedConfigProperty::name).collect(Collectors.toSet());
   }

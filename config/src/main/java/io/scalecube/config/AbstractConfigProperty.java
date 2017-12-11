@@ -136,7 +136,7 @@ abstract class AbstractConfigProperty<T> {
   }
 
   private boolean isInputsEqual(List<LoadedConfigProperty> inputList, List<LoadedConfigProperty> inputList1) {
-    if ((inputList == null && inputList1 != null) || (inputList != null && inputList == null)) {
+    if ((inputList == null && inputList1 != null) || (inputList != null && inputList1 == null)) {
       return false;
     }
 

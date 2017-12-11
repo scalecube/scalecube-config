@@ -30,7 +30,7 @@ public class MongoConfigConnector {
     public Builder forUri(String uri) {
       this.clientUri = new MongoClientURI(uri);
       String databaseName = clientUri.getDatabase();
-      Objects.requireNonNull(databaseName != null, "Mongo uri must contain database");
+      Objects.requireNonNull(databaseName, "Mongo uri must contain database");
       this.database = new MongoClient(clientUri).getDatabase(databaseName);
       return this;
     }

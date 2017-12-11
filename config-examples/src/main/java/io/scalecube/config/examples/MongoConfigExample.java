@@ -4,28 +4,50 @@ import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.audit.Slf4JConfigEventListener;
-import io.scalecube.config.mongo.ConfigurationEntity;
+import io.scalecube.config.keyvalue.KeyValueConfigSource;
 import io.scalecube.config.mongo.MongoConfigConnector;
 import io.scalecube.config.mongo.MongoConfigEventListener;
 import io.scalecube.config.mongo.MongoConfigRepository;
-import io.scalecube.config.mongo.MongoConfigSource;
 
-@SuppressWarnings("OptionalGetWithoutIsPresent")
+/**
+ * For program properly functioning add some data to mogno.
+ * <ul>
+ * <li>Collection {@code group1.config_source} must have: {@code prop1->value-from-group1}</li>
+ * <li>Collection {@code group2.config_source} must have: {@code prop1->value-from-group2}</li>
+ * <li>Collection {@code group3.config_source} must have: {@code prop2->value-from-group3}</li>
+ * <li>Collection {@code config_source} must have: {@code propRoot->value-from-root}</li>
+ * </ul>
+ * <p/>
+ * <b>NOTE:</b> A document in certain collection comes in format:
+ * 
+ * <pre>
+ *   {
+ *     "config" :
+ *     [ {
+ *         "propName" : "prop_name_1",
+ *         "propValue" : "prop_value_1"
+ *       },
+ *       ...
+ *       {
+ *         "propName" : "prop_name_N",
+ *         "propValue" : "prop_value_N"
+ *       }
+ *     ]
+ *   }
+ * </pre>
+ */
 public class MongoConfigExample {
 
   public static void main(String[] args) throws Exception {
-    String databaseName = "MongoConfigExample" + System.currentTimeMillis();
+    String databaseName = args[0] != null ? args[0] : "MongoConfigExample" + System.currentTimeMillis();
     String uri = "mongodb://localhost:27017/" + databaseName;
-    String configSourceCollectionName = "TestConfigurationSource";
+    String configSourceCollectionName = "MongoConfigRepository";
     String auditLogCollectionName = "TestConfigurationAuditLog";
 
     MongoConfigConnector connector = MongoConfigConnector.builder().forUri(uri).build();
-    MongoConfigRepository repository = new MongoConfigRepository(connector, configSourceCollectionName);
 
-    populateInitialConfigEntries(repository);
-
-    MongoConfigSource mongoConfigSource = MongoConfigSource.withConnector(connector)
-        .collectionName(configSourceCollectionName)
+    KeyValueConfigSource mongoConfigSource = KeyValueConfigSource
+        .withRepository(new MongoConfigRepository(connector), configSourceCollectionName)
         .groups("group1", "group2", "group3")
         .build();
 
@@ -49,31 +71,5 @@ public class MongoConfigExample {
     StringConfigProperty propRoot = configRegistry.stringProperty("propRoot");
     System.out.println("### Initial mongo config **root** property: propRoot=" + propRoot.value().get() +
         ", group=" + propRoot.origin().get());
-  }
-
-  private static void populateInitialConfigEntries(MongoConfigRepository repository) throws Exception {
-    ConfigurationEntity configEntity1 = new ConfigurationEntity();
-    configEntity1.setPropName("prop1");
-    configEntity1.setGroupName("group1");
-    configEntity1.setPropValue("value-from-group1");
-
-    ConfigurationEntity configEntity2 = new ConfigurationEntity();
-    configEntity2.setPropName("prop1");
-    configEntity2.setGroupName("group2");
-    configEntity2.setPropValue("value-from-group2");
-
-    ConfigurationEntity configEntity3 = new ConfigurationEntity();
-    configEntity3.setPropName("prop2");
-    configEntity3.setGroupName("group3");
-    configEntity3.setPropValue("value-from-group3");
-
-    ConfigurationEntity configEntity4 = new ConfigurationEntity();
-    configEntity4.setPropName("propRoot");
-    configEntity4.setPropValue("value-from-root");
-
-    repository.insertOneAsync(configEntity1).get();
-    repository.insertOneAsync(configEntity2).get();
-    repository.insertOneAsync(configEntity3).get();
-    repository.insertOneAsync(configEntity4).get();
   }
 }

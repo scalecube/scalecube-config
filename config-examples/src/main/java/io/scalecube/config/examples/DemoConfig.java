@@ -5,9 +5,10 @@ import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.audit.Slf4JConfigEventListener;
 import io.scalecube.config.http.server.ConfigRegistryHttpServer;
+import io.scalecube.config.keyvalue.KeyValueConfigSource;
 import io.scalecube.config.mongo.MongoConfigConnector;
 import io.scalecube.config.mongo.MongoConfigEventListener;
-import io.scalecube.config.mongo.MongoConfigSource;
+import io.scalecube.config.mongo.MongoConfigRepository;
 import io.scalecube.config.source.DirectoryConfigSource;
 
 import java.nio.file.Path;
@@ -20,15 +21,15 @@ public class DemoConfig {
     // Mongo property source init
     String databaseName = "MongoConfigExample";
     String uri = "mongodb://localhost:27017/" + databaseName;
-    String configSourceCollectionName = "MongoConfigSource";
+    String configSourceCollectionName = "MongoConfigRepository";
     String auditLogCollectionName = "TestConfigurationAuditLog";
+
     MongoConfigConnector connector = MongoConfigConnector.builder().forUri(uri).build();
-    MongoConfigSource mongoConfigSource = MongoConfigSource
-        .withConnector(connector)
-        .collectionName(configSourceCollectionName)
+
+    KeyValueConfigSource mongoConfigSource = KeyValueConfigSource
+        .withRepository(new MongoConfigRepository(connector), configSourceCollectionName)
         .groups("group2", "group1", "root")
         .build();
-
 
     // Local resource cfg source init
     Predicate<Path> propsPredicate = path -> path.toString().endsWith(".props");

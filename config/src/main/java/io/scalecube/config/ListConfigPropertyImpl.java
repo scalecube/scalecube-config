@@ -35,19 +35,35 @@ class ListConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<List<T>> im
   private static <T> Class<?> getListPropertyClass(Function<String, T> valueParser) {
     Class<?> result = null;
     if (ConfigRegistryImpl.STRING_PARSER == valueParser) {
-      result = String.class;
+      result = StringList.class;
     } else if (ConfigRegistryImpl.DOUBLE_PARSER == valueParser) {
-      result = Double.class;
+      result = DoubleList.class;
     } else if (ConfigRegistryImpl.LONG_PARSER == valueParser) {
-      result = Long.class;
+      result = LongList.class;
     } else if (ConfigRegistryImpl.INT_PARSER == valueParser) {
-      result = Integer.class;
+      result = IntList.class;
     } else if (ConfigRegistryImpl.DURATION_PARSER == valueParser) {
-      result = Duration.class;
+      result = DurationList.class;
     }
     if (result == null) {
       throw new IllegalArgumentException("ListConfigPropertyImpl: unsupported list valueParser " + valueParser);
     }
     return result;
   }
+
+  private static class StringList {
+  }
+
+  private static class DoubleList {
+  }
+
+  private static class LongList {
+  }
+
+  private static class IntList {
+  }
+
+  private static class DurationList {
+  }
+
 }

@@ -10,6 +10,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.scalecube.config.source.ConfigSource;
 
 import org.junit.Test;
@@ -108,6 +110,21 @@ public class SimpleConfigPropertyManyInstancesTest {
 
     verify(sideEffect1).apply("1", "42");
     verify(sideEffect2).apply(1, 42);
+  }
+
+  @Test
+  public void testManyInstancesListTypeAndMultimapTypeAndSimplePropertyType() {
+    when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("prop", "key=value").build()));
+    ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
+
+    StringConfigProperty stringProperty = configRegistry.stringProperty("prop");
+    assertEquals("key=value", stringProperty.valueOrThrow());
+
+    ListConfigProperty<String> stringListProperty = configRegistry.stringListProperty("prop");
+    assertEquals(ImmutableList.of("key=value"), stringListProperty.valueOrThrow());
+
+    MultimapConfigProperty<String> stringMultimapProperty = configRegistry.stringMultimapProperty("prop");
+    assertEquals(ImmutableMap.of("key", ImmutableList.of("value")), stringMultimapProperty.valueOrThrow());
   }
 
   public interface SideEffect {

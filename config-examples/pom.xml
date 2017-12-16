@@ -26,6 +26,11 @@
         </dependency>
         <dependency>
             <groupId>io.scalecube</groupId>
+            <artifactId>config-consul</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.scalecube</groupId>
             <artifactId>config-http-server</artifactId>
             <version>${project.version}</version>
         </dependency>

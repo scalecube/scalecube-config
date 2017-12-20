@@ -61,6 +61,8 @@
         <jackson.version>2.8.8</jackson.version>
         <bson4jackson.version>2.7.0</bson4jackson.version>
         <mongo-java-driver.version>3.4.2</mongo-java-driver.version>
+        <zookeeper.version>3.4.11</zookeeper.version>
+        <zookeeper-curator.version>4.0.0</zookeeper-curator.version>
         <findbugs.version>2.0.3</findbugs.version>
         <slf4j.version>1.7.7</slf4j.version>
         <jersey.version>2.26-b09</jersey.version>
@@ -80,6 +82,7 @@
         <module>config-mongo</module>
         <module>config-http-server</module>
         <module>config-examples</module>
+        <module>config-zookeeper</module>
     </modules>
 
     <dependencyManagement>
@@ -118,6 +121,33 @@
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongo-java-driver</artifactId>
                 <version>${mongo-java-driver.version}</version>
+            </dependency>
+            <!-- Zookeeper -->
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-framework</artifactId>
+                <version>${zookeeper-curator.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${zookeeper.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

@@ -80,6 +80,7 @@
         <module>config-mongo</module>
         <module>config-http-server</module>
         <module>config-examples</module>
+        <module>config-vault</module>
     </modules>
 
     <dependencyManagement>

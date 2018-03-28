@@ -5,7 +5,7 @@ import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.source.LoadedConfigProperty.Builder;
 
-import com.bettercloud.vault.SslConfig;
+import com.bettercloud.vault.EnvironmentLoader;
 import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
@@ -13,32 +13,37 @@ import com.bettercloud.vault.response.LogicalResponse;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class VaultConfigSource implements ConfigSource {
 
   private Vault vault;
-  final String SECRET_DEFAULT_PATH;
+  private String SECRET_DEFAULT_PATH;
 
-  public VaultConfigSource() {
+  VaultConfigSource(EnvironmentLoader environmentLoader) {
+    this(Optional.of(new VaultConfig().environmentLoader(environmentLoader)));
+    SECRET_DEFAULT_PATH = environmentLoader.loadVariable("VAULT_SECRETS_PATH");
+  }
+
+  public VaultConfigSource(Optional<VaultConfig> config) {
     SECRET_DEFAULT_PATH = System.getenv("VAULT_SECRETS_PATH");
-    VaultConfig config;
     try {
-      config =
-          new VaultConfig()
-              // Defaults to "VAULT_ADDR" environment variable
-              // .address("http://localhost:8200")
-              // Defaults to "VAULT_TOKEN" environment variable
-              // .token("00000000-0000-0000-0000-000000000000")
-              // Defaults to "VAULT_OPEN_TIMEOUT" environment variable
-              // .openTimeout(5)
-              // Defaults to "VAULT_READ_TIMEOUT" environment variable
-              // .readTimeout(30)
-              // See "SSL Config" section below
-              .sslConfig(new SslConfig().build())
-              .build();
-      vault = new Vault(config);
+      VaultConfig cfg = config.orElseGet(() -> new VaultConfig()
+      // Defaults to "VAULT_ADDR" environment variable
+      // .address("http://localhost:8200")
+      // Defaults to "VAULT_TOKEN" environment variable
+      // .token("00000000-0000-0000-0000-000000000000")
+      // Defaults to "VAULT_OPEN_TIMEOUT" environment variable
+      // .openTimeout(5)
+      // Defaults to "VAULT_READ_TIMEOUT" environment variable
+      // .readTimeout(30)
+      // See "SSL Config" section below
+      // .sslConfig(new SslConfig().build())
+      );
+
+      vault = new Vault(cfg.build());
       Boolean initialized = vault.debug().health().getInitialized();
       if (!initialized) {
         throw new VaultException("Vault yet initialized");

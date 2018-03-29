@@ -11,48 +11,71 @@ import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
 import com.bettercloud.vault.response.LogicalResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * This class is a {@link ConfigSource} implemented for Vault
+ * 
+ * @author AharonHa
+ * @see The Vault Project's site at {@link https://www.vaultproject.io/}
+ *
+ */
 public class VaultConfigSource implements ConfigSource {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
   private Vault vault;
   private String SECRET_DEFAULT_PATH;
 
+  /**
+   * This constructor is used internally for test purposes. please use it only for tests
+   * 
+   * @param environmentLoader an {@link EnvironmentLoader}
+   */
   VaultConfigSource(EnvironmentLoader environmentLoader) {
     this(Optional.of(new VaultConfig().environmentLoader(environmentLoader)));
     SECRET_DEFAULT_PATH = environmentLoader.loadVariable("VAULT_SECRETS_PATH");
   }
 
-  public VaultConfigSource(Optional<VaultConfig> config) {
-    SECRET_DEFAULT_PATH = System.getenv("VAULT_SECRETS_PATH");
-    try {
-      VaultConfig cfg = config.orElseGet(() -> new VaultConfig()
-      // Defaults to "VAULT_ADDR" environment variable
-      // .address("http://localhost:8200")
-      // Defaults to "VAULT_TOKEN" environment variable
-      // .token("00000000-0000-0000-0000-000000000000")
-      // Defaults to "VAULT_OPEN_TIMEOUT" environment variable
-      // .openTimeout(5)
-      // Defaults to "VAULT_READ_TIMEOUT" environment variable
-      // .readTimeout(30)
-      // See "SSL Config" section below
-      // .sslConfig(new SslConfig().build())
-      );
+  public VaultConfigSource() {
+    this(Optional.empty());
+  }
 
+  /**
+   * Create a new {@link VaultConfigSource} with the given {@link VaultConfig}. <br>
+   * Default configurations can also be used by passing {@link Optional#empty() empty}. Please note the following
+   * required environment variables are required if the configuration does not provide them
+   * <ul>
+   * <li><code>VAULT_SECRETS_PATH</pre> is the path to use (defaults to <code>secret</code>)</li>
+   * <li><code>VAULT_TOKEN</code> is the {@link VaultConfig#token(String) token} to use</li>
+   * <li><code>VAULT_ADDR</code> is the {@link VaultConfig#address(String) address} of the vault (API)</li>
+   * </ul>
+   * 
+   * @param config an optional configuration to create vault access with.
+   * 
+   */
+
+  public VaultConfigSource(Optional<VaultConfig> config) {
+    SECRET_DEFAULT_PATH = System.getenv().getOrDefault("VAULT_SECRETS_PATH", "secret");
+    try {
+      VaultConfig cfg = config.orElseGet(() -> new VaultConfig());
       vault = new Vault(cfg.build());
       Boolean initialized = vault.debug().health().getInitialized();
       if (!initialized) {
-        throw new VaultException("Vault yet initialized");
+        throw new VaultException("Vault not yet initialized");
       }
       if (vault.seal().sealStatus().getSealed()) {
         throw new VaultException("Vault is sealed");
       }
-    } catch (VaultException ignoredException) {
-      ignoredException.printStackTrace();
+    } catch (VaultException exception) {
+      LOGGER.error("unable to build vault config source", exception);
+      vault = null;
     }
   }
 
@@ -64,8 +87,8 @@ public class VaultConfigSource implements ConfigSource {
       return response.getData().entrySet().stream().map(LoadedConfigProperty::withNameAndValue).map(Builder::build)
           .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
     } catch (VaultException ignoredException) {
+      LOGGER.warn("unable to read from vault", ignoredException);
       return new HashMap<>();
     }
   }
-
 }

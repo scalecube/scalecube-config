@@ -1,6 +1,7 @@
 package io.scalecube.config.vault;
 
 import io.scalecube.config.ConfigProperty;
+import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.source.LoadedConfigProperty.Builder;
@@ -14,7 +15,7 @@ import com.bettercloud.vault.response.LogicalResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -65,7 +66,19 @@ public class VaultConfigSource implements ConfigSource {
     SECRET_DEFAULT_PATH = System.getenv().getOrDefault("VAULT_SECRETS_PATH", "secret");
     try {
       VaultConfig cfg = config.orElseGet(() -> new VaultConfig());
+      if (cfg.build().getToken() == null) {
+        throw new VaultException("Missing Vault token");
+      }
       vault = new Vault(cfg.build());
+      checkVaultHealth();
+    } catch (VaultException exception) {
+      LOGGER.error("unable to build vault config source", exception);
+      vault = null;
+    }
+  }
+
+  private void checkVaultHealth() throws VaultException {
+    if (vault != null) {
       Boolean initialized = vault.debug().health().getInitialized();
       if (!initialized) {
         throw new VaultException("Vault not yet initialized");
@@ -73,22 +86,26 @@ public class VaultConfigSource implements ConfigSource {
       if (vault.seal().sealStatus().getSealed()) {
         throw new VaultException("Vault is sealed");
       }
-    } catch (VaultException exception) {
-      LOGGER.error("unable to build vault config source", exception);
-      vault = null;
+    } else {
+      throw new VaultException("Vault instance is unhealthy");
     }
   }
 
   @Override
   public Map<String, ConfigProperty> loadConfig() {
     try {
+      checkVaultHealth();
+    } catch (VaultException ignoredException) {
+      LOGGER.warn("unable to read from vault", ignoredException);
+      throw new ConfigSourceNotAvailableException("unable to read from vault", ignoredException);
+    }
+    try {
       LogicalResponse response = vault.logical().read(SECRET_DEFAULT_PATH);
-
       return response.getData().entrySet().stream().map(LoadedConfigProperty::withNameAndValue).map(Builder::build)
           .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
     } catch (VaultException ignoredException) {
-      LOGGER.warn("unable to read from vault", ignoredException);
-      return new HashMap<>();
+      return Collections.emptyMap();
     }
   }
+
 }

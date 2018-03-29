@@ -4,8 +4,10 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 import io.scalecube.config.ConfigProperty;
+import io.scalecube.config.ConfigSourceNotAvailableException;
 
 import com.bettercloud.vault.EnvironmentLoader;
+import com.bettercloud.vault.VaultException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -28,16 +30,18 @@ public class TestVaultConfigSource {
   // these 3 are actual values we would like to test with
   private static final String VAULT_SECRETS_PATH1 = "secret/application/tenant1";
   private static final String VAULT_SECRETS_PATH2 = "secret/application/tenant2";
-  private static final String VAULT_SECRETS_PATH3 = "secret/application/tenant3";
+  private static final String VAULT_SECRETS_PATH3 = "secret/application2/tenant3";
+  private static final String VAULT_SECRETS_PATH4 = "secret";
 
   @ClassRule
   public static VaultContainer<?> vaultContainer = new VaultContainer<>()
       .withVaultToken(VAULT_TOKEN)
       .withVaultPort(VAULT_PORT)
       .withSecretInVault(VAULT_SECRETS_PATH1, "top_secret=password1", "db_password=dbpassword1")
-      .withSecretInVault(VAULT_SECRETS_PATH2, "top_secret=password2", "db_password=dbpassword2");
+      .withSecretInVault(VAULT_SECRETS_PATH2, "top_secret=password2", "db_password=dbpassword2")
+      .withSecretInVault(VAULT_SECRETS_PATH3, "secret=password", "password=dbpassword");
 
-  EnvironmentLoader loader1, loader2, loader3;
+  EnvironmentLoader loader1, loader2, loader3, loader4, loader5;
 
 
   @Before
@@ -46,7 +50,7 @@ public class TestVaultConfigSource {
     commonEnvironmentVariables.put("VAULT_TOKEN", VAULT_TOKEN);
     commonEnvironmentVariables.put("VAULT_ADDR", new StringBuilder("http://")
         .append(vaultContainer.getContainerIpAddress()).append(':').append(VAULT_PORT).toString());
-    
+
     Map<String, String> tenant1 = new HashMap<>(commonEnvironmentVariables);
     tenant1.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH1);
     this.loader1 = new MockEnvironmentLoader(tenant1);
@@ -59,6 +63,7 @@ public class TestVaultConfigSource {
     tenant3.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH3);
     this.loader3 = new MockEnvironmentLoader(tenant3);
 
+    this.loader4 = new MockEnvironmentLoader(commonEnvironmentVariables);
 
   }
 
@@ -103,11 +108,57 @@ public class TestVaultConfigSource {
   }
 
   @Test
-  public void testMissingTenant() {
+  public void testMissingProperty() {
     VaultConfigSource vaultConfigSource = new VaultConfigSource(loader3);
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+    assertThat(loadConfig.size(), not(0));
     ConfigProperty actual = loadConfig.get("top_secret");
     assertThat(actual, nullValue());
+  }
+
+  @Test
+  public void testMissingTenant() {
+    VaultConfigSource vaultConfigSource = new VaultConfigSource(loader4);
+    Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+    assertThat(loadConfig.size(), is(0));
+  }
+
+  @Test(expected = ConfigSourceNotAvailableException.class)
+  public void testInvalidAddress() {
+    Map<String, String> map = new HashMap<>();
+    map.put("VAULT_ADDR", "http://0.0.0.0:8200");
+    map.put("VAULT_TOKEN", "abcd");
+    VaultConfigSource vaultConfigSource = new VaultConfigSource(new MockEnvironmentLoader(map));
+    vaultConfigSource.loadConfig();
+
+  }
+
+  @Test(expected = ConfigSourceNotAvailableException.class)
+  public void testInvalidToken() {
+    Map<String, String> map = new HashMap<>();
+    map.put("VAULT_ADDR", "http://0.0.0.0:8200");
+
+    VaultConfigSource vaultConfigSource = new VaultConfigSource(new MockEnvironmentLoader(map));
+    vaultConfigSource.loadConfig();
+
+  }
+
+  @Test(expected = VaultException.class)
+  public void testUninitialized() {
+    VaultContainer<?> vaultContainer2 = new VaultContainer<>().withVaultToken(VAULT_TOKEN).withVaultPort(8201);
+    vaultContainer2.withEnv("VAULT_DEV_ROOT_TOKEN_ID", (String) null);
+
+    Map<String, String> clientEnv = new HashMap<>();
+    clientEnv.put("VAULT_TOKEN", VAULT_TOKEN);
+    clientEnv.put("VAULT_ADDR", new StringBuilder("http://")
+        .append(vaultContainer2.getContainerIpAddress()).append(':').append(8201).toString());
+
+    try {
+      vaultContainer2.start();
+      new VaultConfigSource(new MockEnvironmentLoader(clientEnv));
+    } finally {
+      vaultContainer2.stop();
+    }
 
   }
 }

@@ -83,7 +83,7 @@ public class TestVaultConfigSource {
   }
 
   @Test
-  public void test() {
+  public void testFirstTenant() {
     VaultConfigSource vaultConfigSource = new VaultConfigSource(loader1);
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     ConfigProperty actual = loadConfig.get("top_secret");

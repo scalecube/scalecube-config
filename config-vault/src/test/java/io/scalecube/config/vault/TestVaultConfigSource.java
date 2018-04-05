@@ -173,7 +173,6 @@ public class TestVaultConfigSource {
     configProperty.addValidator(Objects::nonNull);
 
     vaultContainer.stop();
-    System.out.println(vaultContainer.isRunning());
     assertFalse(vaultContainer.isRunning());
 
     TimeUnit.SECONDS.sleep(2);

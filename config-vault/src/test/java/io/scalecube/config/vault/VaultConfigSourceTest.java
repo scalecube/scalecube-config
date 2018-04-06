@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public class TestVaultConfigSource {
+public class VaultConfigSourceTest {
 
   private static final int VAULT_PORT = 8200;
   private static final String VAULT_TOKEN = "my-root-token";

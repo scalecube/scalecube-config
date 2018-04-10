@@ -1,7 +1,7 @@
 package io.scalecube.config.vault;
 
 import static co.unruly.matchers.OptionalMatchers.contains;
-
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
@@ -9,6 +9,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assume.assumeThat;
+import static org.junit.Assume.assumeTrue;
 
 import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigRegistry;
@@ -24,11 +26,12 @@ import com.bettercloud.vault.VaultException;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.Container.ExecResult;
+import org.testcontainers.containers.wait.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.WaitStrategy;
 import org.testcontainers.vault.VaultContainer;
 
 import java.util.HashMap;
@@ -51,10 +54,12 @@ public class VaultConfigSourceTest {
   private static final String VAULT_SECRETS_PATH2 = "secret/application/tenant2";
   private static final String VAULT_SECRETS_PATH3 = "secret/application2/tenant3";
 
+  static WaitStrategy VAULT_SERVER_STARTED =
+      new LogMessageWaitStrategy().withRegEx("==> Vault server started! Log data will stream in below:\n").withTimes(1);
 
   @ClassRule
   public static VaultContainer<?> vaultContainer = new VaultContainer<>()
-      .withVaultToken(VAULT_TOKEN)
+      .waitingFor(VAULT_SERVER_STARTED).withVaultToken(VAULT_TOKEN)
       .withVaultPort(VAULT_PORT)
       .withSecretInVault(VAULT_SECRETS_PATH1, "top_secret=password1", "db_password=dbpassword1")
       .withSecretInVault(VAULT_SECRETS_PATH2, "top_secret=password2", "db_password=dbpassword2")
@@ -170,9 +175,8 @@ public class VaultConfigSourceTest {
     try (VaultContainer<?> vaultContainer2 = new VaultContainer<>(VAULT_IMAGE_NAME)) {
       vaultContainer2.withVaultToken(VAULT_TOKEN).withVaultPort(8202)
           .withSecretInVault(VAULT_SECRETS_PATH1, "top_secret=password1", "db_password=dbpassword1")
-
+          .waitingFor(VAULT_SERVER_STARTED)
           .start();
-      TimeUnit.SECONDS.sleep(1);
       String address = new StringBuilder("http://")
           .append(vaultContainer2.getContainerIpAddress()).append(':').append(8202).toString();
       ConfigRegistrySettings settings = ConfigRegistrySettings.builder()
@@ -184,8 +188,9 @@ public class VaultConfigSourceTest {
 
       assertThat(configProperty.value(), contains("password1"));
       try {
-        ExecResult execResult = vaultContainer2.execInContainer( "/bin/sh", "-c", "vault write " +  VAULT_SECRETS_PATH1 + " top_secret=new_password");
-        Assume.assumeThat(execResult.getStdout(), CoreMatchers.containsString("Success"));
+        ExecResult execResult = vaultContainer2.execInContainer("/bin/sh", "-c",
+            "vault write " + VAULT_SECRETS_PATH1 + " top_secret=new_password");
+        assumeThat(execResult.getStdout(), CoreMatchers.containsString("Success"));
         TimeUnit.SECONDS.sleep(2);
       } catch (Exception ignoredException) {
         Assert.fail("oops");
@@ -203,6 +208,7 @@ public class VaultConfigSourceTest {
       vaultContainer2.withVaultToken(VAULT_TOKEN).withVaultPort(8203)
           .withEnv("VAULT_DEV_ROOT_TOKEN_ID", (String) VAULT_TOKEN)
           .withSecretInVault(VAULT_SECRETS_PATH1, secret)
+          .waitingFor(VAULT_SERVER_STARTED)
           .start();
 
       String address = new StringBuilder("http://")
@@ -229,17 +235,19 @@ public class VaultConfigSourceTest {
   }
 
 
-  @Test(expected = VaultException.class)
+  @Test
   public void testSealed() throws Throwable {
     try (VaultContainer<?> vaultContainerUnInit = new VaultContainer<>()) {
-      vaultContainerUnInit.withEnv("VAULT_TOKEN", VAULT_TOKEN)
-          .withVaultPort(8204).start();
+      vaultContainerUnInit.withVaultToken(VAULT_TOKEN).withVaultPort(8204)
+          .waitingFor(VAULT_SERVER_STARTED)
+          .start();
+
       String address = new StringBuilder("http://")
           .append(vaultContainerUnInit.getContainerIpAddress()).append(':').append(8204).toString();
       Vault vault = new Vault(new VaultConfig().address(address).token(VAULT_TOKEN).sslConfig(new SslConfig()));
 
       vault.seal().seal();
-      Assume.assumeTrue(vault.seal().sealStatus().getSealed());
+      assumeTrue(vault.seal().sealStatus().getSealed());
 
 
       Map<String, String> clientEnv = new HashMap<>();
@@ -248,12 +256,11 @@ public class VaultConfigSourceTest {
       clientEnv.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH1);
 
       new VaultConfigSource(new MockEnvironmentLoader(clientEnv)).loadConfig();
-    } catch (ConfigSourceNotAvailableException ignoredException) {
-      assertThat(ignoredException.getCause(), instanceOf(VaultException.class));
-      String message = ignoredException.getCause().getMessage();
-      assertThat(message, CoreMatchers.containsString("Vault instance is unhealthy"));
-      throw ignoredException.getCause();
+      Assert.fail("Negative test failed");
+    } catch (ConfigSourceNotAvailableException expectedException) {
+      assertThat(expectedException.getCause(), instanceOf(VaultException.class));
+      String message = expectedException.getCause().getMessage();
+      assertThat(message, containsString("Vault is sealed"));
     }
-    Assert.fail("Negative test failed");
   }
 }

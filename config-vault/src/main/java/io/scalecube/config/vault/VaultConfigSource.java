@@ -67,18 +67,17 @@ public class VaultConfigSource implements ConfigSource {
       checkVaultStatus();
     } catch (VaultException exception) {
       LOGGER.error("unable to build vault config source", exception);
-      vault = null;
     }
   }
 
   private void checkVaultStatus() throws VaultException {
     if (vault != null) {
+      if (vault.seal().sealStatus().getSealed()) {
+        throw new VaultException("Vault is sealed");
+      }
       Boolean initialized = vault.debug().health().getInitialized();
       if (!initialized) {
         throw new VaultException("Vault not yet initialized");
-      }
-      if (vault.seal().sealStatus().getSealed()) {
-        throw new VaultException("Vault is sealed");
       }
     } else {
       throw new VaultException("Vault instance is unhealthy");

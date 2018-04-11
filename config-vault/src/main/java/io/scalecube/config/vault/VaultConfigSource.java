@@ -30,9 +30,9 @@ import java.util.stream.Collectors;
  */
 public class VaultConfigSource implements ConfigSource {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
+  static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
 
-  private Vault vault;
+  private final Vault vault;
   private final String secretsPath;
 
   /**
@@ -47,7 +47,7 @@ public class VaultConfigSource implements ConfigSource {
   }
 
   /**
-   * Create a new {@link VaultConfigSource} with the given {@link VaultConfig}. <br>
+   * Create a new {@link VaultConfigSource} with the given {@link VaultConfigSource.Builder}. <br>
    * Default configurations can also be used by passing {@link Optional#empty() empty}. Please note the following
    * required environment variables are required if the configuration does not provide them
    * <ul>
@@ -60,27 +60,18 @@ public class VaultConfigSource implements ConfigSource {
    * 
    */
 
-  VaultConfigSource(VaultConfigSource.Builder builder) {
+  VaultConfigSource(Builder builder) {
     this.secretsPath = builder.secretsPath();
-    try {
-      vault = new Vault(builder.config);
-      checkVaultStatus();
-    } catch (VaultException exception) {
-      LOGGER.error("unable to build vault config source", exception);
-    }
+    vault = new Vault(builder.config);
   }
 
   private void checkVaultStatus() throws VaultException {
-    if (vault != null) {
-      if (vault.seal().sealStatus().getSealed()) {
-        throw new VaultException("Vault is sealed");
-      }
-      Boolean initialized = vault.debug().health().getInitialized();
-      if (!initialized) {
-        throw new VaultException("Vault not yet initialized");
-      }
-    } else {
-      throw new VaultException("Vault instance is unhealthy");
+    if (vault.seal().sealStatus().getSealed()) {
+      throw new VaultException("Vault is sealed");
+    }
+    Boolean initialized = vault.debug().health().getInitialized();
+    if (!initialized) {
+      throw new VaultException("Vault not yet initialized");
     }
   }
 
@@ -93,6 +84,7 @@ public class VaultConfigSource implements ConfigSource {
           .map(LoadedConfigProperty.Builder::build)
           .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
     } catch (VaultException vaultException) {
+      LOGGER.warn("unable to load config properties", vaultException);
       throw new ConfigSourceNotAvailableException(vaultException);
     }
   }
@@ -128,6 +120,7 @@ public class VaultConfigSource implements ConfigSource {
         this.config.build();
         return new VaultConfigSource(this);
       } catch (VaultException propogateException) {
+        LOGGER.error("Unable to build " + VaultConfigSource.class.getSimpleName(), propogateException);
         throw ThrowableUtil.propagate(propogateException);
       }
     }

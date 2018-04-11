@@ -127,7 +127,7 @@ public class VaultConfigSourceTest {
 
   @Test
   public void testFirstTenant() {
-    VaultConfigSource vaultConfigSource = new VaultConfigSource(loader1);
+    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader1).build();
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     ConfigProperty actual = loadConfig.get("top_secret");
     assertThat(actual, notNullValue());
@@ -137,7 +137,7 @@ public class VaultConfigSourceTest {
 
   @Test
   public void testSecondTenant() {
-    VaultConfigSource vaultConfigSource = new VaultConfigSource(loader2);
+    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader2).build();
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     ConfigProperty actual = loadConfig.get("top_secret");
     assertThat(actual, notNullValue());
@@ -147,7 +147,7 @@ public class VaultConfigSourceTest {
 
   @Test
   public void testMissingProperty() {
-    VaultConfigSource vaultConfigSource = new VaultConfigSource(loader3);
+    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader3).build();
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     assertThat(loadConfig.size(), not(0));
     ConfigProperty actual = loadConfig.get("top_secret");
@@ -160,7 +160,7 @@ public class VaultConfigSourceTest {
     Map<String, String> tenant4 = new HashMap<>(commonEnvironmentVariables);
     tenant4.put(VAULT_SECRETS_PATH, "secrets/unknown/path");
     loader4 = new MockEnvironmentLoader(tenant4);
-    VaultConfigSource vaultConfigSource = new VaultConfigSource(loader4);
+    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader4).build();
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     assertThat(loadConfig.size(), equalTo(0));
   }
@@ -172,7 +172,7 @@ public class VaultConfigSourceTest {
     invalidAddress.put("VAULT_TOKEN", VAULT_TOKEN);
     invalidAddress.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH1);
 
-    VaultConfigSource vaultConfigSource = new VaultConfigSource(new MockEnvironmentLoader(invalidAddress));
+    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(new MockEnvironmentLoader(invalidAddress)).build();
     vaultConfigSource.loadConfig();
 
   }
@@ -183,7 +183,7 @@ public class VaultConfigSourceTest {
     invalidToken.put("VAULT_TOKEN", "zzzzzz");
     invalidToken.put(VAULT_SECRETS_PATH, "secrets/unknown/path");
 
-    VaultConfigSource vaultConfigSource = new VaultConfigSource(new MockEnvironmentLoader(invalidToken));
+    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(new MockEnvironmentLoader(invalidToken)).build();
     vaultConfigSource.loadConfig();
 
   }
@@ -265,7 +265,7 @@ public class VaultConfigSourceTest {
       Vault vault = new Vault(new VaultConfig().address(address).token(VAULT_TOKEN).sslConfig(new SslConfig()));
 
       vault.seal().seal();
-      assumeTrue(vault.seal().sealStatus().getSealed());
+      assumeTrue("valut seal status",vault.seal().sealStatus().getSealed());
 
 
       Map<String, String> clientEnv = new HashMap<>();
@@ -273,7 +273,7 @@ public class VaultConfigSourceTest {
       clientEnv.put("VAULT_ADDR", address);
       clientEnv.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH1);
 
-      new VaultConfigSource(new MockEnvironmentLoader(clientEnv)).loadConfig();
+      VaultConfigSource.builder(new MockEnvironmentLoader(clientEnv)).build().loadConfig();
       Assert.fail("Negative test failed");
     } catch (ConfigSourceNotAvailableException expectedException) {
       assertThat(expectedException.getCause(), instanceOf(VaultException.class));
@@ -285,14 +285,14 @@ public class VaultConfigSourceTest {
   @Test
   public void shouldWorkWhenRegistryIsReloadedAndVaultIsUnSealed() throws InterruptedException {
     AtomicReference<String> unsealKey = new AtomicReference<>();
-    try (VaultContainer<?> vaultContainer2 = new VaultContainer<>(VAULT_IMAGE_NAME)) {
-      vaultContainer2.withVaultToken(VAULT_TOKEN).withVaultPort(8205)
+    try (VaultContainer<?> sealdVaultContainer = new VaultContainer<>(VAULT_IMAGE_NAME)) {
+      sealdVaultContainer.withVaultToken(VAULT_TOKEN).withVaultPort(8205)
           .withSecretInVault(VAULT_SECRETS_PATH1, "top_secret=password1", "db_password=dbpassword1")
           .withLogConsumer(waitingForUnsealKey(unsealKey)).waitingFor(VAULT_SERVER_STARTED)
           .start();
       assumeThat("unable to get unseal key", unsealKey.get(), notNullValue());
       String address = new StringBuilder("http://")
-          .append(vaultContainer2.getContainerIpAddress()).append(':').append(8205).toString();
+          .append(sealdVaultContainer.getContainerIpAddress()).append(':').append(8205).toString();
       ConfigRegistrySettings settings = ConfigRegistrySettings.builder()
           .addLastSource("vault", VaultConfigSource.builder(address, VAULT_TOKEN, VAULT_SECRETS_PATH1).build())
           .reloadIntervalSec(1)

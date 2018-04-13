@@ -1,7 +1,15 @@
 language: java
+
+addons:
+  apt:
+    packages:
+      - libxml-xpath-perl
+
 sudo: required
+
 jdk:
   - oraclejdk8
+
 env:
   global:
   - secure: ktbzhkaobK1TL5hgZbK1QLG1EDCOrRWk+zmfG73eWo3K+bChMaQp45rO/73cWhsC6OkryIS95/KBBakdCmBLNweOgyKSXE8pXe1iQHGOzjZ4rnybp6v5RK4/D6nFPxwPG+l0iPMfxeZ5tg2JwoorwDzpjWynEo555i4QmlFFb9rVUoWWp2WHiegIuUhnfulI1C0MhdC9LRMdS4agSajdqlw8KTeIUfg3lhFCG3ZyQUJE1101NdjtD8z1oeXIIxYpwBPylDOj+u5L/6d4lqZKDaQy7Qghb1hcSjgNyedZ9m9VHGHSPatW0R25fuSiDIhqD10ZY+/SASgwG0m33mNjoMGCw49V4yFYryXkSpRaj/w9Bh4ieSjAExtr3bpU1l2VatHorvUrU1TcACM9OAk7ezyaQtPfTm4MIehwKSQMkRQ9lUPlS3T9ZmI8MyHsLiFL34RUyfPrqPvMF/0q005NHY4MpIWl4WMrd9YQEwSjraA5AgxegdUbM5Fr8F4e2GX1I1FtT3GN4f5jyep6Pe+HOKJIOirLKVGntbE5BJhemcyWKpyf+tRv12ch5gyXI0pL7VEP+G+TTCTv6ILL1qAczWVMUjF/UZsgUc6s+W9UtLdgw5YL+oaSn0Ynfl1xayIPg0OhFMLlRYOz0+kcFitsTlTxLU8gtPK3PaLdMwNfwPs=
@@ -9,14 +17,20 @@ env:
   - secure: DepUZKikTUpQCYEutT0kz9nc2XVdpqLOsOZmYEkV+lgG+fqiAJuEOkYAjmOL76zKvhGyr8WHVtjXBjyX9LY1OHttEPLaksMA2dhnS+1fD1YdcODGI0AqHUiFT+xH38lfCOcuvBCByv3VTc2aNCjibSsM0Z6KgSUZubY4NailDxqOBA6H3jAHhpj92ehsOW9UmWhn18Q82cFh575wZGhoW2LP0+HPLxuWFqbFrvlhdf7qhwDoGiV8ScLQ2Ai/12fwGBqZlXn8TvzrySiFHDFKo7Nb3bEhM5Q7ytDERtCTC2XRmz4xnZLJaxmGFyTLrjBw3Vw52mrMoqgGTC/xo+C4QKsEGWPB19wC88OlltB1g6QxHjhSkndIhhyH4uLASh0wQCYANjjhTi3wa6v72nFdXbqDzkmCFPaqGS7AoWsZRuhwqSTt5L+0S/WD8wfYbdO3/Hm7zXvlX26JKDmlsCYnjZn1YHgiyrRS8oevT0E2jG0V6fgjH7qt0vnLlXyfYksKfd6SYA+yLKd+qywQDkdKFgL0qPLcfdhwUUIY/ArA2anA45Q3zmps3ZUI+cvcUPwUunM8DevHq16igGsKI2zKwqq04/8EGDqNktJHT9nSksY5D7m2HTmkwoTtow8XOyVxGlVZy7RE6EKKvhJfREXB0eug/Iy13qWq/RYPOwTN3jw=
   - secure: jJ1VUwUf/sSt0wD0UTxJr6quvk6iSapMZ1HOtga2DUYzr3PwsJjWuqsmxI7FTNyN/bAE180H1gd4tW/lexYsIuthXWMrArG9pnxfo8eFexgto/adq8KbNBVlwxmSC3NPPIFgKRg2Mq261xmr9tng7l4qkVx+d2jxUzOs/T4yD9dB0Zoy45XndtVfSoFvdQMYanZeHQ0ge7RS6KJzj7/LfHupbYaot4aIJxkEhKhNYUHnyHOH32pNdr2VS4KyYZQLTVQNvu6MWl7gpiieTiU6NSesqWrhppfuRm3ZHyIh9BWyJIn84XjtB+rqdD54omumoCNry7OsacGT3WBxykbqMqKqmH7UF4a/Bg8g0SJVlWb3ulCpYd9pII6WSDn9UEo11s5guz5E/PKn3IK0jMAGmPnv4W4NnO472MFyp4er+l/CHjY+iJhZapYhwOIPMmPXlIM1AvNcA2HrCEMu2/NXnCijm/wDS5MUKKunREvFZrsf0RLG1FfZsfZYCOeiiY7TAUnkwHu28fECD8ksHE5d/MQQiON7ox16FAl2zxfNfAf265F2GnWxcJfHFp/L8WDZxOG+5eyobI5gc+oWBEIBXLN9kTNt4eJGDhFw7aKDmgFc1Cu/e1QnIQ3x6Oj7PjoreBE95NFuHYmKjW4pCboRBiFrJswcrSzOba8kS/F1fr4=
 
-install: mvn install -P !build-extras -DskipTests=true -Dmaven.javadoc.skip=true -B -V
-
-script: mvn test -P !build-extras -B
-
-cache:
-  directories:
-    - ~/.m2/repository
+before_install:
+  - "./src/main/scripts/ci/before-install.sh"
+  - "./src/main/scripts/cd/before-deploy.sh"
 
 after_success:
-  - ./cd/before-deploy.sh
-  - ./cd/deploy.sh
+  - java -jar ~/codacy-coverage-reporter-assembly.jar -l Java -r ./services/target/site/jacoco/jacoco.xml
+
+deploy:
+  - provider: script
+  script: mvn -P release deploy -DskipTests=true -B -V -s travis-settings.xml
+  on:
+    branch: develop
+- provider: script
+  script:
+    - "./src/main/scripts/cd/deploy.sh"
+  on:
+    branch: master

@@ -7,8 +7,6 @@ addons:
 
 sudo: required
 
-sudo: required
-
 services:
   - docker
 jdk:

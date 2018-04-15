@@ -3,12 +3,10 @@ language: java
 addons:
   apt:
     packages:
-      - libxml-xpath-perl
-
-sudo: required
+    - libxml-xpath-perl
 
 jdk:
-  - oraclejdk8
+- oraclejdk8
 
 env:
   global:
@@ -18,19 +16,17 @@ env:
   - secure: jJ1VUwUf/sSt0wD0UTxJr6quvk6iSapMZ1HOtga2DUYzr3PwsJjWuqsmxI7FTNyN/bAE180H1gd4tW/lexYsIuthXWMrArG9pnxfo8eFexgto/adq8KbNBVlwxmSC3NPPIFgKRg2Mq261xmr9tng7l4qkVx+d2jxUzOs/T4yD9dB0Zoy45XndtVfSoFvdQMYanZeHQ0ge7RS6KJzj7/LfHupbYaot4aIJxkEhKhNYUHnyHOH32pNdr2VS4KyYZQLTVQNvu6MWl7gpiieTiU6NSesqWrhppfuRm3ZHyIh9BWyJIn84XjtB+rqdD54omumoCNry7OsacGT3WBxykbqMqKqmH7UF4a/Bg8g0SJVlWb3ulCpYd9pII6WSDn9UEo11s5guz5E/PKn3IK0jMAGmPnv4W4NnO472MFyp4er+l/CHjY+iJhZapYhwOIPMmPXlIM1AvNcA2HrCEMu2/NXnCijm/wDS5MUKKunREvFZrsf0RLG1FfZsfZYCOeiiY7TAUnkwHu28fECD8ksHE5d/MQQiON7ox16FAl2zxfNfAf265F2GnWxcJfHFp/L8WDZxOG+5eyobI5gc+oWBEIBXLN9kTNt4eJGDhFw7aKDmgFc1Cu/e1QnIQ3x6Oj7PjoreBE95NFuHYmKjW4pCboRBiFrJswcrSzOba8kS/F1fr4=
 
 before_install:
-  - "./src/main/scripts/ci/before-install.sh"
-  - "./src/main/scripts/cd/before-deploy.sh"
-
+- "./src/main/scripts/ci/before-install.sh"
+- "./src/main/scripts/cd/before-deploy.sh"
 after_success:
-  - java -jar ~/codacy-coverage-reporter-assembly.jar -l Java -r ./services/target/site/jacoco/jacoco.xml
-
+- java -jar ~/codacy-coverage-reporter-assembly.jar -l Java -r ./services/target/site/jacoco/jacoco.xml
 deploy:
-  - provider: script
+- provider: script
   script: mvn -P release deploy -DskipTests=true -B -V -s travis-settings.xml
   on:
     branch: develop
 - provider: script
   script:
-    - "./src/main/scripts/cd/deploy.sh"
+  - "./src/main/scripts/cd/deploy.sh"
   on:
     branch: master

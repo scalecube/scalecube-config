@@ -8,6 +8,9 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>config-vault</artifactId>
+    <properties>
+        <enforcer.skip>true</enforcer.skip>
+    </properties>
 
 	<dependencies>
 		<dependency>

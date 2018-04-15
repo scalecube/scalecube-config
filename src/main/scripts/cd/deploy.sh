@@ -5,5 +5,5 @@ mvn -P release release:prepare release:perform -DautoVersionSubmodules=true -Dsc
 
 git checkout develop
 git merge --ff-only master && git push origin develop
-POST /repos/:owner/:repo/pulls
+# POST /repos/:owner/:repo/pulls
 curl -d '{"title": "Prepare new release","head": "develop","base": "master"}' https://api.github.com/repos/scalecube/config/pulls?access_token=$GITTOKEN

@@ -5,6 +5,10 @@ addons:
     packages:
     - libxml-xpath-perl
 
+sudo: required
+
+services:
+  - docker
 jdk:
 - oraclejdk8
 

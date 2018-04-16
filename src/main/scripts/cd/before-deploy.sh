@@ -10,8 +10,7 @@ function decryptsecrets {
 	echo *-*-*-*-*-*-*-*-*-*-*-*
 	pushd src/main/scripts/cd
 	mkdir ~/tmp
-	openssl aes-256-cbc -K $encrypted_d19fb18b4b9d_key -iv $encrypted_d19fb18b4b9d_iv -in secrets.tar.enc -out ~/tmp/secrets.tar -d
-#       openssl aes-256-cbc -K $encrypted_868b88463c43_key -iv $encrypted_868b88463c43_iv -in codesigning.asc.enc -out codesigning.asc -d
+        openssl aes-256-cbc -K $encrypted_c616616652d8_key -iv $encrypted_c616616652d8_iv -in secrets.tar.enc -out secrets.tar -d
 	md5sum secrets.tar
 	tar -xvf ~/tmp/secrets.tar -C  ~/.ssh
 	shred -z -u ~/tmp/secrets.tar

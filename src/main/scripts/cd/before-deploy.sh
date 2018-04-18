@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-#!/usr/bin/env bash
-
 echo       Running $0
 echo *-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -10,8 +8,8 @@ function decryptsecrets {
 	echo *-*-*-*-*-*-*-*-*-*-*-*
 	pushd src/main/scripts/cd
 	mkdir ~/tmp
-        openssl aes-256-cbc -K $encrypted_c616616652d8_key -iv $encrypted_c616616652d8_iv -in secrets.tar.enc -out secrets.tar -d
-	md5sum secrets.tar
+	openssl aes-256-cbc -K $encrypted_SOME_key -iv $encrypted_SOME_iv -in secrets.tar.enc -out ~/tmp/secrets.tar -d
+	md5sum ~/tmp/secrets.tar
 	tar -xvf ~/tmp/secrets.tar -C  ~/.ssh
 	shred -z -u ~/tmp/secrets.tar
     popd    
@@ -61,3 +59,4 @@ function deployment {
 }
 
 deployment
+

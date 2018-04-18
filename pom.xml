@@ -229,6 +229,10 @@
                                     <goal>sign</goal>
                                 </goals>
                             </execution>
+                            <configuration>
+                                <keyname>${env.GPG_KEY}</keyname>
+                                <passphraseServerId>${env.GPG_KEY}</passphraseServerId>
+                            </configuration>
                         </executions>
                     </plugin>
                     <plugin>

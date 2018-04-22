@@ -43,7 +43,7 @@ function setupgit {
     git config --global user.name "io-scalecube-ci"
     git config --global user.signingkey $GPG_KEY
 	git checkout -B $TRAVIS_BRANCH
-	git reset origin/$TRAVIS_BRANCH
+	git reset origin $TRAVIS_BRANCH
 }
 
 function deployment {

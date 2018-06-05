@@ -6,13 +6,11 @@ echo *-*-*-*-*-*-*-*-*-*-*-*-*-*
 function decryptsecrets {
 	echo   decrypting secrets
 	echo *-*-*-*-*-*-*-*-*-*-*-*
-	pushd src/main/scripts/cd
 	mkdir -p ~/tmp
-	openssl aes-256-cbc -K $encrypted_SOME_key -iv $encrypted_SOME_iv -in secrets.tar.enc -out ~/tmp/secrets.tar -d
+	openssl aes-256-cbc -K $encrypted_SOME_key -iv $encrypted_SOME_iv -in $TRAVIS_BUILD_DIR/src/main/scripts/cd/secrets.tar.enc -out ~/tmp/secrets.tar -d
 	md5sum ~/tmp/secrets.tar
 	tar -xvf ~/tmp/secrets.tar -C  ~/.ssh
-	shred -z -u ~/tmp/secrets.tar
-    popd    
+	shred -z -u ~/tmp/secrets.tar    
 }
 
 function importpgp {
@@ -43,9 +41,7 @@ function setupgit {
     git remote set-url origin git@github.com:$TRAVIS_REPO_SLUG.git
 	git config --global user.email "io.scalecube.ci@gmail.com"
     git config --global user.name "io-scalecube-ci"
-    git config --global user.signingkey $GPG_KEY
-	git checkout $TRAVIS_BRANCH
-	git reset --hard $TRAVIS_BRANCH
+	git checkout -B $TRAVIS_BRANCH | true
 }
 
 function deployment {

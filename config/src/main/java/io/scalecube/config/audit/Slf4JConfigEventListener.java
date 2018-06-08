@@ -3,12 +3,14 @@ package io.scalecube.config.audit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+
 public class Slf4JConfigEventListener implements ConfigEventListener {
   private static final Logger LOGGER = LoggerFactory.getLogger(Slf4JConfigEventListener.class);
 
   @Override
-  public void onEvent(ConfigEvent event) {
-    LOGGER.info("Config property changed: {}", event);
+  public void onEvents(Collection<ConfigEvent> events) {
+    LOGGER.info("Config property changed: {}", events);
   }
 
 }

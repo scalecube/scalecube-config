@@ -16,6 +16,7 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -420,7 +421,12 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     propertyMap = loadedPropertyMap;
 
     detectedChanges.forEach(input -> recentConfigEvents.put(input, null)); // keep recent changes
-    detectedChanges.stream().filter(ConfigEvent::isChanged).forEach(this::reportChanges); // report changes
+    Collection<ConfigEvent> events =
+        detectedChanges.stream().filter(ConfigEvent::isChanged).collect(Collectors.toList());
+
+    /* .forEach(this::reportChanges); // report changes */
+
+    reportChanges(events);
 
     // re-compute values and invoke callbacks
     detectedChanges.stream()
@@ -432,12 +438,13 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         .forEach(PropertyCallback::computeValue);
   }
 
-  private void reportChanges(ConfigEvent event) {
+  private void reportChanges(Collection<ConfigEvent> events) {
+    Collection<ConfigEvent> configEvents = Collections.unmodifiableCollection(events);
     settings.getListeners().forEach((key, eventListener) -> {
       try {
-        eventListener.onEvent(event);
+        eventListener.onEvents(configEvents);
       } catch (Exception e) {
-        LOGGER.error("Exception on configEventListener: {}, event: {}, cause: {}", key, event, e, e);
+        LOGGER.error("Exception on configEventListener: {}, events: {}, cause: {}", key, configEvents, e, e);
       }
     });
   }

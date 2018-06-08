@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -44,8 +45,13 @@ public class MongoConfigEventListener implements ConfigEventListener {
     this.collectionName = collectionName;
   }
 
+
   @Override
-  public void onEvent(ConfigEvent event) {
+  public void onEvents(Collection<ConfigEvent> events) {
+    events.forEach(this::onEvent);
+  }
+
+  private void onEvent(ConfigEvent event) {
     CompletableFuture.runAsync(() -> {
       AuditLogEntity entity = new AuditLogEntity();
       entity.setName(event.getName());

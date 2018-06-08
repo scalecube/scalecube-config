@@ -9,7 +9,7 @@ public class Slf4JConfigEventListener implements ConfigEventListener {
   private static final Logger LOGGER = LoggerFactory.getLogger(Slf4JConfigEventListener.class);
 
   @Override
-  public void onEvents(Collection<ConfigEvent> events) {
+  public void onEvents(Collection<AuditConfigEvent> events) {
     LOGGER.info("Config property changed: {}", events);
   }
 

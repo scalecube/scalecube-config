@@ -1,5 +1,6 @@
 package io.scalecube.config;
 
+import io.scalecube.config.audit.AuditConfigEvent;
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.jmx.JmxConfigRegistry;
 import io.scalecube.config.source.ConfigSource;
@@ -422,7 +423,10 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
     detectedChanges.forEach(input -> recentConfigEvents.put(input, null)); // keep recent changes
 
-    reportChanges(detectedChanges.stream().filter(ConfigEvent::isChanged).collect(Collectors.toList()));
+    reportChanges(detectedChanges.stream()
+        .filter(ConfigEvent::isChanged)
+        .map(AuditConfigEvent::new)
+        .collect(Collectors.toList()));
 
     // re-compute values and invoke callbacks
     detectedChanges.stream()
@@ -434,8 +438,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         .forEach(PropertyCallback::computeValue);
   }
 
-  private void reportChanges(Collection<ConfigEvent> events) {
-    Collection<ConfigEvent> configEvents = Collections.unmodifiableCollection(events);
+  private void reportChanges(Collection<AuditConfigEvent> events) {
+    Collection<AuditConfigEvent> configEvents = Collections.unmodifiableCollection(events);
     settings.getListeners().forEach((key, eventListener) -> {
       try {
         eventListener.onEvents(configEvents);

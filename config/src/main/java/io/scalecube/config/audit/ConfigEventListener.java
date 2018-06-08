@@ -10,5 +10,5 @@ public interface ConfigEventListener {
   /**
    * Process configuration change event.
    */
-  void onEvents(Collection<ConfigEvent> event);
+  void onEvents(Collection<AuditConfigEvent> event);
 }

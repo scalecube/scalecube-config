@@ -58,7 +58,7 @@ public class AuditConfigEvent {
 
   @Override
   public String toString() {
-    return "AuditConfigEvent{" +
+    return "{" +
         "source='" + source + '\'' +
         ", origin='" + origin + '\'' +
         ", propName='" + propName + '\'' +

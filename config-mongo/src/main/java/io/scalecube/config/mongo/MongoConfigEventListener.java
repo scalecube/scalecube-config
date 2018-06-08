@@ -1,6 +1,6 @@
 package io.scalecube.config.mongo;
 
-import io.scalecube.config.audit.AuditConfigEvent;
+import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.audit.ConfigEventListener;
 import io.scalecube.config.utils.ThrowableUtil;
 
@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Collection;
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -45,18 +46,23 @@ public class MongoConfigEventListener implements ConfigEventListener {
   }
 
   @Override
-  public void onEvents(Collection<AuditConfigEvent> events) {
+  public void onEvents(Collection<ConfigEvent> events) {
     CompletableFuture.runAsync(() -> {
       ObjectMapper objectMapper = MongoConfigObjectMapper.getInstance();
       connector.getDatabase().getCollection(collectionName, RawBsonDocument.class)
           .insertMany(events.stream()
               .map(event -> {
                 AuditLogEntity entity = new AuditLogEntity();
-                entity.setSource(event.getSource());
-                entity.setOrigin(event.getOrigin());
-                entity.setPropName(event.getPropName());
-                entity.setPropValue(event.getPropValue());
-                entity.setUpdateDate(event.getUpdateDate());
+                entity.setName(event.getName());
+                entity.setTimestamp(event.getTimestamp());
+                entity.setHost(event.getHost());
+                entity.setType(event.getType().toString());
+                entity.setNewSource(event.getNewSource());
+                entity.setNewOrigin(event.getNewOrigin());
+                entity.setNewValue(event.getNewValue());
+                entity.setOldSource(event.getOldSource());
+                entity.setOldOrigin(event.getOldOrigin());
+                entity.setOldValue(event.getOldValue());
                 return entity;
               })
               .map(entity -> {
@@ -74,61 +80,110 @@ public class MongoConfigEventListener implements ConfigEventListener {
   }
 
   private static class AuditLogEntity {
+    private String name;
+    private Date timestamp;
+    private String type;
+    private String host;
+    private String oldSource;
+    private String oldOrigin;
+    private String oldValue;
+    private String newSource;
+    private String newOrigin;
+    private String newValue;
 
-    private String source;
-    private String origin;
-    private String propName;
-    private String propValue;
-    private String updateDate;
-
-    public String getSource() {
-      return source;
+    public String getName() {
+      return name;
     }
 
-    public void setSource(String source) {
-      this.source = source;
+    public void setName(String name) {
+      this.name = name;
     }
 
-    public String getOrigin() {
-      return origin;
+    public String getType() {
+      return type;
     }
 
-    public void setOrigin(String origin) {
-      this.origin = origin;
+    public void setType(String type) {
+      this.type = type;
     }
 
-    public String getPropName() {
-      return propName;
+    public Date getTimestamp() {
+      return timestamp;
     }
 
-    public void setPropName(String propName) {
-      this.propName = propName;
+    public void setTimestamp(Date timestamp) {
+      this.timestamp = timestamp;
     }
 
-    public String getPropValue() {
-      return propValue;
+    public String getHost() {
+      return host;
     }
 
-    public void setPropValue(String propValue) {
-      this.propValue = propValue;
+    public void setHost(String host) {
+      this.host = host;
     }
 
-    public String getUpdateDate() {
-      return updateDate;
+    public String getOldSource() {
+      return oldSource;
     }
 
-    public void setUpdateDate(String updateDate) {
-      this.updateDate = updateDate;
+    public void setOldSource(String oldSource) {
+      this.oldSource = oldSource;
+    }
+
+    public String getOldOrigin() {
+      return oldOrigin;
+    }
+
+    public void setOldOrigin(String oldOrigin) {
+      this.oldOrigin = oldOrigin;
+    }
+
+    public String getOldValue() {
+      return oldValue;
+    }
+
+    public void setOldValue(String oldValue) {
+      this.oldValue = oldValue;
+    }
+
+    public String getNewSource() {
+      return newSource;
+    }
+
+    public void setNewSource(String newSource) {
+      this.newSource = newSource;
+    }
+
+    public String getNewOrigin() {
+      return newOrigin;
+    }
+
+    public void setNewOrigin(String newOrigin) {
+      this.newOrigin = newOrigin;
+    }
+
+    public String getNewValue() {
+      return newValue;
+    }
+
+    public void setNewValue(String newValue) {
+      this.newValue = newValue;
     }
 
     @Override
     public String toString() {
       return "AuditLogEntity{" +
-          "source='" + source + '\'' +
-          ", origin='" + origin + '\'' +
-          ", propName='" + propName + '\'' +
-          ", propValue='" + propValue + '\'' +
-          ", updateDate='" + updateDate + '\'' +
+          "name='" + name + '\'' +
+          ", timestamp=" + timestamp +
+          ", type='" + type + '\'' +
+          ", host='" + host + '\'' +
+          ", oldSource='" + oldSource + '\'' +
+          ", oldOrigin='" + oldOrigin + '\'' +
+          ", oldValue='" + oldValue + '\'' +
+          ", newSource='" + newSource + '\'' +
+          ", newOrigin='" + newOrigin + '\'' +
+          ", newValue='" + newValue + '\'' +
           '}';
     }
   }

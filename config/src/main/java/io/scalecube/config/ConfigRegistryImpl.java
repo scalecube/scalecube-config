@@ -114,6 +114,13 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
+  public <T> ObjectConfigProperty<T> objectProperty(Class<T> cfgClass) {
+    Map<String, String> bindingMap = Arrays.stream(cfgClass.getDeclaredFields())
+        .collect(Collectors.toMap(Field::getName, Field::getName));
+    return new ObjectConfigPropertyImpl<>(bindingMap, cfgClass, propertyMap, propertyCallbackMap);
+  }
+
+  @Override
   public <T> ObjectConfigProperty<T> objectProperty(String prefix, Class<T> cfgClass) {
     Map<String, String> bindingMap = Arrays.stream(cfgClass.getDeclaredFields())
         .collect(Collectors.toMap(Field::getName, field -> prefix + '.' + field.getName()));

@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>io.scalecube</groupId>
 		<artifactId>config-parent</artifactId>
-		<version>0.3.3</version>
+		<version>0.3.4-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>config-vault</artifactId>

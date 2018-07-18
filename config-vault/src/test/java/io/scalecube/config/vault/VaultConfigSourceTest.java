@@ -1,18 +1,25 @@
 package io.scalecube.config.vault;
 
-import static co.unruly.matchers.OptionalMatchers.contains;
+import static io.scalecube.config.vault.VaultContainerExtension.VAULT_IMAGE_NAME;
+import static io.scalecube.config.vault.VaultContainerExtension.VAULT_PORT;
+import static io.scalecube.config.vault.VaultContainerExtension.VAULT_SECRETS_PATH;
+import static io.scalecube.config.vault.VaultContainerExtension.VAULT_SECRETS_PATH1;
+import static io.scalecube.config.vault.VaultContainerExtension.VAULT_SECRETS_PATH2;
+import static io.scalecube.config.vault.VaultContainerExtension.VAULT_SECRETS_PATH3;
+import static io.scalecube.config.vault.VaultContainerExtension.VAULT_SERVER_STARTED;
+import static io.scalecube.config.vault.VaultContainerExtension.VAULT_TOKEN;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeThat;
-import static org.junit.Assume.assumeTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigRegistry;
@@ -26,15 +33,11 @@ import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
 
-import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.containers.Container.ExecResult;
 import org.testcontainers.containers.output.OutputFrame;
-import org.testcontainers.containers.wait.LogMessageWaitStrategy;
-import org.testcontainers.containers.wait.WaitStrategy;
 import org.testcontainers.vault.VaultContainer;
 
 import java.util.HashMap;
@@ -46,25 +49,15 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class VaultConfigSourceTest {
+class VaultConfigSourceTest {
 
-  private static final String VAULT_IMAGE_NAME = "vault:0.9.6";
-  private static final int VAULT_PORT = 8200;
-  private static final String VAULT_TOKEN = "my-root-token";
-  /**
-   * the environment variable name for vault secret path
-   */
-  private static final String VAULT_SECRETS_PATH = "VAULT_SECRETS_PATH";
+  private static final Pattern unsealKeyPattern = Pattern.compile("Unseal Key: ([a-z/0-9=A-Z]*)\n");
 
-  // these 3 are actual values we would like to test with
-  private static final String VAULT_SECRETS_PATH1 = "secret/application/tenant1";
-  private static final String VAULT_SECRETS_PATH2 = "secret/application/tenant2";
-  private static final String VAULT_SECRETS_PATH3 = "secret/application2/tenant3";
+  private EnvironmentLoader loader1, loader2, loader3;
+  private Map<String, String> environmentVariables = new HashMap<>();
 
-  static WaitStrategy VAULT_SERVER_STARTED =
-      new LogMessageWaitStrategy().withRegEx("==> Vault server started! Log data will stream in below:\n").withTimes(1);
-
-  private final Pattern unsealKeyPattern = Pattern.compile("Unseal Key: ([a-z/0-9=A-Z]*)\n");
+  @RegisterExtension
+  static final VaultContainerExtension vaultContainerExtension = new VaultContainerExtension();
 
   private Consumer<OutputFrame> waitingForUnsealKey(AtomicReference<String> unsealKey) {
     return onFrame -> {
@@ -75,47 +68,29 @@ public class VaultConfigSourceTest {
     };
   }
 
-  @ClassRule
-  public static VaultContainer<?> vaultContainer = new VaultContainer<>()
-      .waitingFor(VAULT_SERVER_STARTED).withVaultToken(VAULT_TOKEN)
-      .withVaultPort(VAULT_PORT)
-      .withSecretInVault(VAULT_SECRETS_PATH1, "top_secret=password1", "db_password=dbpassword1")
-      .withSecretInVault(VAULT_SECRETS_PATH2, "top_secret=password2", "db_password=dbpassword2")
-      .withSecretInVault(VAULT_SECRETS_PATH3, "secret=password", "password=dbpassword");
+  @BeforeEach
+  void setUp() {
+    environmentVariables.put("VAULT_TOKEN", VAULT_TOKEN);
+    environmentVariables.put("VAULT_ADDR",
+        "http://" + vaultContainerExtension.container().getContainerIpAddress() + ':' + VAULT_PORT);
 
-  EnvironmentLoader loader1, loader2, loader3;
-
-  Map<String, String> commonEnvironmentVariables = new HashMap<>();
-
-  @Before
-  public void setUp() throws Exception {
-    commonEnvironmentVariables.put("VAULT_TOKEN", VAULT_TOKEN);
-    commonEnvironmentVariables.put("VAULT_ADDR", new StringBuilder("http://")
-        .append(vaultContainer.getContainerIpAddress()).append(':').append(VAULT_PORT).toString());
-
-    Map<String, String> tenant1 = new HashMap<>(commonEnvironmentVariables);
+    Map<String, String> tenant1 = new HashMap<>(environmentVariables);
     tenant1.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH1);
     this.loader1 = new MockEnvironmentLoader(tenant1);
 
-    Map<String, String> tenant2 = new HashMap<>(commonEnvironmentVariables);
+    Map<String, String> tenant2 = new HashMap<>(environmentVariables);
     tenant2.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH2);
     this.loader2 = new MockEnvironmentLoader(tenant2);
 
-    Map<String, String> tenant3 = new HashMap<>(commonEnvironmentVariables);
+    Map<String, String> tenant3 = new HashMap<>(environmentVariables);
     tenant3.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH3);
     this.loader3 = new MockEnvironmentLoader(tenant3);
-
-
   }
 
   private class MockEnvironmentLoader extends EnvironmentLoader {
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 7285747202838173640L;
     private final Map<String, String> delegate;
 
-    public MockEnvironmentLoader(Map<String, String> delegate) {
+    MockEnvironmentLoader(Map<String, String> delegate) {
       this.delegate = delegate;
     }
 
@@ -126,77 +101,82 @@ public class VaultConfigSourceTest {
   }
 
   @Test
-  public void testFirstTenant() {
+  void testFirstTenant() {
     VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader1).build();
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     ConfigProperty actual = loadConfig.get("top_secret");
+
     assertThat(actual, notNullValue());
     assertThat(actual.name(), equalTo("top_secret"));
     assertThat(actual.valueAsString(""), equalTo("password1"));
   }
 
   @Test
-  public void testSecondTenant() {
+  void testSecondTenant() {
     VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader2).build();
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     ConfigProperty actual = loadConfig.get("top_secret");
+
     assertThat(actual, notNullValue());
     assertThat(actual.name(), equalTo("top_secret"));
     assertThat(actual.valueAsString(""), equalTo("password2"));
   }
 
   @Test
-  public void testMissingProperty() {
+  void testMissingProperty() {
     VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader3).build();
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+
     assertThat(loadConfig.size(), not(0));
+
     ConfigProperty actual = loadConfig.get("top_secret");
     assertThat(actual, nullValue());
   }
 
-  @Test(expected = ConfigSourceNotAvailableException.class)
-  public void testMissingTenant() {
+  @Test
+  void testMissingTenant() {
     EnvironmentLoader loader4;
-    Map<String, String> tenant4 = new HashMap<>(commonEnvironmentVariables);
+    Map<String, String> tenant4 = new HashMap<>(environmentVariables);
+
     tenant4.put(VAULT_SECRETS_PATH, "secrets/unknown/path");
     loader4 = new MockEnvironmentLoader(tenant4);
+
     VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader4).build();
-    Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
-    assertThat(loadConfig.size(), equalTo(0));
+
+    assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
   }
 
-  @Test(expected = ConfigSourceNotAvailableException.class)
-  public void testInvalidAddress() {
+  @Test
+  void testInvalidAddress() {
     Map<String, String> invalidAddress = new HashMap<>();
     invalidAddress.put("VAULT_ADDR", "http://invalid.host.local:8200");
     invalidAddress.put("VAULT_TOKEN", VAULT_TOKEN);
     invalidAddress.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH1);
 
     VaultConfigSource vaultConfigSource = VaultConfigSource.builder(new MockEnvironmentLoader(invalidAddress)).build();
-    vaultConfigSource.loadConfig();
 
+    assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
   }
 
-  @Test(expected = ConfigSourceNotAvailableException.class)
-  public void testInvalidToken() {
-    Map<String, String> invalidToken = new HashMap<>(commonEnvironmentVariables);
+  @Test
+  void testInvalidToken() {
+    Map<String, String> invalidToken = new HashMap<>(environmentVariables);
     invalidToken.put("VAULT_TOKEN", "zzzzzz");
     invalidToken.put(VAULT_SECRETS_PATH, "secrets/unknown/path");
 
     VaultConfigSource vaultConfigSource = VaultConfigSource.builder(new MockEnvironmentLoader(invalidToken)).build();
-    vaultConfigSource.loadConfig();
 
+    assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
   }
 
   @Test
-  public void shouldWorkWhenRegistryIsReloadedAndVaultIsRunning() throws InterruptedException {
+  void shouldWorkWhenRegistryIsReloadedAndVaultIsRunning() {
     try (VaultContainer<?> vaultContainer2 = new VaultContainer<>(VAULT_IMAGE_NAME)) {
       vaultContainer2.withVaultToken(VAULT_TOKEN).withVaultPort(8202)
           .withSecretInVault(VAULT_SECRETS_PATH1, "top_secret=password1", "db_password=dbpassword1")
           .waitingFor(VAULT_SERVER_STARTED)
           .start();
-      String address = new StringBuilder("http://")
-          .append(vaultContainer2.getContainerIpAddress()).append(':').append(8202).toString();
+      String address = "http://" + vaultContainer2.getContainerIpAddress() + ':' + 8202;
       ConfigRegistrySettings settings = ConfigRegistrySettings.builder()
           .addLastSource("vault", VaultConfigSource.builder(address, VAULT_TOKEN, VAULT_SECRETS_PATH1).build())
           .reloadIntervalSec(1)
@@ -204,21 +184,21 @@ public class VaultConfigSourceTest {
       ConfigRegistry configRegistry = ConfigRegistry.create(settings);
       StringConfigProperty configProperty = configRegistry.stringProperty("top_secret");
 
-      assertThat(configProperty.value(), contains("password1"));
+      assertThat(configProperty.value().get(), containsString("password1"));
       try {
         ExecResult execResult = vaultContainer2.execInContainer("/bin/sh", "-c",
             "vault write " + VAULT_SECRETS_PATH1 + " top_secret=new_password");
-        assumeThat(execResult.getStdout(), CoreMatchers.containsString("Success"));
+        assumeTrue(execResult.getStdout().contains("Success"));
         TimeUnit.SECONDS.sleep(2);
       } catch (Exception ignoredException) {
-        Assert.fail("oops");
+        fail("oops");
       }
-      assertThat(configProperty.value(), contains("new_password"));
+      assertThat(configProperty.value().get(), containsString("new_password"));
     }
   }
 
   @Test
-  public void shouldWorkWhenRegistryIsReloadedAndVaultIsDown() {
+  void shouldWorkWhenRegistryIsReloadedAndVaultIsDown() {
     String PASSWORD_PROPERTY_NAME = "password";
     String PASSWORD_PROPERTY_VALUE = "123456";
     String secret = PASSWORD_PROPERTY_NAME + "=" + PASSWORD_PROPERTY_VALUE;
@@ -229,8 +209,7 @@ public class VaultConfigSourceTest {
           .waitingFor(VAULT_SERVER_STARTED)
           .start();
 
-      String address = new StringBuilder("http://")
-          .append(vaultContainer2.getContainerIpAddress()).append(':').append(8203).toString();
+      String address = "http://" + vaultContainer2.getContainerIpAddress() + ':' + 8203;
 
       ConfigRegistrySettings settings = ConfigRegistrySettings.builder()
           .addLastSource("vault", VaultConfigSource.builder(address, VAULT_TOKEN, VAULT_SECRETS_PATH1).build())
@@ -248,24 +227,23 @@ public class VaultConfigSourceTest {
       } catch (InterruptedException ignoredException) {
       }
 
-      assertThat(configProperty.value(), contains(PASSWORD_PROPERTY_VALUE));
+      assertThat(configProperty.value().get(), containsString(PASSWORD_PROPERTY_VALUE));
     }
   }
 
 
   @Test
-  public void testSealed() throws Throwable {
+  void testSealed() throws Throwable {
     try (VaultContainer<?> vaultContainerSealed = new VaultContainer<>()) {
       vaultContainerSealed.withVaultToken(VAULT_TOKEN).withVaultPort(8204)
           .waitingFor(VAULT_SERVER_STARTED)
           .start();
 
-      String address = new StringBuilder("http://")
-          .append(vaultContainerSealed.getContainerIpAddress()).append(':').append(8204).toString();
+      String address = "http://" + vaultContainerSealed.getContainerIpAddress() + ':' + 8204;
       Vault vault = new Vault(new VaultConfig().address(address).token(VAULT_TOKEN).sslConfig(new SslConfig()));
 
       vault.seal().seal();
-      assumeTrue("valut seal status",vault.seal().sealStatus().getSealed());
+      assumeTrue(vault.seal().sealStatus().getSealed(), "vault seal status");
 
 
       Map<String, String> clientEnv = new HashMap<>();
@@ -274,7 +252,7 @@ public class VaultConfigSourceTest {
       clientEnv.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH1);
 
       VaultConfigSource.builder(new MockEnvironmentLoader(clientEnv)).build().loadConfig();
-      Assert.fail("Negative test failed");
+      fail("Negative test failed");
     } catch (ConfigSourceNotAvailableException expectedException) {
       assertThat(expectedException.getCause(), instanceOf(VaultException.class));
       String message = expectedException.getCause().getMessage();
@@ -283,16 +261,18 @@ public class VaultConfigSourceTest {
   }
 
   @Test
-  public void shouldWorkWhenRegistryIsReloadedAndVaultIsUnSealed() throws InterruptedException {
+  void shouldWorkWhenRegistryIsReloadedAndVaultIsUnSealed() throws InterruptedException {
     AtomicReference<String> unsealKey = new AtomicReference<>();
-    try (VaultContainer<?> sealdVaultContainer = new VaultContainer<>(VAULT_IMAGE_NAME)) {
-      sealdVaultContainer.withVaultToken(VAULT_TOKEN).withVaultPort(8205)
+    try (VaultContainer<?> sealedVaultContainer = new VaultContainer<>(VAULT_IMAGE_NAME)) {
+      sealedVaultContainer.withVaultToken(VAULT_TOKEN).withVaultPort(8205)
           .withSecretInVault(VAULT_SECRETS_PATH1, "top_secret=password1", "db_password=dbpassword1")
           .withLogConsumer(waitingForUnsealKey(unsealKey)).waitingFor(VAULT_SERVER_STARTED)
           .start();
-      assumeThat("unable to get unseal key", unsealKey.get(), notNullValue());
-      String address = new StringBuilder("http://")
-          .append(sealdVaultContainer.getContainerIpAddress()).append(':').append(8205).toString();
+
+      assumeTrue(unsealKey.get() != null, "unable to get unseal key");
+
+      String address = "http://" + sealedVaultContainer.getContainerIpAddress() + ':' + 8205;
+
       ConfigRegistrySettings settings = ConfigRegistrySettings.builder()
           .addLastSource("vault", VaultConfigSource.builder(address, VAULT_TOKEN, VAULT_SECRETS_PATH1).build())
           .reloadIntervalSec(1)
@@ -301,7 +281,8 @@ public class VaultConfigSourceTest {
       ConfigRegistry configRegistry = ConfigRegistry.create(settings);
       StringConfigProperty configProperty = configRegistry.stringProperty("top_secret");
 
-      assertThat("initial value of top_secret", configProperty.value(), contains("password1"));
+      assertThat("initial value of top_secret", configProperty.value().get(), containsString("password1"));
+
       Vault vault = new Vault(new VaultConfig().address(address).token(VAULT_TOKEN).sslConfig(new SslConfig()));
       Map<String, Object> newValues = new HashMap<>();
       newValues.put(configProperty.name(), "new_password");
@@ -309,20 +290,21 @@ public class VaultConfigSourceTest {
       try {
         vault.logical().write(VAULT_SECRETS_PATH1, newValues);
         vault.seal().seal();
-        assumeThat("valut seal status", vault.seal().sealStatus().getSealed(), is(true));
+        assumeTrue(vault.seal().sealStatus().getSealed(), "vault seal status");
       } catch (VaultException vaultException) {
         fail(vaultException.getMessage());
       }
       TimeUnit.SECONDS.sleep(2);
-      assumeThat("new value was unexpectedly set", configProperty.value(), not(contains("new_password")));
+      assumeFalse(configProperty.value().isPresent() && configProperty.value().get().contains("new_password"),
+          "new value was unexpectedly set");
       try {
         vault.seal().unseal(unsealKey.get());
-        assumeThat("valut seal status", vault.seal().sealStatus().getSealed(), is(false));
+        assumeFalse(vault.seal().sealStatus().getSealed(), "vault seal status");
       } catch (VaultException vaultException) {
         fail(vaultException.getMessage());
       }
       TimeUnit.SECONDS.sleep(2);
-      assertThat(configProperty.value(), contains("new_password"));
+      assertThat(configProperty.value().get(), containsString("new_password"));
     }
   }
 }

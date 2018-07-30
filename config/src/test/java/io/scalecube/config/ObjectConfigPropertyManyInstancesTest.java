@@ -4,41 +4,38 @@ import static io.scalecube.config.TestUtil.WAIT_FOR_RELOAD_PERIOD_MILLIS;
 import static io.scalecube.config.TestUtil.mapBuilder;
 import static io.scalecube.config.TestUtil.newConfigRegistry;
 import static io.scalecube.config.TestUtil.toConfigProps;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.scalecube.config.source.ConfigSource;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.TimeUnit;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ObjectConfigPropertyManyInstancesTest {
+@ExtendWith(MockitoExtension.class)
+class ObjectConfigPropertyManyInstancesTest {
+
   @Mock
-  ConfigSource configSource;
+  private ConfigSource configSource;
   @Mock
-  SideEffect sideEffect1;
+  private SideEffect sideEffect1;
   @Mock
-  SideEffect sideEffect2;
+  private SideEffect sideEffect2;
 
   // Normal scenarios
 
   @Test
-  public void testValueNullInitially() {
+  void testValueNullInitially() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
@@ -52,7 +49,7 @@ public class ObjectConfigPropertyManyInstancesTest {
   }
 
   @Test
-  public void testReloadValueBecameNotNull() throws Exception {
+  void testReloadValueBecameNotNull() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().build()))
         .thenReturn(toConfigProps(mapBuilder()
@@ -94,7 +91,7 @@ public class ObjectConfigPropertyManyInstancesTest {
   // Failure scenarios
 
   @Test
-  public void testValidationNotPassedAtOne() throws Exception {
+  void testValidationNotPassedAtOne() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder()
         .put("com.acme.accessKey", "access")
         .put("com.acme.secretKey", "secret")
@@ -108,19 +105,15 @@ public class ObjectConfigPropertyManyInstancesTest {
     mailProperty.addValidator(settings -> settings.emailFrom.contains("@")); // validation is passing
     assertTrue(mailProperty.value().isPresent());
 
-    try {
-      ObjectConfigProperty<ConnectorSettings> connectorProperty =
-          configRegistry.objectProperty("com.acme", ConnectorSettings.class);
-      connectorProperty.addValidator(settings -> settings.connectUrl.startsWith("http")); // validation would fail
-      fail();
-    } catch (Exception e) {
-      assertThat(e, is(instanceOf(IllegalArgumentException.class)));
-      assertThat(e.getMessage(), containsString("Validation failed"));
-    }
+    ObjectConfigProperty<ConnectorSettings> connectorProperty =
+        configRegistry.objectProperty("com.acme", ConnectorSettings.class);
+
+    assertThrows(IllegalArgumentException.class,
+        () -> connectorProperty.addValidator(settings -> settings.connectUrl.startsWith("http")),
+        "Validation failed");
   }
 
   public interface SideEffect {
-
     boolean apply(Object t1, Object t2);
   }
 

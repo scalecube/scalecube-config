@@ -4,11 +4,12 @@ import static io.scalecube.config.TestUtil.WAIT_FOR_RELOAD_PERIOD_MILLIS;
 import static io.scalecube.config.TestUtil.mapBuilder;
 import static io.scalecube.config.TestUtil.newConfigRegistry;
 import static io.scalecube.config.TestUtil.toConfigProps;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -16,13 +17,12 @@ import static org.mockito.Mockito.when;
 
 import io.scalecube.config.source.ConfigSource;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,24 +35,26 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ObjectConfigPropertyTest {
-  @Mock
-  ConfigSource configSource;
+@ExtendWith(MockitoExtension.class)
+class ObjectConfigPropertyTest {
 
   @Mock
-  SideEffect sideEffect;
+  private ConfigSource configSource;
 
-  @Rule
-  public TestName testName = new TestName();
+  @Mock
+  private SideEffect sideEffect;
 
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  private TestInfo testInfo;
+
+  @BeforeEach
+  void setUp(TestInfo testInfo) {
+    this.testInfo = testInfo;
+  }
 
   // Normal scenarios
 
   @Test
-  public void testObjectProperty() throws Exception {
+  void testObjectProperty() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder()
             .put("testObjectProperty.maxCount", "42")
@@ -64,7 +66,7 @@ public class ObjectConfigPropertyTest {
 
     Class<TestConfig> configClass = TestConfig.class;
     ObjectConfigProperty<TestConfig> objectProperty =
-        configRegistry.objectProperty(testName.getMethodName(), configClass);
+        configRegistry.objectProperty(testInfo.getTestMethod().get().getName(), configClass);
 
     TestConfig config = objectProperty.value(null);
     assertNotNull(config);
@@ -74,7 +76,7 @@ public class ObjectConfigPropertyTest {
   }
 
   @Test
-  public void testObjectPropertyValidationPassed() throws Exception {
+  void testObjectPropertyValidationPassed() {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder()
             .put("testObjectPropertyValidationPassed.maxCount", "100")
@@ -86,7 +88,7 @@ public class ObjectConfigPropertyTest {
 
     Class<TestConfig> configClass = TestConfig.class;
     ObjectConfigProperty<TestConfig> objectProperty =
-        configRegistry.objectProperty(testName.getMethodName(), configClass);
+        configRegistry.objectProperty(testInfo.getTestMethod().get().getName(), configClass);
 
     objectProperty.addValidator(input -> input.isEnabled &&
         input.maxCount >= 1 &&
@@ -101,7 +103,7 @@ public class ObjectConfigPropertyTest {
   }
 
   @Test
-  public void testReloadObjectPropertyValidationPassed() throws Exception {
+  void testReloadObjectPropertyValidationPassed() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder()
             .put("testReloadObjectPropertyValidationPassed.maxCount", "1") // this value would be changed after reload
@@ -118,7 +120,7 @@ public class ObjectConfigPropertyTest {
 
     Class<TestConfig> configClass = TestConfig.class;
     ObjectConfigProperty<TestConfig> objectProperty =
-        configRegistry.objectProperty(testName.getMethodName(), configClass);
+        configRegistry.objectProperty(testInfo.getTestMethod().get().getName(), configClass);
 
     objectProperty.addValidator(input -> input.isEnabled && input.maxCount >= 1);
     objectProperty.addCallback((o1, o2) -> sideEffect.apply(o1, o2));
@@ -140,7 +142,7 @@ public class ObjectConfigPropertyTest {
   }
 
   @Test
-  public void testCallbacksNotAppliedOnReloadWhenNothingChanged() throws Exception {
+  void testCallbacksNotAppliedOnReloadWhenNothingChanged() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder()
             .put("testCallbacksNotAppliedOnReloadWhenNothingChanged.anInt", "42")
@@ -155,24 +157,24 @@ public class ObjectConfigPropertyTest {
 
     Class<SimpleConfig> configClass = SimpleConfig.class;
     ObjectConfigProperty<SimpleConfig> objectProperty =
-        configRegistry.objectProperty(testName.getMethodName(), configClass);
+        configRegistry.objectProperty(testInfo.getTestMethod().get().getName(), configClass);
     objectProperty.addCallback((cfg1, cfg2) -> sideEffect.apply(cfg1, cfg2));
 
     SimpleConfig config = objectProperty.value(null);
     assertNotNull(config);
     assertEquals(42, config.anInt);
-    assertEquals(42.0, config.aDouble, 0);
+    assertEquals(42.0, config.aDouble);
 
     TimeUnit.MILLISECONDS.sleep(WAIT_FOR_RELOAD_PERIOD_MILLIS);
 
     SimpleConfig config1 = objectProperty.value(null);
     assertEquals(42, config1.anInt);
-    assertEquals(42.0, config1.aDouble, 0);
+    assertEquals(42.0, config1.aDouble);
     verify(sideEffect, never()).apply(any(), any());
   }
 
   @Test
-  public void testObjectValuesRemovedOnReloadAndNoValidationDefined() throws Exception {
+  void testObjectValuesRemovedOnReloadAndNoValidationDefined() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder()
             .put("testObjectValuesRemovedOnReloadAndNoValidationDefined.isEnabled1", "true")
@@ -186,7 +188,7 @@ public class ObjectConfigPropertyTest {
 
     Class<ConfigValueSoonWillDisappear> configClass = ConfigValueSoonWillDisappear.class;
     ObjectConfigProperty<ConfigValueSoonWillDisappear> objectProperty =
-        configRegistry.objectProperty(testName.getMethodName(), configClass);
+        configRegistry.objectProperty(testInfo.getTestMethod().get().getName(), configClass);
     objectProperty.addCallback((cfg1, cfg2) -> sideEffect.apply(cfg1, cfg2));
 
     ConfigValueSoonWillDisappear config = objectProperty.value(null);
@@ -202,7 +204,7 @@ public class ObjectConfigPropertyTest {
   }
 
   @Test
-  public void testObjectValueRemovedPartiallyOnReloadAndNoValidationDefined() throws Exception {
+  void testObjectValueRemovedPartiallyOnReloadAndNoValidationDefined() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder()
             .put("testObjectValueRemovedPartiallyOnReloadAndNoValidationDefined.x", "1")
@@ -217,7 +219,7 @@ public class ObjectConfigPropertyTest {
 
     Class<ConfigValueSoonWillDisappearPartially> configClass = ConfigValueSoonWillDisappearPartially.class;
     ObjectConfigProperty<ConfigValueSoonWillDisappearPartially> objectProperty =
-        configRegistry.objectProperty(testName.getMethodName(), configClass);
+        configRegistry.objectProperty(testInfo.getTestMethod().get().getName(), configClass);
     objectProperty.addCallback((cfg1, cfg2) -> sideEffect.apply(cfg1, cfg2));
 
     ConfigValueSoonWillDisappearPartially config = objectProperty.value(null);
@@ -234,13 +236,13 @@ public class ObjectConfigPropertyTest {
     assertNotNull(config1);
     assertEquals(100500, config1.x); // partial config's new value had been set
     assertEquals(0, config1.primLong); // primiteive ==> hence set to default i.e. 0
-    assertEquals(null, config1.objLong); // object ==> hence set to default, i.e. null
+    assertNull(config1.objLong); // object ==> hence set to default, i.e. null
 
     verify(sideEffect).apply(config, config1);
   }
 
   @Test
-  public void testObjectValuesAddedOnReloadAndNoValidationDefined() throws Exception {
+  void testObjectValuesAddedOnReloadAndNoValidationDefined() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().build())) // note that no config props defined at start
         .thenReturn(toConfigProps(mapBuilder()
@@ -252,7 +254,7 @@ public class ObjectConfigPropertyTest {
 
     Class<ConfigValueWillBeAdded> configClass = ConfigValueWillBeAdded.class;
     ObjectConfigProperty<ConfigValueWillBeAdded> objectProperty =
-        configRegistry.objectProperty(testName.getMethodName(), configClass);
+        configRegistry.objectProperty(testInfo.getTestMethod().get().getName(), configClass);
     objectProperty.addCallback((cfg1, cfg2) -> sideEffect.apply(cfg1, cfg2));
 
     assertFalse(objectProperty.value().isPresent());
@@ -269,7 +271,7 @@ public class ObjectConfigPropertyTest {
   }
 
   @Test
-  public void testObjectPropertyNotDefinedInConfigSource() throws Exception {
+  void testObjectPropertyNotDefinedInConfigSource() {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().build()));
 
@@ -283,10 +285,7 @@ public class ObjectConfigPropertyTest {
   }
 
   @Test
-  public void testFailedValueParsingOnObjectProperty() throws Exception {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("NumberFormatException: For input string: \"int\"");
-
+  void testFailedValueParsingOnObjectProperty() {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder()
             .put("testFailedValueParsingOnObjectProperty.incorrectInt", "int")
@@ -296,11 +295,14 @@ public class ObjectConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     Class<IncorrectIntegerValueConfig> configClass = IncorrectIntegerValueConfig.class;
-    configRegistry.objectProperty(testName.getMethodName(), configClass).value();
+
+    assertThrows(IllegalArgumentException.class,
+        () -> configRegistry.objectProperty(testInfo.getTestMethod().get().getName(), configClass).value(),
+        "NumberFormatException: For input string: \"int\"");
   }
 
   @Test
-  public void testPartiallyDefinedValueConfig() throws Exception {
+  void testPartiallyDefinedValueConfig() {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder()
             .put("testPartiallyDefinedValueConfig.d2", "42")
@@ -310,14 +312,14 @@ public class ObjectConfigPropertyTest {
 
     Class<PartiallyDefinedValueConfig> configClass = PartiallyDefinedValueConfig.class;
     PartiallyDefinedValueConfig config =
-        configRegistry.objectProperty(testName.getMethodName(), configClass).value().get();
+        configRegistry.objectProperty(testInfo.getTestMethod().get().getName(), configClass).value().get();
 
-    assertEquals(1e7, config.d1, 0); // default value not changed
-    assertEquals(42, config.d2, 0); // value came from config
+    assertEquals(1e7, config.d1); // default value not changed
+    assertEquals(42, config.d2); // value came from config
   }
 
   @Test
-  public void testCustomBindingObjectPropertyConfig() throws Exception {
+  void testCustomBindingObjectPropertyConfig() {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder()
             .put("test.config.list_of_long_values", "1,2,3")
@@ -334,7 +336,7 @@ public class ObjectConfigPropertyTest {
   }
 
   @Test
-  public void testSkipStaticOrFinalFieldInObjectPropertryClass() throws Exception {
+  void testSkipStaticOrFinalFieldInObjectPropertryClass() {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder()
             .put("testSkipStaticOrFinalFieldInObjectPropertryClass.anInt", "42")
@@ -345,7 +347,7 @@ public class ObjectConfigPropertyTest {
 
     Class<ConfigClassWithStaticOrFinalField> configClass = ConfigClassWithStaticOrFinalField.class;
     ConfigClassWithStaticOrFinalField config =
-        configRegistry.objectProperty(testName.getMethodName(), configClass).value().get();
+        configRegistry.objectProperty(testInfo.getTestMethod().get().getName(), configClass).value().get();
 
     assertEquals(42, config.anInt);
     // fields with modifier 'final' are not taken into account, even if defined in config source
@@ -355,20 +357,22 @@ public class ObjectConfigPropertyTest {
   // Failure scenarios
 
   @Test
-  public void testValueAbsentAndValidationNotPassed() throws Exception {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Validation failed");
-
+  void testValueAbsentAndValidationNotPassed() {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<ConnectorSettings> objectProperty =
         configRegistry.objectProperty("connector", ConnectorSettings.class);
-    objectProperty.addValidator(Objects::nonNull);
-    objectProperty.addValidator(settings -> settings.user != null && settings.password != null);
+
+    assertThrows(IllegalArgumentException.class,
+        () -> {
+          objectProperty.addValidator(Objects::nonNull);
+          objectProperty.addValidator(settings -> settings.user != null && settings.password != null);
+        },
+        "Validation failed");
   }
 
   @Test
-  public void testValueRemovedOnReloadValidationNotPassed() throws Exception {
+  void testValueRemovedOnReloadValidationNotPassed() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put("connector.user", "yada").put("connector.password", "yada").build()))
         .thenReturn(toConfigProps(mapBuilder().build())); // -> prorperties gone
@@ -392,7 +396,7 @@ public class ObjectConfigPropertyTest {
   }
 
   @Test
-  public void testValueParserFailingOnReload() throws Exception {
+  void testValueParserFailingOnReload() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put("com.acme.anInt", "1").build()))
         .thenReturn(toConfigProps(mapBuilder().put("com.acme.anInt", "not an int").build()));
@@ -414,16 +418,16 @@ public class ObjectConfigPropertyTest {
   }
 
   @Test
-  public void testValidationNotPassed() throws Exception {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Validation failed");
-
+  void testValidationNotPassed() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("com.acme.anInt", "1").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<IntObjectSettings> objectProperty =
         configRegistry.objectProperty("com.acme", IntObjectSettings.class);
-    objectProperty.addValidator(settings -> settings.anInt >= 42);
+
+    assertThrows(IllegalArgumentException.class,
+        () -> objectProperty.addValidator(settings -> settings.anInt >= 42),
+        "Validation failed");
   }
 
   public static class TestConfig {
@@ -480,7 +484,6 @@ public class ObjectConfigPropertyTest {
   }
 
   public interface SideEffect {
-
     boolean apply(Object t1, Object t2);
   }
 

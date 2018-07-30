@@ -1,15 +1,14 @@
 package io.scalecube.config;
 
-import static org.hamcrest.CoreMatchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.time.Duration;
@@ -20,14 +19,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ObjectPropertyFieldTest {
-  static final String propName = "dummy";
+class ObjectPropertyFieldTest {
 
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  private static final String propName = "dummy";
 
   @Test
-  public void testPrimitiveObjectPropertyField() throws Exception {
+  void testPrimitiveObjectPropertyField() throws Exception {
     PrimitiveClass instance = new PrimitiveClass();
 
     Class<PrimitiveClass> clazz = PrimitiveClass.class;
@@ -42,13 +39,13 @@ public class ObjectPropertyFieldTest {
     field_lll.applyValueParser(instance, "1");
 
     assertEquals(1, instance.iii);
-    assertEquals(1e7, instance.ddd, 0);
-    assertEquals(false, instance.bbb);
+    assertEquals(1e7, instance.ddd);
+    assertFalse(instance.bbb);
     assertEquals(1, instance.lll);
   }
 
   @Test
-  public void testNonPrimitiveObjectPropertyField() throws Exception {
+  void testNonPrimitiveObjectPropertyField() throws Exception {
     NonPrimitiveClass instance = new NonPrimitiveClass();
 
     Class<NonPrimitiveClass> clazz = NonPrimitiveClass.class;
@@ -63,7 +60,7 @@ public class ObjectPropertyFieldTest {
   }
 
   @Test
-  public void testListObjectPropertyField() throws Exception {
+  void testListObjectPropertyField() throws Exception {
     TypedListConfigClass instance = new TypedListConfigClass();
 
     Class<TypedListConfigClass> clazz = TypedListConfigClass.class;
@@ -75,7 +72,7 @@ public class ObjectPropertyFieldTest {
   }
 
   @Test
-  public void testMultimapObjectPropertyField() throws Exception {
+  void testMultimapObjectPropertyField() throws Exception {
     Map<String, List<Integer>> expectedMultimap = ImmutableMap.<String, List<Integer>>builder()
         .put("key1", ImmutableList.of(1))
         .put("key2", ImmutableList.of(2, 3, 4))
@@ -92,56 +89,54 @@ public class ObjectPropertyFieldTest {
   }
 
   @Test
-  public void testUntypedListNotSupported() throws Exception {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("ObjectPropertyField: unsupported type on field");
-
+  void testUntypedListNotSupported() {
     UntypedListConfigClass instance = new UntypedListConfigClass();
 
     Class<UntypedListConfigClass> clazz = UntypedListConfigClass.class;
-    ObjectPropertyField field_list = new ObjectPropertyField(clazz.getDeclaredField("list"), propName);
 
-    field_list.applyValueParser(instance, "1,2,3");
+    assertThrows(IllegalArgumentException.class,
+        () -> {
+          ObjectPropertyField field_list = new ObjectPropertyField(clazz.getDeclaredField("list"), propName);
+          field_list.applyValueParser(instance, "1,2,3");
+        },
+        "ObjectPropertyField: unsupported type on field");
   }
 
   @Test
-  public void testStaticOrFinalFieldsInConfigClassNotSupported() throws Exception {
+  void testStaticOrFinalFieldsInConfigClassNotSupported() {
     Class<ConfigClassWithStaticOrFinalField> clazz = ConfigClassWithStaticOrFinalField.class;
-    try {
+
+    final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
       new ObjectPropertyField(clazz.getDeclaredField("defaultInstance"), propName);
-      fail("Expect fail here with IllegalArgumentException");
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), startsWith("ObjectPropertyField: 'static' or 'final' declaration is not supported"));
-    }
-    try {
       new ObjectPropertyField(clazz.getDeclaredField("finalInt"), propName);
-      fail("Expect fail here with IllegalArgumentException");
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), startsWith("ObjectPropertyField: 'static' or 'final' declaration is not supported"));
-    }
+    });
+
+    assertTrue(
+        exception.getMessage().startsWith("ObjectPropertyField: 'static' or 'final' declaration is not supported"));
+
   }
 
-  static class PrimitiveClass {
+  private static class PrimitiveClass {
     private int iii = 0;
     private double ddd = 0;
     private boolean bbb = true;
     private long lll = 0;
   }
 
-  static class NonPrimitiveClass {
+  private static class NonPrimitiveClass {
     private String str = "";
     private Duration duration = Duration.ofMillis(0);
   }
 
-  static class TypedListConfigClass {
+  private static class TypedListConfigClass {
     private List<Integer> integerList = new ArrayList<>();
   }
 
-  static class TypedMultimapConfigClass {
+  private static class TypedMultimapConfigClass {
     private Map<String, List<Integer>> integerMultimap = new HashMap<>();
   }
 
-  static class UntypedListConfigClass {
+  private static class UntypedListConfigClass {
     private List list = new ArrayList<>();
   }
 

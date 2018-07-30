@@ -4,35 +4,37 @@ import static io.scalecube.config.TestUtil.WAIT_FOR_RELOAD_PERIOD_MILLIS;
 import static io.scalecube.config.TestUtil.mapBuilder;
 import static io.scalecube.config.TestUtil.newConfigRegistry;
 import static io.scalecube.config.TestUtil.toConfigProps;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.scalecube.config.source.ConfigSource;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
-@RunWith(MockitoJUnitRunner.class)
-public class SimpleConfigPropertyManyInstancesTest {
+@ExtendWith(MockitoExtension.class)
+class SimpleConfigPropertyManyInstancesTest {
+
   @Mock
-  ConfigSource configSource;
+  private ConfigSource configSource;
   @Mock
-  SideEffect sideEffect1;
+  private SideEffect sideEffect1;
   @Mock
-  SideEffect sideEffect2;
+  private SideEffect sideEffect2;
 
   @Test
-  public void testManyInstancesValueNullInitially() throws Exception {
+  void testManyInstancesValueNullInitially() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
@@ -44,7 +46,7 @@ public class SimpleConfigPropertyManyInstancesTest {
   }
 
   @Test
-  public void testReloadValueBecameNotNull() throws Exception {
+  void testReloadValueBecameNotNull() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().build()))
         .thenReturn(toConfigProps(mapBuilder().put("prop", "1.e-3").build()));
@@ -68,7 +70,7 @@ public class SimpleConfigPropertyManyInstancesTest {
   }
 
   @Test
-  public void testManyInstancesNoValidationOnBoths() throws Exception {
+  void testManyInstancesNoValidationOnBoths() throws Exception {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("prop", "1").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
@@ -82,7 +84,7 @@ public class SimpleConfigPropertyManyInstancesTest {
   }
 
   @Test
-  public void testReloadValidationPassedOnBoths() throws Exception {
+  void testReloadValidationPassedOnBoths() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put("prop", "1").build()))
         .thenReturn(toConfigProps(mapBuilder().put("prop", "42").build()));
@@ -113,7 +115,7 @@ public class SimpleConfigPropertyManyInstancesTest {
   }
 
   @Test
-  public void testManyInstancesListTypeAndMultimapTypeAndSimplePropertyType() {
+  void testManyInstancesListTypeAndMultimapTypeAndSimplePropertyType() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("prop", "key=value").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
@@ -128,7 +130,6 @@ public class SimpleConfigPropertyManyInstancesTest {
   }
 
   public interface SideEffect {
-
     boolean apply(Object t1, Object t2);
   }
 }

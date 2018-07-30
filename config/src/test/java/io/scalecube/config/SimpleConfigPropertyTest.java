@@ -4,9 +4,10 @@ import static io.scalecube.config.TestUtil.WAIT_FOR_RELOAD_PERIOD_MILLIS;
 import static io.scalecube.config.TestUtil.mapBuilder;
 import static io.scalecube.config.TestUtil.newConfigRegistry;
 import static io.scalecube.config.TestUtil.toConfigProps;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,30 +15,26 @@ import static org.mockito.Mockito.when;
 
 import io.scalecube.config.source.ConfigSource;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-@RunWith(MockitoJUnitRunner.class)
-public class SimpleConfigPropertyTest {
-  @Mock
-  ConfigSource configSource;
-  @Mock
-  SideEffect sideEffect;
+@ExtendWith(MockitoExtension.class)
+class SimpleConfigPropertyTest {
 
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  @Mock
+  private ConfigSource configSource;
+  @Mock
+  private SideEffect sideEffect;
 
   // Normal scenarios
 
   @Test
-  public void testValueFoundAndNoValidationDefined() throws Exception {
+  void testValueFoundAndNoValidationDefined() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("int", "1").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
@@ -47,7 +44,7 @@ public class SimpleConfigPropertyTest {
   }
 
   @Test
-  public void testValueAbsentAndNoValidationDefined() throws Exception {
+  void testValueAbsentAndNoValidationDefined() {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     IntConfigProperty intProperty = configRegistry.intProperty("int");
@@ -55,7 +52,7 @@ public class SimpleConfigPropertyTest {
   }
 
   @Test
-  public void testValueFoundAndValidationPassed() throws Exception {
+  void testValueFoundAndValidationPassed() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("bool", "true").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
@@ -64,7 +61,7 @@ public class SimpleConfigPropertyTest {
   }
 
   @Test
-  public void testReloadWithValidationPassed() throws Exception {
+  void testReloadWithValidationPassed() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put("int", "1").build()))
         .thenReturn(toConfigProps(mapBuilder().put("int", "42").build()));
@@ -85,7 +82,7 @@ public class SimpleConfigPropertyTest {
   }
 
   @Test
-  public void testCallbacksNotAppliedOnReloadWhenNothingChanged() throws Exception {
+  void testCallbacksNotAppliedOnReloadWhenNothingChanged() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put("ddd", "1.e-3").build()))
         .thenReturn(toConfigProps(mapBuilder().put("ddd", "1.e-3").build()));
@@ -96,17 +93,17 @@ public class SimpleConfigPropertyTest {
     doubleProperty.addCallback((d1, d2) -> sideEffect.apply(d1, d2));
 
     assertTrue(doubleProperty.value().isPresent());
-    assertEquals(1.e-3, doubleProperty.value().get(), 0);
+    assertEquals(1.e-3, doubleProperty.value().get().doubleValue());
 
     TimeUnit.MILLISECONDS.sleep(WAIT_FOR_RELOAD_PERIOD_MILLIS);
 
     assertTrue(doubleProperty.value().isPresent());
-    assertEquals(1.e-3, doubleProperty.value().get(), 0);
+    assertEquals(1.e-3, doubleProperty.value().get().doubleValue());
     verify(sideEffect, never()).apply(any(), any());
   }
 
   @Test
-  public void testValueRemovedOnReloadAndNoValidationDefined() throws Exception {
+  void testValueRemovedOnReloadAndNoValidationDefined() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put("int", "1").build()))
         .thenReturn(toConfigProps(mapBuilder().put("no_more_int", "int property gone").build()));
@@ -124,7 +121,7 @@ public class SimpleConfigPropertyTest {
   }
 
   @Test
-  public void testValueShowUpOnReload() throws Exception {
+  void testValueShowUpOnReload() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put("xyz", "1").build()))
         .thenReturn(toConfigProps(mapBuilder().put("int", "1").build()));
@@ -144,18 +141,19 @@ public class SimpleConfigPropertyTest {
   // Failure scenarios
 
   @Test
-  public void testValueAbsentAndValidationNotPassed() throws Exception {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Validation failed");
-
+  void testValueAbsentAndValidationNotPassed() {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     BooleanConfigProperty booleanProperty = configRegistry.booleanProperty("bool");
-    booleanProperty.addValidator(Objects::nonNull); // proper, 'must have', validation check
+
+    // proper, 'must have', validation check
+    assertThrows(IllegalArgumentException.class,
+        () -> booleanProperty.addValidator(Objects::nonNull),
+        "Validation failed");
   }
 
   @Test
-  public void testValueRemovedOnReloadValidationNotPassed() throws Exception {
+  void testValueRemovedOnReloadValidationNotPassed() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put("int", "1").build()))
         .thenReturn(toConfigProps(mapBuilder().put("no_more_int", "no_more_int").build()));
@@ -176,18 +174,17 @@ public class SimpleConfigPropertyTest {
   }
 
   @Test
-  public void testFailingValueParser() throws Exception {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Exception occured at valueParser");
-
+  void testFailingValueParser() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("int", "not an int").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
-    configRegistry.intProperty("int");
+    assertThrows(IllegalArgumentException.class,
+        () -> configRegistry.intProperty("int"),
+        "Exception occured at valueParser");
   }
 
   @Test
-  public void testValueParserFailingOnReload() throws Exception {
+  void testValueParserFailingOnReload() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put("int", "1").build()))
         .thenReturn(toConfigProps(mapBuilder().put("int", "not an int").build()));
@@ -209,30 +206,29 @@ public class SimpleConfigPropertyTest {
   }
 
   @Test
-  public void testValidationNotPassed() throws Exception {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Validation failed");
-
+  void testValidationNotPassed() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("prop", "1").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     IntConfigProperty intProperty = configRegistry.intProperty("prop");
-    intProperty.addValidator(i -> i >= 42);
+
+    assertThrows(IllegalArgumentException.class,
+        () -> intProperty.addValidator(i -> i >= 42),
+        "Validation failed");
   }
 
   @Test
-  public void testValidationFailingWithNullPointerIfNullValueApplied() throws Exception {
-    thrown.expect(NullPointerException.class);
-
+  void testValidationFailingWithNullPointerIfNullValueApplied() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("prop", "1").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     IntConfigProperty intProperty = configRegistry.intProperty("prop_not_found");
-    intProperty.addValidator(i -> i >= 42); // NOTE there's no check for not-null
+
+    // NOTE there's no check for not-null
+    assertThrows(NullPointerException.class, () -> intProperty.addValidator(i -> i >= 42));
   }
 
   public interface SideEffect {
-
     boolean apply(Object t1, Object t2);
   }
 }

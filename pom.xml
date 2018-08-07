@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.scalecube</groupId>
   <artifactId>config-parent</artifactId>
-  <version>0.3.4-SNAPSHOT</version>
+  <version>0.3.4</version>
   <packaging>pom</packaging>
 
   <name>ScaleCube Config</name>
@@ -30,7 +29,7 @@
     <url>https://github.com/scalecube/config</url>
     <connection>scm:git:git@github.com:scalecube/config.git</connection>
     <developerConnection>scm:git:git@github.com:scalecube/config.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>v0.3.4</tag>
   </scm>
 
   <developers>
@@ -231,7 +230,7 @@
             <id>enforce</id>
             <configuration>
               <rules>
-                <DependencyConvergence/>
+                <DependencyConvergence />
               </rules>
             </configuration>
             <goals>

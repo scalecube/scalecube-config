@@ -7,9 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
-import org.junit.jupiter.api.Test;
-
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -18,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 
 class ObjectPropertyFieldTest {
 
@@ -28,10 +26,14 @@ class ObjectPropertyFieldTest {
     PrimitiveClass instance = new PrimitiveClass();
 
     Class<PrimitiveClass> clazz = PrimitiveClass.class;
-    ObjectPropertyField field_iii = new ObjectPropertyField(clazz.getDeclaredField("iii"), propName);
-    ObjectPropertyField field_ddd = new ObjectPropertyField(clazz.getDeclaredField("ddd"), propName);
-    ObjectPropertyField field_bbb = new ObjectPropertyField(clazz.getDeclaredField("bbb"), propName);
-    ObjectPropertyField field_lll = new ObjectPropertyField(clazz.getDeclaredField("lll"), propName);
+    ObjectPropertyField field_iii =
+        new ObjectPropertyField(clazz.getDeclaredField("iii"), propName);
+    ObjectPropertyField field_ddd =
+        new ObjectPropertyField(clazz.getDeclaredField("ddd"), propName);
+    ObjectPropertyField field_bbb =
+        new ObjectPropertyField(clazz.getDeclaredField("bbb"), propName);
+    ObjectPropertyField field_lll =
+        new ObjectPropertyField(clazz.getDeclaredField("lll"), propName);
 
     field_iii.applyValueParser(instance, "1");
     field_ddd.applyValueParser(instance, "1E+7");
@@ -49,8 +51,10 @@ class ObjectPropertyFieldTest {
     NonPrimitiveClass instance = new NonPrimitiveClass();
 
     Class<NonPrimitiveClass> clazz = NonPrimitiveClass.class;
-    ObjectPropertyField field_string = new ObjectPropertyField(clazz.getDeclaredField("str"), propName);
-    ObjectPropertyField field_duration = new ObjectPropertyField(clazz.getDeclaredField("duration"), propName);
+    ObjectPropertyField field_string =
+        new ObjectPropertyField(clazz.getDeclaredField("str"), propName);
+    ObjectPropertyField field_duration =
+        new ObjectPropertyField(clazz.getDeclaredField("duration"), propName);
 
     field_string.applyValueParser(instance, "just str");
     field_duration.applyValueParser(instance, "100ms");
@@ -64,7 +68,8 @@ class ObjectPropertyFieldTest {
     TypedListConfigClass instance = new TypedListConfigClass();
 
     Class<TypedListConfigClass> clazz = TypedListConfigClass.class;
-    ObjectPropertyField field_integerList = new ObjectPropertyField(clazz.getDeclaredField("integerList"), propName);
+    ObjectPropertyField field_integerList =
+        new ObjectPropertyField(clazz.getDeclaredField("integerList"), propName);
 
     field_integerList.applyValueParser(instance, "1,2,3");
 
@@ -73,11 +78,12 @@ class ObjectPropertyFieldTest {
 
   @Test
   void testMultimapObjectPropertyField() throws Exception {
-    Map<String, List<Integer>> expectedMultimap = ImmutableMap.<String, List<Integer>>builder()
-        .put("key1", ImmutableList.of(1))
-        .put("key2", ImmutableList.of(2, 3, 4))
-        .put("key3", ImmutableList.of(5))
-        .build();
+    Map<String, List<Integer>> expectedMultimap =
+        ImmutableMap.<String, List<Integer>>builder()
+            .put("key1", ImmutableList.of(1))
+            .put("key2", ImmutableList.of(2, 3, 4))
+            .put("key3", ImmutableList.of(5))
+            .build();
     TypedMultimapConfigClass instance = new TypedMultimapConfigClass();
 
     Field target = instance.getClass().getDeclaredField("integerMultimap");
@@ -94,9 +100,11 @@ class ObjectPropertyFieldTest {
 
     Class<UntypedListConfigClass> clazz = UntypedListConfigClass.class;
 
-    assertThrows(IllegalArgumentException.class,
+    assertThrows(
+        IllegalArgumentException.class,
         () -> {
-          ObjectPropertyField field_list = new ObjectPropertyField(clazz.getDeclaredField("list"), propName);
+          ObjectPropertyField field_list =
+              new ObjectPropertyField(clazz.getDeclaredField("list"), propName);
           field_list.applyValueParser(instance, "1,2,3");
         },
         "ObjectPropertyField: unsupported type on field");
@@ -106,14 +114,18 @@ class ObjectPropertyFieldTest {
   void testStaticOrFinalFieldsInConfigClassNotSupported() {
     Class<ConfigClassWithStaticOrFinalField> clazz = ConfigClassWithStaticOrFinalField.class;
 
-    final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-      new ObjectPropertyField(clazz.getDeclaredField("defaultInstance"), propName);
-      new ObjectPropertyField(clazz.getDeclaredField("finalInt"), propName);
-    });
+    final IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              new ObjectPropertyField(clazz.getDeclaredField("defaultInstance"), propName);
+              new ObjectPropertyField(clazz.getDeclaredField("finalInt"), propName);
+            });
 
     assertTrue(
-        exception.getMessage().startsWith("ObjectPropertyField: 'static' or 'final' declaration is not supported"));
-
+        exception
+            .getMessage()
+            .startsWith("ObjectPropertyField: 'static' or 'final' declaration is not supported"));
   }
 
   private static class PrimitiveClass {
@@ -141,7 +153,8 @@ class ObjectPropertyFieldTest {
   }
 
   static class ConfigClassWithStaticOrFinalField {
-    static final ConfigClassWithStaticOrFinalField defaultInstance = new ConfigClassWithStaticOrFinalField();
+    static final ConfigClassWithStaticOrFinalField defaultInstance =
+        new ConfigClassWithStaticOrFinalField();
 
     private final int finalInt = 1;
   }

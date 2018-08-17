@@ -1,11 +1,10 @@
 package io.scalecube.config.audit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Slf4JConfigEventListener implements ConfigEventListener {
   private static final Logger LOGGER = LoggerFactory.getLogger(Slf4JConfigEventListener.class);
@@ -15,17 +14,21 @@ public class Slf4JConfigEventListener implements ConfigEventListener {
     if (!events.isEmpty()) {
       StringBuilder sb = new StringBuilder();
       sb.append("[");
-      events.stream().sorted(Comparator.comparing(ConfigEvent::getName)).forEach(event -> {
-        sb.append("\n");
-        sb.append(event.getName()).append("=");
-        sb.append(propValueAsString(event));
-        sb.append(",\t");
-        sb.append("source=");
-        sb.append(sourceAsString(event));
-        sb.append(",\t");
-        sb.append("origin=");
-        sb.append(originAsString(event));
-      });
+      events
+          .stream()
+          .sorted(Comparator.comparing(ConfigEvent::getName))
+          .forEach(
+              event -> {
+                sb.append("\n");
+                sb.append(event.getName()).append("=");
+                sb.append(propValueAsString(event));
+                sb.append(",\t");
+                sb.append("source=");
+                sb.append(sourceAsString(event));
+                sb.append(",\t");
+                sb.append("origin=");
+                sb.append(originAsString(event));
+              });
       sb.append("\n").append("]");
       LOGGER.info("Config property changed: {}", sb);
     }

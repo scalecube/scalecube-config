@@ -1,10 +1,6 @@
 package io.scalecube.config.source;
 
 import io.scalecube.config.utils.ThrowableUtil;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -17,6 +13,8 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class FilteredPathConfigSource implements ConfigSource {
   private static final Logger LOGGER = LoggerFactory.getLogger(FilteredPathConfigSource.class);
@@ -29,7 +27,8 @@ public abstract class FilteredPathConfigSource implements ConfigSource {
   }
 
   protected final Map<Path, Map<String, String>> loadConfigMap(Collection<Path> pathCollection) {
-    return pathCollection.stream()
+    return pathCollection
+        .stream()
         .filter(path -> predicates.stream().anyMatch(predicate -> predicate.test(path)))
         .collect(Collectors.toMap(path -> path, this::loadProperties));
   }
@@ -47,7 +46,7 @@ public abstract class FilteredPathConfigSource implements ConfigSource {
 
   private Map<String, String> fromProperties(Properties properties) {
     Map<String, String> map = new HashMap<>();
-    for (Enumeration<?> e = properties.propertyNames(); e.hasMoreElements();) {
+    for (Enumeration<?> e = properties.propertyNames(); e.hasMoreElements(); ) {
       String key = (String) e.nextElement();
       map.put(key, properties.getProperty(key));
     }

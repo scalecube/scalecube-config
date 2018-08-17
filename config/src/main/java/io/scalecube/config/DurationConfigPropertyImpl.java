@@ -1,16 +1,18 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
-
 import java.time.Duration;
 import java.util.Map;
 
-class DurationConfigPropertyImpl extends AbstractSimpleConfigProperty<Duration> implements DurationConfigProperty {
+class DurationConfigPropertyImpl extends AbstractSimpleConfigProperty<Duration>
+    implements DurationConfigProperty {
 
-  DurationConfigPropertyImpl(String name,
+  DurationConfigPropertyImpl(
+      String name,
       Map<String, LoadedConfigProperty> propertyMap,
       Map<String, Map<Class, PropertyCallback>> propertyCallbackMap) {
-    super(name, Duration.class, propertyMap, propertyCallbackMap, ConfigRegistryImpl.DURATION_PARSER);
+    super(
+        name, Duration.class, propertyMap, propertyCallbackMap, ConfigRegistryImpl.DURATION_PARSER);
   }
 
   @Override

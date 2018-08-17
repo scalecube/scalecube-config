@@ -49,11 +49,13 @@ public class ConfigPropertyInfo {
 
   @Override
   public String toString() {
-    return "ConfigPropertyInfo{name=" + name +
-        ", value='" + value + '\'' +
-        ", source='" + source + '\'' +
-        ", origin='" + origin + '\'' +
-        ", host=" + host +
-        '}';
+    final StringBuilder sb = new StringBuilder("ConfigPropertyInfo{");
+    sb.append("name='").append(name).append('\'');
+    sb.append(", value='").append(value).append('\'');
+    sb.append(", source='").append(source).append('\'');
+    sb.append(", origin='").append(origin).append('\'');
+    sb.append(", host='").append(host).append('\'');
+    sb.append('}');
+    return sb.toString();
   }
 }

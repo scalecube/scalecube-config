@@ -7,26 +7,32 @@ import io.scalecube.config.audit.Slf4JConfigEventListener;
 import io.scalecube.config.http.server.ConfigRegistryHttpServer;
 import io.scalecube.config.source.ClassPathConfigSource;
 import io.scalecube.config.source.DirectoryConfigSource;
-
 import java.nio.file.Path;
 import java.util.function.Predicate;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class ConfigRegistryExample {
 
+  /**
+   * Main method of example of using {@link ConfigRegistry}.
+   *
+   * @param args program arguments
+   */
   public static void main(String[] args) {
     Predicate<Path> propsPredicate = path -> path.toString().endsWith(".props");
 
     String basePath = "config-examples/config";
 
-    ConfigRegistry configRegistry = ConfigRegistry.create(
-        ConfigRegistrySettings.builder()
-            .addLastSource("classpath", new ClassPathConfigSource(propsPredicate))
-            .addLastSource("configDirectory", new DirectoryConfigSource(basePath, propsPredicate))
-            .addListener(new Slf4JConfigEventListener())
-            .jmxEnabled(true)
-            .jmxMBeanName("config.exporter:name=ConfigRegistry")
-            .build());
+    ConfigRegistry configRegistry =
+        ConfigRegistry.create(
+            ConfigRegistrySettings.builder()
+                .addLastSource("classpath", new ClassPathConfigSource(propsPredicate))
+                .addLastSource(
+                    "configDirectory", new DirectoryConfigSource(basePath, propsPredicate))
+                .addListener(new Slf4JConfigEventListener())
+                .jmxEnabled(true)
+                .jmxMBeanName("config.exporter:name=ConfigRegistry")
+                .build());
 
     StringConfigProperty orderedProp1 = configRegistry.stringProperty("orderedProp1");
 

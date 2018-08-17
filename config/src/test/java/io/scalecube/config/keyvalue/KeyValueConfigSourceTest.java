@@ -6,11 +6,11 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 
+import com.google.common.collect.ImmutableList;
 import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigSourceNotAvailableException;
-
-import com.google.common.collect.ImmutableList;
-
+import java.time.Duration;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,14 +18,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 
-import java.time.Duration;
-import java.util.Map;
-
 @ExtendWith(MockitoExtension.class)
 class KeyValueConfigSourceTest {
 
-  @Mock
-  private KeyValueConfigRepository repository;
+  @Mock private KeyValueConfigRepository repository;
 
   private KeyValueConfigSource configSource;
   private String collectionName;
@@ -37,10 +33,11 @@ class KeyValueConfigSourceTest {
     collectionName = "config";
     g1 = "group1";
     g2 = "group2";
-    configSource = KeyValueConfigSource.withRepository(repository, collectionName)
-        .repositoryTimeout(Duration.ofMillis(300))
-        .groups(g1, g2)
-        .build();
+    configSource =
+        KeyValueConfigSource.withRepository(repository, collectionName)
+            .repositoryTimeout(Duration.ofMillis(300))
+            .groups(g1, g2)
+            .build();
   }
 
   @Test
@@ -93,15 +90,23 @@ class KeyValueConfigSourceTest {
     KeyValueConfigEntity entity1 = new KeyValueConfigEntity("p1", "v1", n1);
     KeyValueConfigEntity entity2 = new KeyValueConfigEntity("p2", "v2", n2);
 
-    doAnswer((Answer<ImmutableList<KeyValueConfigEntity>>) invocation -> {
-      Thread.sleep(100);
-      return ImmutableList.of(entity1);
-    }).when(repository).findAll(n1);
+    doAnswer(
+            (Answer<ImmutableList<KeyValueConfigEntity>>)
+                invocation -> {
+                  Thread.sleep(100);
+                  return ImmutableList.of(entity1);
+                })
+        .when(repository)
+        .findAll(n1);
 
-    doAnswer((Answer<ImmutableList<KeyValueConfigEntity>>) invocation -> {
-      Thread.sleep(100);
-      return ImmutableList.of(entity2);
-    }).when(repository).findAll(n2);
+    doAnswer(
+            (Answer<ImmutableList<KeyValueConfigEntity>>)
+                invocation -> {
+                  Thread.sleep(100);
+                  return ImmutableList.of(entity2);
+                })
+        .when(repository)
+        .findAll(n2);
 
     doThrow(new RuntimeException("some exception")).when(repository).findAll(root);
 
@@ -119,15 +124,23 @@ class KeyValueConfigSourceTest {
     KeyValueConfigName root = new KeyValueConfigName(null, collectionName);
     KeyValueConfigEntity entity = new KeyValueConfigEntity("p42", "v42", root);
 
-    doAnswer((Answer<ImmutableList<KeyValueConfigEntity>>) invocation -> {
-      Thread.sleep(Long.MAX_VALUE);
-      throw new RuntimeException("never return");
-    }).when(repository).findAll(n1);
+    doAnswer(
+            (Answer<ImmutableList<KeyValueConfigEntity>>)
+                invocation -> {
+                  Thread.sleep(Long.MAX_VALUE);
+                  throw new RuntimeException("never return");
+                })
+        .when(repository)
+        .findAll(n1);
 
-    doAnswer((Answer<ImmutableList<KeyValueConfigEntity>>) invocation -> {
-      Thread.sleep(Long.MAX_VALUE);
-      throw new RuntimeException("never return");
-    }).when(repository).findAll(n2);
+    doAnswer(
+            (Answer<ImmutableList<KeyValueConfigEntity>>)
+                invocation -> {
+                  Thread.sleep(Long.MAX_VALUE);
+                  throw new RuntimeException("never return");
+                })
+        .when(repository)
+        .findAll(n2);
 
     doReturn(ImmutableList.of(entity)).when(repository).findAll(root);
 

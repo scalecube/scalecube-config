@@ -1,12 +1,13 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
-
 import java.util.Map;
 
-class IntConfigPropertyImpl extends AbstractSimpleConfigProperty<Integer> implements IntConfigProperty {
+class IntConfigPropertyImpl extends AbstractSimpleConfigProperty<Integer>
+    implements IntConfigProperty {
 
-  IntConfigPropertyImpl(String name,
+  IntConfigPropertyImpl(
+      String name,
       Map<String, LoadedConfigProperty> propertyMap,
       Map<String, Map<Class, PropertyCallback>> propertyCallbackMap) {
     super(name, Integer.class, propertyMap, propertyCallbackMap, ConfigRegistryImpl.INT_PARSER);

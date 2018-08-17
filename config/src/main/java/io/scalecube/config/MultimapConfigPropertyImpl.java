@@ -1,7 +1,6 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +10,8 @@ import java.util.function.Function;
 class MultimapConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<Map<String, List<T>>>
     implements MultimapConfigProperty<T> {
 
-  static <T> Function<String, Map<String, List<T>>> toMultimapPropertyParser(Function<String, T> valueParser) {
+  static <T> Function<String, Map<String, List<T>>> toMultimapPropertyParser(
+      Function<String, T> valueParser) {
     return str -> {
       Map<String, List<T>> result = new HashMap<>();
       String[] tokens = str.split(",");
@@ -33,11 +33,16 @@ class MultimapConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<Map<Str
     };
   }
 
-  MultimapConfigPropertyImpl(String name,
+  MultimapConfigPropertyImpl(
+      String name,
       Map<String, LoadedConfigProperty> propertyMap,
       Map<String, Map<Class, PropertyCallback>> propertyCallbackMap,
       Function<String, T> valueParser) {
-    super(name, getMapPropertyClass(valueParser), propertyMap, propertyCallbackMap,
+    super(
+        name,
+        getMapPropertyClass(valueParser),
+        propertyMap,
+        propertyCallbackMap,
         toMultimapPropertyParser(valueParser));
   }
 
@@ -65,24 +70,19 @@ class MultimapConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<Map<Str
       result = DurationMultimap.class;
     }
     if (result == null) {
-      throw new IllegalArgumentException("MultimapConfigPropertyImpl: unsupported multimap valueParser " + valueParser);
+      throw new IllegalArgumentException(
+          "MultimapConfigPropertyImpl: unsupported multimap valueParser " + valueParser);
     }
     return result;
   }
 
-  private static class StringMultimap {
-  }
+  private static class StringMultimap {}
 
-  private static class DoubleMultimap {
-  }
+  private static class DoubleMultimap {}
 
-  private static class LongMultimap {
-  }
+  private static class LongMultimap {}
 
-  private static class IntMultimap {
-  }
+  private static class IntMultimap {}
 
-  private static class DurationMultimap {
-  }
-
+  private static class DurationMultimap {}
 }

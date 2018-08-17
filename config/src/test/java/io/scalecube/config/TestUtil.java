@@ -1,10 +1,8 @@
 package io.scalecube.config;
 
+import com.google.common.collect.ImmutableMap;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
-
-import com.google.common.collect.ImmutableMap;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,19 +14,22 @@ public class TestUtil {
   public static Map<String, ConfigProperty> toConfigProps(Map<String, String> props) {
     Map<String, ConfigProperty> propertyMap = new HashMap<>();
     for (Map.Entry<String, String> entry : props.entrySet()) {
-      propertyMap.put(entry.getKey(), LoadedConfigProperty.forNameAndValue(entry.getKey(), entry.getValue()));
+      propertyMap.put(
+          entry.getKey(), LoadedConfigProperty.forNameAndValue(entry.getKey(), entry.getValue()));
     }
     return propertyMap;
   }
 
   public static ConfigRegistryImpl newConfigRegistry(ConfigSource configSource) {
     ConfigRegistryImpl configRegistry;
-    configRegistry = new ConfigRegistryImpl(ConfigRegistrySettings.builder()
-        .jmxEnabled(false)
-        .keepRecentConfigEvents(0)
-        .addLastSource("source", configSource)
-        .reloadIntervalSec(RELOAD_PERIOD_SEC)
-        .build());
+    configRegistry =
+        new ConfigRegistryImpl(
+            ConfigRegistrySettings.builder()
+                .jmxEnabled(false)
+                .keepRecentConfigEvents(0)
+                .addLastSource("source", configSource)
+                .reloadIntervalSec(RELOAD_PERIOD_SEC)
+                .build());
     configRegistry.init();
     return configRegistry;
   }

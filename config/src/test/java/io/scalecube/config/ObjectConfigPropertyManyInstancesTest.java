@@ -13,24 +13,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.scalecube.config.source.ConfigSource;
-
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.concurrent.TimeUnit;
-
 @ExtendWith(MockitoExtension.class)
 class ObjectConfigPropertyManyInstancesTest {
 
-  @Mock
-  private ConfigSource configSource;
-  @Mock
-  private SideEffect sideEffect1;
-  @Mock
-  private SideEffect sideEffect2;
+  @Mock private ConfigSource configSource;
+  @Mock private SideEffect sideEffect1;
+  @Mock private SideEffect sideEffect2;
 
   // Normal scenarios
 
@@ -52,12 +47,14 @@ class ObjectConfigPropertyManyInstancesTest {
   void testReloadValueBecameNotNull() throws Exception {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().build()))
-        .thenReturn(toConfigProps(mapBuilder()
-            .put("com.acme.accessKey", "access")
-            .put("com.acme.secretKey", "secret")
-            .put("com.acme.emailFrom", "email@email.com")
-            .put("com.acme.connectUrl", "protocol://admi@admin?connecthere")
-            .build()));
+        .thenReturn(
+            toConfigProps(
+                mapBuilder()
+                    .put("com.acme.accessKey", "access")
+                    .put("com.acme.secretKey", "secret")
+                    .put("com.acme.emailFrom", "email@email.com")
+                    .put("com.acme.connectUrl", "protocol://admi@admin?connecthere")
+                    .build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<MailSettings> mailProperty =
@@ -73,7 +70,8 @@ class ObjectConfigPropertyManyInstancesTest {
     TimeUnit.MILLISECONDS.sleep(WAIT_FOR_RELOAD_PERIOD_MILLIS);
 
     assertTrue(mailProperty.value().isPresent());
-    ArgumentCaptor<MailSettings> mailSettingsArgumentCaptor = ArgumentCaptor.forClass(MailSettings.class);
+    ArgumentCaptor<MailSettings> mailSettingsArgumentCaptor =
+        ArgumentCaptor.forClass(MailSettings.class);
     verify(sideEffect1).apply(any(), mailSettingsArgumentCaptor.capture());
     assertEquals("access", mailSettingsArgumentCaptor.getValue().accessKey);
     assertEquals("secret", mailSettingsArgumentCaptor.getValue().secretKey);
@@ -85,30 +83,36 @@ class ObjectConfigPropertyManyInstancesTest {
     verify(sideEffect2).apply(any(), connectorSettingsArgumentCaptor.capture());
     assertEquals("access", connectorSettingsArgumentCaptor.getValue().accessKey);
     assertEquals("secret", connectorSettingsArgumentCaptor.getValue().secretKey);
-    assertEquals("protocol://admi@admin?connecthere", connectorSettingsArgumentCaptor.getValue().connectUrl);
+    assertEquals(
+        "protocol://admi@admin?connecthere", connectorSettingsArgumentCaptor.getValue().connectUrl);
   }
 
   // Failure scenarios
 
   @Test
   void testValidationNotPassedAtOne() {
-    when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder()
-        .put("com.acme.accessKey", "access")
-        .put("com.acme.secretKey", "secret")
-        .put("com.acme.emailFrom", "email@email.com")
-        .put("com.acme.connectUrl", "protocol://admi@admin?connecthere")
-        .build()));
+    when(configSource.loadConfig())
+        .thenReturn(
+            toConfigProps(
+                mapBuilder()
+                    .put("com.acme.accessKey", "access")
+                    .put("com.acme.secretKey", "secret")
+                    .put("com.acme.emailFrom", "email@email.com")
+                    .put("com.acme.connectUrl", "protocol://admi@admin?connecthere")
+                    .build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<MailSettings> mailProperty =
         configRegistry.objectProperty("com.acme", MailSettings.class);
-    mailProperty.addValidator(settings -> settings.emailFrom.contains("@")); // validation is passing
+    mailProperty.addValidator(
+        settings -> settings.emailFrom.contains("@")); // validation is passing
     assertTrue(mailProperty.value().isPresent());
 
     ObjectConfigProperty<ConnectorSettings> connectorProperty =
         configRegistry.objectProperty("com.acme", ConnectorSettings.class);
 
-    assertThrows(IllegalArgumentException.class,
+    assertThrows(
+        IllegalArgumentException.class,
         () -> connectorProperty.addValidator(settings -> settings.connectUrl.startsWith("http")),
         "Validation failed");
   }

@@ -3,7 +3,6 @@ package io.scalecube.config.source;
 import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.utils.ConfigCollectorUtil;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -19,17 +18,30 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nonnull;
 
 public class DirectoryConfigSource extends FilteredPathConfigSource {
   private final Path basePath;
 
-  public DirectoryConfigSource(@Nonnull String basePath, @Nonnull List<Predicate<Path>> predicates) {
+  /**
+   * Creates provider of configuration properties with directory as source.
+   *
+   * @param basePath directory path
+   * @param predicates list of predicates to filter
+   */
+  public DirectoryConfigSource(
+      @Nonnull String basePath, @Nonnull List<Predicate<Path>> predicates) {
     super(predicates);
-    this.basePath = Paths.get(Objects.requireNonNull(basePath, "DirectoryConfigSource: basePath is required"));
+    this.basePath =
+        Paths.get(Objects.requireNonNull(basePath, "DirectoryConfigSource: basePath is required"));
   }
 
+  /**
+   * Creates provider of configuration properties with directory as source.
+   *
+   * @param basePath directory path
+   * @param predicates predicates to filter
+   */
   @SafeVarargs
   public DirectoryConfigSource(@Nonnull String basePath, @Nonnull Predicate<Path>... predicates) {
     this(basePath, Arrays.asList(predicates));
@@ -41,14 +53,18 @@ public class DirectoryConfigSource extends FilteredPathConfigSource {
     try {
       basePath1 = basePath.toRealPath(LinkOption.NOFOLLOW_LINKS);
     } catch (FileNotFoundException e) {
-      String message = String.format("DirectoryConfigSource.basePath='%s' can not be found", basePath);
+      String message =
+          String.format("DirectoryConfigSource.basePath='%s' can not be found", basePath);
       throw new ConfigSourceNotAvailableException(message, e);
     } catch (FileSystemException e) {
       String message =
-          String.format("FileSystemException on DirectoryConfigSource.basePath='%s', cause: %s", basePath, e);
+          String.format(
+              "FileSystemException on DirectoryConfigSource.basePath='%s', cause: %s", basePath, e);
       throw new ConfigSourceNotAvailableException(message, e);
     } catch (IOException e) {
-      String message = String.format("IOException on DirectoryConfigSource.basePath='%s', cause: %s", basePath, e);
+      String message =
+          String.format(
+              "IOException on DirectoryConfigSource.basePath='%s', cause: %s", basePath, e);
       throw new ConfigSourceNotAvailableException(message, e);
     }
 
@@ -58,18 +74,24 @@ public class DirectoryConfigSource extends FilteredPathConfigSource {
     Map<Path, Map<String, String>> configMap = loadConfigMap(pathCollection);
 
     Map<String, ConfigProperty> result = new TreeMap<>();
-    ConfigCollectorUtil.filterAndCollectInOrder(predicates.iterator(), configMap,
-        (path, map) -> map.entrySet().forEach(
-            entry -> result.putIfAbsent(entry.getKey(),
-                LoadedConfigProperty.withNameAndValue(entry).origin(path.toString()).build())));
+    ConfigCollectorUtil.filterAndCollectInOrder(
+        predicates.iterator(),
+        configMap,
+        (path, map) ->
+            map.entrySet()
+                .forEach(
+                    entry ->
+                        result.putIfAbsent(
+                            entry.getKey(),
+                            LoadedConfigProperty.withNameAndValue(entry)
+                                .origin(path.toString())
+                                .build())));
 
     return result;
   }
 
   @Override
   public String toString() {
-    return "DirectoryConfigSource{" +
-        "basePath='" + basePath.toAbsolutePath() + "'" +
-        '}';
+    return "DirectoryConfigSource{" + "basePath='" + basePath.toAbsolutePath() + "'" + '}';
   }
 }

@@ -1,39 +1,31 @@
 package io.scalecube.config.keyvalue;
 
 import java.util.Objects;
-
 import javax.annotation.Nonnull;
 
-/**
- * Generic entity class for key-value config data source.
- */
+/** Generic entity class for key-value config data source. */
 public final class KeyValueConfigEntity {
   /**
-   * A config name. Non-persistent field. Being set in method {@link #setConfigName(KeyValueConfigName)}.
+   * A config name. Non-persistent field. Being set in method {@link
+   * #setConfigName(KeyValueConfigName)}.
    */
   private KeyValueConfigName configName;
 
-  /**
-   * Property name. Persistent not-nullable field.
-   */
+  /** Property name. Persistent not-nullable field. */
   private String propName;
 
-  /**
-   * Property value. Persistent not-nullable field.
-   */
+  /** Property value. Persistent not-nullable field. */
   private String propValue;
 
   /**
-   * Persistent indicator flag denoting intent to have actually the property key-value pair in data source but have it
-   * in disabled state.
+   * Persistent indicator flag denoting intent to have actually the property key-value pair in data
+   * source but have it in disabled state.
    */
   private boolean disabled;
 
   public KeyValueConfigEntity() {}
 
-  /**
-   * <b>NOTE:</b> this constructor exposed for test purpose only.
-   */
+  /** <b>NOTE:</b> this constructor exposed for test purpose only. */
   KeyValueConfigEntity(String propName, String propValue, KeyValueConfigName configName) {
     this.configName = configName;
     this.propName = propName;
@@ -86,11 +78,12 @@ public final class KeyValueConfigEntity {
 
   @Override
   public String toString() {
-    return "KeyValueConfigEntity{" +
-        "configName=" + configName +
-        ", propName='" + propName + '\'' +
-        ", propValue='" + propValue + '\'' +
-        ", disabled=" + disabled +
-        '}';
+    final StringBuilder sb = new StringBuilder("KeyValueConfigEntity{");
+    sb.append("configName=").append(configName);
+    sb.append(", propName='").append(propName).append('\'');
+    sb.append(", propValue='").append(propValue).append('\'');
+    sb.append(", disabled=").append(disabled);
+    sb.append('}');
+    return sb.toString();
   }
 }

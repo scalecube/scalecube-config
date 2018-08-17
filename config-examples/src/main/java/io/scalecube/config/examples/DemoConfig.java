@@ -10,13 +10,17 @@ import io.scalecube.config.mongo.MongoConfigConnector;
 import io.scalecube.config.mongo.MongoConfigEventListener;
 import io.scalecube.config.mongo.MongoConfigRepository;
 import io.scalecube.config.source.DirectoryConfigSource;
-
 import java.nio.file.Path;
 import java.util.function.Predicate;
 
 public class DemoConfig {
 
-  public static void main(String[] args) throws InterruptedException {
+  /**
+   * Main method of example.
+   *
+   * @param args program arguments
+   */
+  public static void main(String[] args) {
 
     // Mongo property source init
     String databaseName = "MongoConfigExample";
@@ -26,27 +30,30 @@ public class DemoConfig {
 
     MongoConfigConnector connector = MongoConfigConnector.builder().forUri(uri).build();
 
-    KeyValueConfigSource mongoConfigSource = KeyValueConfigSource
-        .withRepository(new MongoConfigRepository(connector), configSourceCollectionName)
-        .groups("group2", "group1", "root")
-        .build();
+    KeyValueConfigSource mongoConfigSource =
+        KeyValueConfigSource.withRepository(
+                new MongoConfigRepository(connector), configSourceCollectionName)
+            .groups("group2", "group1", "root")
+            .build();
 
     // Local resource cfg source init
     Predicate<Path> propsPredicate = path -> path.toString().endsWith(".props");
     String basePath = "config-examples/config";
 
     // Config registry init
-    ConfigRegistry configRegistry = ConfigRegistry.create(
-        ConfigRegistrySettings.builder()
-            .addLastSource("ConfigDirectory", new DirectoryConfigSource(basePath, propsPredicate))
-            .addLastSource("MongoConfig", mongoConfigSource)
-            .addListener(new Slf4JConfigEventListener())
-            .addListener(new MongoConfigEventListener(connector, auditLogCollectionName))
-            .keepRecentConfigEvents(10)
-            .reloadIntervalSec(3)
-            .jmxEnabled(true)
-            .jmxMBeanName("config.exporter:name=ConfigRegistry")
-            .build());
+    ConfigRegistry configRegistry =
+        ConfigRegistry.create(
+            ConfigRegistrySettings.builder()
+                .addLastSource(
+                    "ConfigDirectory", new DirectoryConfigSource(basePath, propsPredicate))
+                .addLastSource("MongoConfig", mongoConfigSource)
+                .addListener(new Slf4JConfigEventListener())
+                .addListener(new MongoConfigEventListener(connector, auditLogCollectionName))
+                .keepRecentConfigEvents(10)
+                .reloadIntervalSec(3)
+                .jmxEnabled(true)
+                .jmxMBeanName("config.exporter:name=ConfigRegistry")
+                .build());
 
     // Inject cfgReg into target component
     SomeComponent component = new SomeComponent(configRegistry);
@@ -61,7 +68,8 @@ public class DemoConfig {
 
     SomeComponent(ConfigRegistry cfgReg) {
       host = cfgReg.stringProperty("host");
-      host.addCallback((oldVal, newVal) -> System.out.println("###Property changed: " + oldVal + "->" + newVal));
+      host.addCallback(
+          (oldVal, newVal) -> System.out.println("###Property changed: " + oldVal + "->" + newVal));
     }
   }
 }

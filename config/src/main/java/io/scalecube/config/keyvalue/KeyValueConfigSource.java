@@ -5,10 +5,6 @@ import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.ThrowableUtil;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,25 +24,28 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nonnull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Generic key-value config source. Communicates with concrete config data source (mongodb, redis, zookeeper) using
- * injectable {@link #repository}.
+ * Generic key-value config source. Communicates with concrete config data source (mongodb, redis,
+ * zookeeper) using injectable {@link #repository}.
  */
 public class KeyValueConfigSource implements ConfigSource {
   private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueConfigSource.class);
 
   private static final ThreadFactory threadFactory;
+
   static {
-    threadFactory = r -> {
-      Thread thread = new Thread(r);
-      thread.setDaemon(true);
-      thread.setName("keyvalue-config-executor");
-      thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
-      return thread;
-    };
+    threadFactory =
+        r -> {
+          Thread thread = new Thread(r);
+          thread.setDaemon(true);
+          thread.setName("keyvalue-config-executor");
+          thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
+          return thread;
+        };
   }
 
   private static final Executor executor = Executors.newCachedThreadPool(threadFactory);
@@ -61,18 +60,23 @@ public class KeyValueConfigSource implements ConfigSource {
     this.configNames = configureConfigNames(builder.groupList, builder.collectionName);
   }
 
-  private List<KeyValueConfigName> configureConfigNames(List<String> groupList, String collectionName) {
+  private List<KeyValueConfigName> configureConfigNames(
+      List<String> groupList, String collectionName) {
     List<String> result = new ArrayList<>();
     result.addAll(groupList);
     result.add(null); // by default 'root' group is always added
-    return result.stream().map(input -> new KeyValueConfigName(input, collectionName)).collect(Collectors.toList());
+    return result
+        .stream()
+        .map(input -> new KeyValueConfigName(input, collectionName))
+        .collect(Collectors.toList());
   }
 
   public static Builder withRepository(@Nonnull KeyValueConfigRepository repository) {
     return new Builder(repository);
   }
 
-  public static Builder withRepository(@Nonnull KeyValueConfigRepository repository, @Nonnull String collectionName) {
+  public static Builder withRepository(
+      @Nonnull KeyValueConfigRepository repository, @Nonnull String collectionName) {
     return new Builder(repository, collectionName);
   }
 
@@ -85,7 +89,8 @@ public class KeyValueConfigSource implements ConfigSource {
         CompletableFuture.allOf(futureList.toArray(new CompletableFuture[futureList.size()]));
 
     CompletableFuture<List<List<KeyValueConfigEntity>>> joinedFuture =
-        allResults.thenApply(input -> futureList.stream().map(CompletableFuture::join).collect(Collectors.toList()));
+        allResults.thenApply(
+            input -> futureList.stream().map(CompletableFuture::join).collect(Collectors.toList()));
 
     List<List<KeyValueConfigEntity>> resultList;
     try {
@@ -93,38 +98,49 @@ public class KeyValueConfigSource implements ConfigSource {
     } catch (ExecutionException e) {
       throw ThrowableUtil.propagate(e.getCause());
     } catch (TimeoutException e) {
-      String message = String.format("TimeoutException after '%s' millis", repositoryTimeout.toMillis());
+      String message =
+          String.format("TimeoutException after '%s' millis", repositoryTimeout.toMillis());
       throw new ConfigSourceNotAvailableException(message, e);
     } catch (InterruptedException e) {
       Thread.interrupted();
       throw ThrowableUtil.propagate(e);
     }
 
-    return resultList.stream()
+    return resultList
+        .stream()
         .flatMap(Collection::stream)
         .filter(i -> !i.getDisabled())
-        .collect(Collector.of(
-            (Supplier<TreeMap<String, ConfigProperty>>) TreeMap::new,
-            (map, i) -> {
-              String origin = i.getConfigName().getQualifiedName();
-              String name = i.getPropName();
-              String value = i.getPropValue();
-              map.putIfAbsent(name, LoadedConfigProperty.withNameAndValue(name, value).origin(origin).build());
-            },
-            (map1, map2) -> map1));
+        .collect(
+            Collector.of(
+                (Supplier<TreeMap<String, ConfigProperty>>) TreeMap::new,
+                (map, i) -> {
+                  String origin = i.getConfigName().getQualifiedName();
+                  String name = i.getPropName();
+                  String value = i.getPropValue();
+                  map.putIfAbsent(
+                      name,
+                      LoadedConfigProperty.withNameAndValue(name, value).origin(origin).build());
+                },
+                (map1, map2) -> map1));
   }
 
   private CompletableFuture<List<KeyValueConfigEntity>> loadConfig(KeyValueConfigName configName) {
-    return CompletableFuture.supplyAsync(() -> {
-      List<KeyValueConfigEntity> result;
-      try {
-        result = repository.findAll(configName);
-      } catch (Exception e) {
-        LOGGER.warn("Exception at {}.findAll({}), cause: {}", repository.getClass().getSimpleName(), configName, e);
-        result = Collections.emptyList();
-      }
-      return result;
-    }, executor);
+    return CompletableFuture.supplyAsync(
+        () -> {
+          List<KeyValueConfigEntity> result;
+          try {
+            result = repository.findAll(configName);
+          } catch (Exception e) {
+            LOGGER.warn(
+                "Exception at {}.findAll({}), cause: {}",
+                repository.getClass().getSimpleName(),
+                configName,
+                e);
+            result = Collections.emptyList();
+          }
+          return result;
+        },
+        executor);
   }
 
   public static class Builder {

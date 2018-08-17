@@ -5,24 +5,30 @@ import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.source.ClassPathConfigSource;
 import io.scalecube.config.source.DirectoryConfigSource;
-
 import java.nio.file.Path;
 import java.util.function.Predicate;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class LocalResourceConfigExample {
 
+  /**
+   * Main method of example of local resource config.
+   *
+   * @param args program arguments
+   */
   public static void main(String[] args) {
     Predicate<Path> propsPredicate = path -> path.toString().endsWith(".props");
 
     String basePath = "config-examples/config";
 
-    ConfigRegistry configRegistry = ConfigRegistry.create(
-        ConfigRegistrySettings.builder()
-            .addLastSource("classpath", new ClassPathConfigSource(propsPredicate))
-            .addLastSource("configDirectory", new DirectoryConfigSource(basePath, propsPredicate))
-            .jmxEnabled(false)
-            .build());
+    ConfigRegistry configRegistry =
+        ConfigRegistry.create(
+            ConfigRegistrySettings.builder()
+                .addLastSource("classpath", new ClassPathConfigSource(propsPredicate))
+                .addLastSource(
+                    "configDirectory", new DirectoryConfigSource(basePath, propsPredicate))
+                .jmxEnabled(false)
+                .build());
 
     StringConfigProperty prop1 = configRegistry.stringProperty("prop1");
     StringConfigProperty prop2 = configRegistry.stringProperty("prop2");

@@ -1,7 +1,6 @@
 package io.scalecube.config.source;
 
 import io.scalecube.config.ConfigProperty;
-
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,6 +30,12 @@ public final class LoadedConfigProperty implements ConfigProperty {
     return new Builder(name, value);
   }
 
+  /**
+   * Creates builder from given config property.
+   *
+   * @param property config property
+   * @return builder instance
+   */
   public static Builder withCopyFrom(ConfigProperty property) {
     Builder builder = new Builder(property.name(), property.valueAsString(null));
     builder.source = property.source().orElse(null);
@@ -65,12 +70,13 @@ public final class LoadedConfigProperty implements ConfigProperty {
 
   @Override
   public String toString() {
-    return "LoadedConfigProperty{" +
-        "name=" + name +
-        ", source='" + source + '\'' +
-        ", origin='" + origin + '\'' +
-        ", value='" + value + '\'' +
-        '}';
+    final StringBuilder sb = new StringBuilder("LoadedConfigProperty{");
+    sb.append("name='").append(name).append('\'');
+    sb.append(", source='").append(source).append('\'');
+    sb.append(", origin='").append(origin).append('\'');
+    sb.append(", value='").append(value).append('\'');
+    sb.append('}');
+    return sb.toString();
   }
 
   public static class Builder {

@@ -49,11 +49,13 @@ public class ConfigSourceInfo {
 
   @Override
   public String toString() {
-    return "ConfigSourceInfo{sourceName=" + sourceName +
-        ", priorityOrder=" + priorityOrder +
-        ", configSourceString='" + configSourceString + '\'' +
-        ", healthString='" + healthString + '\'' +
-        ", host=" + host +
-        '}';
+    final StringBuilder sb = new StringBuilder("ConfigSourceInfo{");
+    sb.append("sourceName='").append(sourceName).append('\'');
+    sb.append(", priorityOrder=").append(priorityOrder);
+    sb.append(", configSourceString='").append(configSourceString).append('\'');
+    sb.append(", healthString='").append(healthString).append('\'');
+    sb.append(", host='").append(host).append('\'');
+    sb.append('}');
+    return sb.toString();
   }
 }

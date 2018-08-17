@@ -1,7 +1,6 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -16,10 +15,9 @@ import java.util.function.Function;
  */
 class AbstractSimpleConfigProperty<T> extends AbstractConfigProperty<T> implements ConfigProperty {
 
-  /**
-   * Constructor for non-object config property.
-   */
-  AbstractSimpleConfigProperty(String name,
+  /** Constructor for non-object config property. */
+  AbstractSimpleConfigProperty(
+      String name,
       Class<?> propertyClass,
       Map<String, LoadedConfigProperty> propertyMap,
       Map<String, Map<Class, PropertyCallback>> propertyCallbackMap,
@@ -58,7 +56,8 @@ class AbstractSimpleConfigProperty<T> extends AbstractConfigProperty<T> implemen
     return new NoSuchElementException("Value is null for property '" + name + "'");
   }
 
-  private PropertyCallback computePropertyCallback(Function<String, T> valueParser,
+  private PropertyCallback computePropertyCallback(
+      Function<String, T> valueParser,
       Map<String, Map<Class, PropertyCallback>> propertyCallbackMap) {
 
     PropertyCallback<T> propertyCallback =

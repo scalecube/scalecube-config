@@ -4,11 +4,11 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
 /**
- * {@link java.time.Duration} parser. Recognizes string format from
- * <a href="https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-" target=
- * "_blank">official java8 documentation</a> and more convenient string form with integer value followed by time_unit
- * string (which is one of: <b>ns</b> - nanos, <b>us</b> - micros, <b>ms</b> - millis, <b>s</b> - seconds, <b>m</b> -
- * minutes, <b>h</b> - hours, <b>d</b> - days).
+ * {@link java.time.Duration} parser. Recognizes string format from <a
+ * href="https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-"
+ * target= "_blank">official java8 documentation</a> and more convenient string form with integer
+ * value followed by time_unit string (which is one of: <b>ns</b> - nanos, <b>us</b> - micros,
+ * <b>ms</b> - millis, <b>s</b> - seconds, <b>m</b> - minutes, <b>h</b> - hours, <b>d</b> - days).
  */
 class DurationParser {
 
@@ -62,7 +62,8 @@ class DurationParser {
         break;
       default:
         throw new IllegalArgumentException(
-            String.format("Could not parse time unit '%s' (try ns, us, ms, s, m, h, d)", originalUnitString));
+            String.format(
+                "Could not parse time unit '%s' (try ns, us, ms, s, m, h, d)", originalUnitString));
     }
 
     return Duration.of(Long.parseLong(numberString), units);
@@ -74,8 +75,9 @@ class DurationParser {
     int i = input.length() - 1;
     while (i >= 0) {
       char c = input.charAt(i);
-      if (!Character.isLetter(c))
+      if (!Character.isLetter(c)) {
         break;
+      }
       i -= 1;
     }
     return new String[] {input.substring(0, i + 1).trim(), input.substring(i + 1).trim()};

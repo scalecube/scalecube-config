@@ -10,28 +10,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.scalecube.config.source.ConfigSource;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
+import io.scalecube.config.source.ConfigSource;
+import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
-import java.util.concurrent.TimeUnit;
-
 @ExtendWith(MockitoExtension.class)
 class SimpleConfigPropertyManyInstancesTest {
 
-  @Mock
-  private ConfigSource configSource;
-  @Mock
-  private SideEffect sideEffect1;
-  @Mock
-  private SideEffect sideEffect2;
+  @Mock private ConfigSource configSource;
+  @Mock private SideEffect sideEffect1;
+  @Mock private SideEffect sideEffect2;
 
   @Test
   void testManyInstancesValueNullInitially() {
@@ -71,7 +65,8 @@ class SimpleConfigPropertyManyInstancesTest {
 
   @Test
   void testManyInstancesNoValidationOnBoths() throws Exception {
-    when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("prop", "1").build()));
+    when(configSource.loadConfig())
+        .thenReturn(toConfigProps(mapBuilder().put("prop", "1").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ListConfigProperty<Integer> intListProperty = configRegistry.intListProperty("prop");
@@ -116,7 +111,8 @@ class SimpleConfigPropertyManyInstancesTest {
 
   @Test
   void testManyInstancesListTypeAndMultimapTypeAndSimplePropertyType() {
-    when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("prop", "key=value").build()));
+    when(configSource.loadConfig())
+        .thenReturn(toConfigProps(mapBuilder().put("prop", "key=value").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     StringConfigProperty stringProperty = configRegistry.stringProperty("prop");
@@ -125,8 +121,10 @@ class SimpleConfigPropertyManyInstancesTest {
     ListConfigProperty<String> stringListProperty = configRegistry.stringListProperty("prop");
     assertEquals(ImmutableList.of("key=value"), stringListProperty.valueOrThrow());
 
-    MultimapConfigProperty<String> stringMultimapProperty = configRegistry.stringMultimapProperty("prop");
-    assertEquals(ImmutableMap.of("key", ImmutableList.of("value")), stringMultimapProperty.valueOrThrow());
+    MultimapConfigProperty<String> stringMultimapProperty =
+        configRegistry.stringMultimapProperty("prop");
+    assertEquals(
+        ImmutableMap.of("key", ImmutableList.of("value")), stringMultimapProperty.valueOrThrow());
   }
 
   public interface SideEffect {

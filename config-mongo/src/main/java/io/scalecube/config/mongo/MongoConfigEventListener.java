@@ -1,15 +1,9 @@
 package io.scalecube.config.mongo;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.audit.ConfigEventListener;
 import io.scalecube.config.utils.ThrowableUtil;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.bson.RawBsonDocument;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayOutputStream;
 import java.util.Collection;
 import java.util.Date;
@@ -18,21 +12,25 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nonnull;
+import org.bson.RawBsonDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MongoConfigEventListener implements ConfigEventListener {
   private static final Logger LOGGER = LoggerFactory.getLogger(MongoConfigEventListener.class);
 
   private static final ThreadFactory threadFactory;
+
   static {
-    threadFactory = r -> {
-      Thread thread = new Thread(r);
-      thread.setDaemon(true);
-      thread.setName("mongo-config-auditor");
-      thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
-      return thread;
-    };
+    threadFactory =
+        r -> {
+          Thread thread = new Thread(r);
+          thread.setDaemon(true);
+          thread.setName("mongo-config-auditor");
+          thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
+          return thread;
+        };
   }
 
   private static final Executor executor = Executors.newSingleThreadExecutor(threadFactory);
@@ -40,43 +38,53 @@ public class MongoConfigEventListener implements ConfigEventListener {
   private final MongoConfigConnector connector;
   private final String collectionName;
 
-  public MongoConfigEventListener(@Nonnull MongoConfigConnector connector, @Nonnull String collectionName) {
+  public MongoConfigEventListener(
+      @Nonnull MongoConfigConnector connector, @Nonnull String collectionName) {
     this.connector = connector;
     this.collectionName = collectionName;
   }
 
   @Override
   public void onEvents(Collection<ConfigEvent> events) {
-    CompletableFuture.runAsync(() -> {
-      ObjectMapper objectMapper = MongoConfigObjectMapper.getInstance();
-      connector.getDatabase().getCollection(collectionName, RawBsonDocument.class)
-          .insertMany(events.stream()
-              .map(event -> {
-                AuditLogEntity entity = new AuditLogEntity();
-                entity.setName(event.getName());
-                entity.setTimestamp(event.getTimestamp());
-                entity.setHost(event.getHost());
-                entity.setType(event.getType().toString());
-                entity.setNewSource(event.getNewSource());
-                entity.setNewOrigin(event.getNewOrigin());
-                entity.setNewValue(event.getNewValue());
-                entity.setOldSource(event.getOldSource());
-                entity.setOldOrigin(event.getOldOrigin());
-                entity.setOldValue(event.getOldValue());
-                return entity;
-              })
-              .map(entity -> {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try {
-                  objectMapper.writer().writeValue(baos, entity);
-                } catch (Exception e) {
-                  LOGGER.error("Exception at converting obj: {} to bson, cause: {}", entity, e);
-                  throw ThrowableUtil.propagate(e);
-                }
-                return new RawBsonDocument(baos.toByteArray());
-              })
-              .collect(Collectors.toList()));
-    }, executor);
+    CompletableFuture.runAsync(
+        () -> {
+          ObjectMapper objectMapper = MongoConfigObjectMapper.getInstance();
+          connector
+              .getDatabase()
+              .getCollection(collectionName, RawBsonDocument.class)
+              .insertMany(
+                  events
+                      .stream()
+                      .map(
+                          event -> {
+                            AuditLogEntity entity = new AuditLogEntity();
+                            entity.setName(event.getName());
+                            entity.setTimestamp(event.getTimestamp());
+                            entity.setHost(event.getHost());
+                            entity.setType(event.getType().toString());
+                            entity.setNewSource(event.getNewSource());
+                            entity.setNewOrigin(event.getNewOrigin());
+                            entity.setNewValue(event.getNewValue());
+                            entity.setOldSource(event.getOldSource());
+                            entity.setOldOrigin(event.getOldOrigin());
+                            entity.setOldValue(event.getOldValue());
+                            return entity;
+                          })
+                      .map(
+                          entity -> {
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            try {
+                              objectMapper.writer().writeValue(baos, entity);
+                            } catch (Exception e) {
+                              LOGGER.error(
+                                  "Exception at converting obj: {} to bson, cause: {}", entity, e);
+                              throw ThrowableUtil.propagate(e);
+                            }
+                            return new RawBsonDocument(baos.toByteArray());
+                          })
+                      .collect(Collectors.toList()));
+        },
+        executor);
   }
 
   private static class AuditLogEntity {
@@ -173,18 +181,19 @@ public class MongoConfigEventListener implements ConfigEventListener {
 
     @Override
     public String toString() {
-      return "AuditLogEntity{" +
-          "name='" + name + '\'' +
-          ", timestamp=" + timestamp +
-          ", type='" + type + '\'' +
-          ", host='" + host + '\'' +
-          ", oldSource='" + oldSource + '\'' +
-          ", oldOrigin='" + oldOrigin + '\'' +
-          ", oldValue='" + oldValue + '\'' +
-          ", newSource='" + newSource + '\'' +
-          ", newOrigin='" + newOrigin + '\'' +
-          ", newValue='" + newValue + '\'' +
-          '}';
+      final StringBuilder sb = new StringBuilder("AuditLogEntity{");
+      sb.append("name='").append(name).append('\'');
+      sb.append(", timestamp=").append(timestamp);
+      sb.append(", type='").append(type).append('\'');
+      sb.append(", host='").append(host).append('\'');
+      sb.append(", oldSource='").append(oldSource).append('\'');
+      sb.append(", oldOrigin='").append(oldOrigin).append('\'');
+      sb.append(", oldValue='").append(oldValue).append('\'');
+      sb.append(", newSource='").append(newSource).append('\'');
+      sb.append(", newOrigin='").append(newOrigin).append('\'');
+      sb.append(", newValue='").append(newValue).append('\'');
+      sb.append('}');
+      return sb.toString();
     }
   }
 }

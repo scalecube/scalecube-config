@@ -2,7 +2,6 @@ package io.scalecube.config;
 
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.source.ConfigSourceInfo;
-
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -31,7 +30,8 @@ public interface ConfigRegistry {
   /**
    * Returns dynamic typed object property.
    *
-   * @param prefix prefix of property keys extended with field names as prefix.fieldName to resolve full property keys
+   * @param prefix prefix of property keys extended with field names as prefix.fieldName to resolve
+   *     full property keys
    * @param cfgClass a class of config object instance
    * @param <T> a type of config object
    * @return property instance
@@ -70,8 +70,8 @@ public interface ConfigRegistry {
   <T> T objectValue(Map<String, String> bindingMap, Class<T> cfgClass, T defaultValue);
 
   /**
-   * Returns dynamic typed string property. String property is a base type for all properties and each type can be
-   * casted to string property.
+   * Returns dynamic typed string property. String property is a base type for all properties and
+   * each type can be casted to string property.
    *
    * @param name property name
    * @return property instance
@@ -156,7 +156,8 @@ public interface ConfigRegistry {
   int intValue(String name, int defaultValue);
 
   /**
-   * Returns dynamic typed java8 duration property. See for details {@link Duration#parse(java.lang.CharSequence)}.
+   * Returns dynamic typed java8 duration property. See for details {@link
+   * Duration#parse(java.lang.CharSequence)}.
    *
    * @param name property name
    * @return property instance
@@ -164,8 +165,8 @@ public interface ConfigRegistry {
   DurationConfigProperty durationProperty(String name);
 
   /**
-   * Returns current value of java8 duration property or defaults. See for details
-   * {@link Duration#parse(java.lang.CharSequence)}.
+   * Returns current value of java8 duration property or defaults. See for details {@link
+   * Duration#parse(java.lang.CharSequence)}.
    *
    * @param name property name
    * @param defaultValue default property value
@@ -273,7 +274,8 @@ public interface ConfigRegistry {
    * @param defaultValue default property value
    * @return property value
    */
-  Map<String, List<String>> stringMultimapValue(String name, Map<String, List<String>> defaultValue);
+  Map<String, List<String>> stringMultimapValue(
+      String name, Map<String, List<String>> defaultValue);
 
   /**
    * Returns dynamic generic-typed multimap property.
@@ -290,7 +292,8 @@ public interface ConfigRegistry {
    * @param defaultValue default property value
    * @return property value
    */
-  Map<String, List<Double>> doubleMultimapValue(String name, Map<String, List<Double>> defaultValue);
+  Map<String, List<Double>> doubleMultimapValue(
+      String name, Map<String, List<Double>> defaultValue);
 
   /**
    * Returns dynamic generic-typed multimap property.
@@ -341,31 +344,21 @@ public interface ConfigRegistry {
    * @param defaultValue default property value
    * @return property value
    */
-  Map<String, List<Duration>> durationMultimapValue(String name, Map<String, List<Duration>> defaultValue);
+  Map<String, List<Duration>> durationMultimapValue(
+      String name, Map<String, List<Duration>> defaultValue);
 
-  /**
-   * Returns set of all loaded property keys.
-   */
+  /** Returns set of all loaded property keys. */
   Set<String> allProperties();
 
-  /**
-   * Returns snapshot of all current property values.
-   */
+  /** Returns snapshot of all current property values. */
   Collection<ConfigPropertyInfo> getConfigProperties();
 
-  /**
-   * Returns list of recent property changes events.
-   */
+  /** Returns list of recent property changes events. */
   Collection<ConfigEvent> getRecentConfigEvents();
 
-  /**
-   * Returns list of configured property sources descriptions.
-   */
+  /** Returns list of configured property sources descriptions. */
   Collection<ConfigSourceInfo> getConfigSources();
 
-  /**
-   * Returns config registry settings.
-   */
+  /** Returns config registry settings. */
   ConfigRegistrySettings getSettings();
-
 }

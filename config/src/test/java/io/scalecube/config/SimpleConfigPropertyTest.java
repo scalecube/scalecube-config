@@ -14,22 +14,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.scalecube.config.source.ConfigSource;
-
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
 @ExtendWith(MockitoExtension.class)
 class SimpleConfigPropertyTest {
 
-  @Mock
-  private ConfigSource configSource;
-  @Mock
-  private SideEffect sideEffect;
+  @Mock private ConfigSource configSource;
+  @Mock private SideEffect sideEffect;
 
   // Normal scenarios
 
@@ -53,7 +49,8 @@ class SimpleConfigPropertyTest {
 
   @Test
   void testValueFoundAndValidationPassed() {
-    when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("bool", "true").build()));
+    when(configSource.loadConfig())
+        .thenReturn(toConfigProps(mapBuilder().put("bool", "true").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     BooleanConfigProperty booleanProperty = configRegistry.booleanProperty("bool");
@@ -147,7 +144,8 @@ class SimpleConfigPropertyTest {
     BooleanConfigProperty booleanProperty = configRegistry.booleanProperty("bool");
 
     // proper, 'must have', validation check
-    assertThrows(IllegalArgumentException.class,
+    assertThrows(
+        IllegalArgumentException.class,
         () -> booleanProperty.addValidator(Objects::nonNull),
         "Validation failed");
   }
@@ -175,10 +173,12 @@ class SimpleConfigPropertyTest {
 
   @Test
   void testFailingValueParser() {
-    when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("int", "not an int").build()));
+    when(configSource.loadConfig())
+        .thenReturn(toConfigProps(mapBuilder().put("int", "not an int").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
-    assertThrows(IllegalArgumentException.class,
+    assertThrows(
+        IllegalArgumentException.class,
         () -> configRegistry.intProperty("int"),
         "Exception occured at valueParser");
   }
@@ -207,19 +207,22 @@ class SimpleConfigPropertyTest {
 
   @Test
   void testValidationNotPassed() {
-    when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("prop", "1").build()));
+    when(configSource.loadConfig())
+        .thenReturn(toConfigProps(mapBuilder().put("prop", "1").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     IntConfigProperty intProperty = configRegistry.intProperty("prop");
 
-    assertThrows(IllegalArgumentException.class,
+    assertThrows(
+        IllegalArgumentException.class,
         () -> intProperty.addValidator(i -> i >= 42),
         "Validation failed");
   }
 
   @Test
   void testValidationFailingWithNullPointerIfNullValueApplied() {
-    when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().put("prop", "1").build()));
+    when(configSource.loadConfig())
+        .thenReturn(toConfigProps(mapBuilder().put("prop", "1").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     IntConfigProperty intProperty = configRegistry.intProperty("prop_not_found");

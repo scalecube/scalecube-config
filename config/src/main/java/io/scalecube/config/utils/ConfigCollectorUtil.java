@@ -13,7 +13,16 @@ public final class ConfigCollectorUtil {
     // Do not instantiate
   }
 
-  public static <T> void filterAndCollectInOrder(Iterator<Predicate<T>> predicateIterator,
+  /**
+   * Performs filtering and collecting configuration properties.
+   *
+   * @param predicateIterator iterator over collection of predicates
+   * @param configMap configuration map
+   * @param configCollector collector function
+   * @param <T> type of the input to the predicate
+   */
+  public static <T> void filterAndCollectInOrder(
+      Iterator<Predicate<T>> predicateIterator,
       Map<T, Map<String, String>> configMap,
       BiConsumer<T, Map<String, String>> configCollector) {
 
@@ -22,7 +31,8 @@ public final class ConfigCollectorUtil {
     }
 
     Predicate<T> groupPredicate = predicateIterator.next();
-    List<T> groups = configMap.keySet().stream().filter(groupPredicate).collect(Collectors.toList());
+    List<T> groups =
+        configMap.keySet().stream().filter(groupPredicate).collect(Collectors.toList());
     for (T group : groups) {
       Map<String, String> map = configMap.get(group);
       if (!map.isEmpty()) {

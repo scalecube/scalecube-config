@@ -7,13 +7,14 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
+ * Holder class for {@link ObjectMapper}.
+ *
  * @author Anton Kharenko
  */
 public class ObjectMapperHolder {
 
-  private static final ObjectMapper objectMapper = new ObjectMapper()
-      .registerModule(new Jdk8Module())
-      .registerModule(new JavaTimeModule());
+  private static final ObjectMapper objectMapper =
+      new ObjectMapper().registerModule(new Jdk8Module()).registerModule(new JavaTimeModule());
 
   static {
     objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
@@ -25,5 +26,4 @@ public class ObjectMapperHolder {
   public static ObjectMapper getInstance() {
     return objectMapper;
   }
-
 }

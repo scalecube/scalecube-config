@@ -3,7 +3,6 @@ package io.scalecube.config.mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoDatabase;
-
 import java.util.Objects;
 
 public class MongoConfigConnector {
@@ -27,6 +26,12 @@ public class MongoConfigConnector {
     private MongoDatabase database;
     private MongoClientURI clientUri;
 
+    /**
+     * Creates builder for given URI.
+     *
+     * @param uri URI
+     * @return builder instance
+     */
     public Builder forUri(String uri) {
       this.clientUri = new MongoClientURI(uri);
       String databaseName = clientUri.getDatabase();
@@ -42,8 +47,6 @@ public class MongoConfigConnector {
 
   @Override
   public String toString() {
-    return "MongoConfigConnector{" +
-        "database=" + clientUri +
-        '}';
+    return "MongoConfigConnector{" + "database=" + clientUri + '}';
   }
 }

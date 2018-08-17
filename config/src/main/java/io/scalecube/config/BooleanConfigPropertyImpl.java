@@ -1,12 +1,13 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
-
 import java.util.Map;
 
-class BooleanConfigPropertyImpl extends AbstractSimpleConfigProperty<Boolean> implements BooleanConfigProperty {
+class BooleanConfigPropertyImpl extends AbstractSimpleConfigProperty<Boolean>
+    implements BooleanConfigProperty {
 
-  BooleanConfigPropertyImpl(String name,
+  BooleanConfigPropertyImpl(
+      String name,
       Map<String, LoadedConfigProperty> propertyMap,
       Map<String, Map<Class, PropertyCallback>> propertyCallbackMap) {
     super(name, Boolean.class, propertyMap, propertyCallbackMap, ConfigRegistryImpl.BOOLEAN_PARSER);

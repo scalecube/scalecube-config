@@ -4,22 +4,29 @@ import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.source.ClassPathConfigSource;
-
 import java.nio.file.Path;
 import java.util.function.Predicate;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class PredicateOrderingConfigExample {
 
+  /**
+   * Main method for example of predicate ordering.
+   *
+   * @param args program arguments
+   */
   public static void main(String[] args) {
     Predicate<Path> propsPredicate = path -> path.toString().endsWith(".props");
     Predicate<Path> firstPredicate = propsPredicate.and(path -> path.toString().contains("order1"));
-    Predicate<Path> secondPredicate = propsPredicate.and(path -> path.toString().contains("order2"));
+    Predicate<Path> secondPredicate =
+        propsPredicate.and(path -> path.toString().contains("order2"));
 
-    ConfigRegistry configRegistry = ConfigRegistry.create(
-        ConfigRegistrySettings.builder()
-            .addLastSource("classpath", new ClassPathConfigSource(firstPredicate, secondPredicate))
-            .build());
+    ConfigRegistry configRegistry =
+        ConfigRegistry.create(
+            ConfigRegistrySettings.builder()
+                .addLastSource(
+                    "classpath", new ClassPathConfigSource(firstPredicate, secondPredicate))
+                .build());
 
     StringConfigProperty orderedProp1 = configRegistry.stringProperty("orderedProp1");
 

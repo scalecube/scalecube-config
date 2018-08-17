@@ -5,10 +5,6 @@ import io.scalecube.config.jmx.JmxConfigRegistry;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.ConfigSourceInfo;
 import io.scalecube.config.source.LoadedConfigProperty;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.time.Duration;
@@ -33,10 +29,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class ConfigRegistryImpl implements ConfigRegistry {
 
@@ -54,13 +51,14 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   private static final ScheduledExecutorService reloadExecutor;
 
   static {
-    ThreadFactory threadFactory = r -> {
-      Thread thread = new Thread(r);
-      thread.setDaemon(true);
-      thread.setName("config-reloader");
-      thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
-      return thread;
-    };
+    ThreadFactory threadFactory =
+        r -> {
+          Thread thread = new Thread(r);
+          thread.setDaemon(true);
+          thread.setName("config-reloader");
+          thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
+          return thread;
+        };
     reloadExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
   }
 
@@ -72,14 +70,16 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private volatile Map<String, LoadedConfigProperty> propertyMap; // being reset on reload
 
-  private final Map<String, Map<Class, PropertyCallback>> propertyCallbackMap = new ConcurrentHashMap<>();
+  private final Map<String, Map<Class, PropertyCallback>> propertyCallbackMap =
+      new ConcurrentHashMap<>();
 
-  private final LinkedHashMap<ConfigEvent, Object> recentConfigEvents = new LinkedHashMap<ConfigEvent, Object>() {
-    @Override
-    protected boolean removeEldestEntry(Map.Entry<ConfigEvent, Object> eldest) {
-      return size() > settings.getRecentConfigEventsNum();
-    }
-  };
+  private final LinkedHashMap<ConfigEvent, Object> recentConfigEvents =
+      new LinkedHashMap<ConfigEvent, Object>() {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<ConfigEvent, Object> eldest) {
+          return size() > settings.getRecentConfigEventsNum();
+        }
+      };
 
   ConfigRegistryImpl(ConfigRegistrySettings settings) {
     Objects.requireNonNull(settings, "ConfigRegistrySettings can't be null");
@@ -89,13 +89,17 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   void init() {
     loadAndNotify();
 
-    reloadExecutor.scheduleAtFixedRate(() -> {
-      try {
-        loadAndNotify();
-      } catch (Exception e) {
-        LOGGER.error("Exception on config reload, cause: {}", e, e);
-      }
-    }, settings.getReloadIntervalSec(), settings.getReloadIntervalSec(), TimeUnit.SECONDS);
+    reloadExecutor.scheduleAtFixedRate(
+        () -> {
+          try {
+            loadAndNotify();
+          } catch (Exception e) {
+            LOGGER.error("Exception on config reload, cause: {}", e, e);
+          }
+        },
+        settings.getReloadIntervalSec(),
+        settings.getReloadIntervalSec(),
+        TimeUnit.SECONDS);
 
     if (settings.isJmxEnabled()) {
       registerJmxMBean();
@@ -104,11 +108,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private void registerJmxMBean() {
     try {
-      MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+      MBeanServer mbeanServer = ManagementFactory.getPlatformMBeanServer();
       ObjectName objectName = new ObjectName(settings.getJmxMBeanName());
-      mBeanServer.registerMBean(new JmxConfigRegistry(this), objectName);
-      MBeanInfo mBeanInfo = mBeanServer.getMBeanInfo(objectName);
-      LOGGER.info("Registered JMX MBean: {}", mBeanInfo);
+      mbeanServer.registerMBean(new JmxConfigRegistry(this), objectName);
+      MBeanInfo mbeanInfo = mbeanServer.getMBeanInfo(objectName);
+      LOGGER.info("Registered JMX MBean: {}", mbeanInfo);
     } catch (Exception e) {
       LOGGER.warn("Failed to register JMX MBean '{}', cause: {}", settings.getJmxMBeanName(), e);
     }
@@ -116,13 +120,15 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   @Override
   public <T> ObjectConfigProperty<T> objectProperty(String prefix, Class<T> cfgClass) {
-    Map<String, String> bindingMap = Arrays.stream(cfgClass.getDeclaredFields())
-        .collect(Collectors.toMap(Field::getName, field -> prefix + '.' + field.getName()));
+    Map<String, String> bindingMap =
+        Arrays.stream(cfgClass.getDeclaredFields())
+            .collect(Collectors.toMap(Field::getName, field -> prefix + '.' + field.getName()));
     return new ObjectConfigPropertyImpl<>(bindingMap, cfgClass, propertyMap, propertyCallbackMap);
   }
 
   @Override
-  public <T> ObjectConfigProperty<T> objectProperty(Map<String, String> bindingMap, Class<T> cfgClass) {
+  public <T> ObjectConfigProperty<T> objectProperty(
+      Map<String, String> bindingMap, Class<T> cfgClass) {
     return new ObjectConfigPropertyImpl<>(bindingMap, cfgClass, propertyMap, propertyCallbackMap);
   }
 
@@ -252,7 +258,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
-  public Map<String, List<String>> stringMultimapValue(String name, Map<String, List<String>> defaultValue) {
+  public Map<String, List<String>> stringMultimapValue(
+      String name, Map<String, List<String>> defaultValue) {
     return stringMultimapProperty(name).value(defaultValue);
   }
 
@@ -262,7 +269,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
-  public Map<String, List<Double>> doubleMultimapValue(String name, Map<String, List<Double>> defaultValue) {
+  public Map<String, List<Double>> doubleMultimapValue(
+      String name, Map<String, List<Double>> defaultValue) {
     return doubleMultimapProperty(name).value(defaultValue);
   }
 
@@ -272,7 +280,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
-  public Map<String, List<Long>> longMultimapValue(String name, Map<String, List<Long>> defaultValue) {
+  public Map<String, List<Long>> longMultimapValue(
+      String name, Map<String, List<Long>> defaultValue) {
     return longMultimapProperty(name).value(defaultValue);
   }
 
@@ -282,36 +291,48 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
-  public Map<String, List<Integer>> intMultimapValue(String name, Map<String, List<Integer>> defaultValue) {
+  public Map<String, List<Integer>> intMultimapValue(
+      String name, Map<String, List<Integer>> defaultValue) {
     return intMultimapProperty(name).value(defaultValue);
   }
 
   @Override
   public MultimapConfigProperty<Duration> durationMultimapProperty(String name) {
-    return new MultimapConfigPropertyImpl<>(name, propertyMap, propertyCallbackMap, DURATION_PARSER);
+    return new MultimapConfigPropertyImpl<>(
+        name, propertyMap, propertyCallbackMap, DURATION_PARSER);
   }
 
   @Override
-  public Map<String, List<Duration>> durationMultimapValue(String name, Map<String, List<Duration>> defaultValue) {
+  public Map<String, List<Duration>> durationMultimapValue(
+      String name, Map<String, List<Duration>> defaultValue) {
     return durationMultimapProperty(name).value(defaultValue);
   }
 
   @Override
   public Set<String> allProperties() {
-    return propertyMap.values().stream().map(LoadedConfigProperty::name).collect(Collectors.toSet());
+    return propertyMap
+        .values()
+        .stream()
+        .map(LoadedConfigProperty::name)
+        .collect(Collectors.toSet());
   }
 
   @Override
   public Collection<ConfigPropertyInfo> getConfigProperties() {
-    return propertyMap.values().stream().map(property -> {
-      ConfigPropertyInfo info = new ConfigPropertyInfo();
-      info.setName(property.name());
-      info.setValue(property.valueAsString().orElse(null));
-      info.setSource(property.source().orElse(null));
-      info.setOrigin(property.origin().orElse(null));
-      info.setHost(settings.getHost());
-      return info;
-    }).collect(Collectors.toList());
+    return propertyMap
+        .values()
+        .stream()
+        .map(
+            property -> {
+              ConfigPropertyInfo info = new ConfigPropertyInfo();
+              info.setName(property.name());
+              info.setValue(property.valueAsString().orElse(null));
+              info.setSource(property.source().orElse(null));
+              info.setOrigin(property.origin().orElse(null));
+              info.setHost(settings.getHost());
+              return info;
+            })
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -329,7 +350,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       info.setConfigSourceString(configSource.toString());
 
       Integer status = configSourceStatusMap.get(sourceName);
-      info.setHealthString(Optional.ofNullable(status).map(i -> i == 1 ? "Error" : "Ok").orElse("Unknown"));
+      info.setHealthString(
+          Optional.ofNullable(status).map(i -> i == 1 ? "Error" : "Ok").orElse("Unknown"));
 
       info.setHost(settings.getHost());
       result.add(info);
@@ -368,8 +390,10 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
       if (loadException == null) {
         // populate loaded properties with new field 'source'
-        configMap.forEach((key, configProperty) -> loadedPropertyMap.putIfAbsent(key,
-            LoadedConfigProperty.withCopyFrom(configProperty).source(name).build()));
+        configMap.forEach(
+            (key, configProperty) ->
+                loadedPropertyMap.putIfAbsent(
+                    key, LoadedConfigProperty.withCopyFrom(configProperty).source(name).build()));
       }
     }
 
@@ -386,20 +410,23 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       Set<String> keySet1 = propertyMap.keySet();
       Set<String> keySet2 = loadedPropertyMap.keySet();
 
-      Set<String> updatedProps = Stream.concat(keySet1.stream(), keySet2.stream())
-          .filter(keySet1::contains)
-          .filter(keySet2::contains)
-          .collect(Collectors.toSet());
+      Set<String> updatedProps =
+          Stream.concat(keySet1.stream(), keySet2.stream())
+              .filter(keySet1::contains)
+              .filter(keySet2::contains)
+              .collect(Collectors.toSet());
 
       for (String propName : updatedProps) {
         ConfigProperty newProp = loadedPropertyMap.get(propName); // not null
         ConfigProperty oldProp = propertyMap.get(propName); // not null
         // collect changes
-        detectedChanges.add(ConfigEvent.createUpdated(propName, settings.getHost(), oldProp, newProp));
+        detectedChanges.add(
+            ConfigEvent.createUpdated(propName, settings.getHost(), oldProp, newProp));
       }
 
       // Checks for removals
-      Set<String> removedProps = keySet1.stream().filter(o -> !keySet2.contains(o)).collect(Collectors.toSet());
+      Set<String> removedProps =
+          keySet1.stream().filter(o -> !keySet2.contains(o)).collect(Collectors.toSet());
       for (String propName : removedProps) {
         ConfigProperty oldProp = propertyMap.get(propName);
         if (oldProp != null) {
@@ -409,7 +436,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       }
 
       // Check for new properties
-      Set<String> addedProps = keySet2.stream().filter(o -> !keySet1.contains(o)).collect(Collectors.toSet());
+      Set<String> addedProps =
+          keySet2.stream().filter(o -> !keySet1.contains(o)).collect(Collectors.toSet());
       for (String propName : addedProps) {
         ConfigProperty newProp = loadedPropertyMap.get(propName); // not null
         // collect changes
@@ -422,27 +450,44 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
     detectedChanges.forEach(input -> recentConfigEvents.put(input, null)); // keep recent changes
 
-    reportChanges(detectedChanges.stream().filter(ConfigEvent::isChanged).collect(Collectors.toList()));
+    reportChanges(
+        detectedChanges.stream().filter(ConfigEvent::isChanged).collect(Collectors.toList()));
 
     // re-compute values and invoke callbacks
-    detectedChanges.stream()
+    detectedChanges
+        .stream()
         .filter(event -> propertyCallbackMap.containsKey(event.getName()))
-        .flatMap(event -> propertyCallbackMap.get(event.getName()).values().stream()
-            .map(callback -> new SimpleImmutableEntry<>(callback, event)))
-        .collect(Collectors.groupingBy(SimpleImmutableEntry::getKey,
-            Collectors.mapping(SimpleImmutableEntry::getValue, Collectors.toList())))
+        .flatMap(
+            event ->
+                propertyCallbackMap
+                    .get(event.getName())
+                    .values()
+                    .stream()
+                    .map(callback -> new SimpleImmutableEntry<>(callback, event)))
+        .collect(
+            Collectors.groupingBy(
+                SimpleImmutableEntry::getKey,
+                Collectors.mapping(SimpleImmutableEntry::getValue, Collectors.toList())))
         .forEach(PropertyCallback::computeValue);
   }
 
   private void reportChanges(Collection<ConfigEvent> events) {
     Collection<ConfigEvent> configEvents = Collections.unmodifiableCollection(events);
-    settings.getListeners().forEach((key, eventListener) -> {
-      try {
-        eventListener.onEvents(configEvents);
-      } catch (Exception e) {
-        LOGGER.error("Exception on configEventListener: {}, events: {}, cause: {}", key, configEvents, e, e);
-      }
-    });
+    settings
+        .getListeners()
+        .forEach(
+            (key, eventListener) -> {
+              try {
+                eventListener.onEvents(configEvents);
+              } catch (Exception e) {
+                LOGGER.error(
+                    "Exception on configEventListener: {}, events: {}, cause: {}",
+                    key,
+                    configEvents,
+                    e,
+                    e);
+              }
+            });
   }
 
   private void computeConfigLoadStatus(String name, ConfigSource source, Throwable throwable) {
@@ -450,7 +495,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     Integer status0 = configSourceStatusMap.put(name, status);
     if (status0 == null || (status0 ^ status) == 1) {
       if (status == 1) {
-        LOGGER.error("Exception at loadConfig on {}, source: {}, cause: {}", source, name, throwable);
+        LOGGER.error(
+            "Exception at loadConfig on {}, source: {}, cause: {}", source, name, throwable);
       } else {
         LOGGER.debug("Loaded config properties from {}, source: {}", source, name);
       }

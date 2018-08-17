@@ -1,7 +1,6 @@
 package io.scalecube.config.source;
 
 import io.scalecube.config.ConfigProperty;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,10 +32,12 @@ public class SystemPropertiesConfigSource implements ConfigSource {
     Map<String, ConfigProperty> result = new TreeMap<>();
     Stream<String> namespaces1 = namespaces.stream();
 
-    for (Enumeration<?> e = properties.propertyNames(); e.hasMoreElements();) {
+    for (Enumeration<?> e = properties.propertyNames(); e.hasMoreElements(); ) {
       String propName = (String) e.nextElement();
       if (namespaces.isEmpty() || namespaces1.anyMatch(propName::startsWith)) {
-        result.put(propName, LoadedConfigProperty.forNameAndValue(propName, properties.getProperty(propName)));
+        result.put(
+            propName,
+            LoadedConfigProperty.forNameAndValue(propName, properties.getProperty(propName)));
       }
     }
     return result;

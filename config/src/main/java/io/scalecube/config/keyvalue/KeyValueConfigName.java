@@ -2,22 +2,15 @@ package io.scalecube.config.keyvalue;
 
 import java.util.Objects;
 import java.util.Optional;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-/**
- * Generic key-value config name. Comes in two parts: group name and config collection name.
- */
+/** Generic key-value config name. Comes in two parts: group name and config collection name. */
 public final class KeyValueConfigName {
-  /**
-   * A group name. Nullable field.
-   */
+  /** A group name. Nullable field. */
   private final String groupName;
 
-  /**
-   * A config collection name. Not null.
-   */
+  /** A config collection name. Not null. */
   private final String collectionName;
 
   public KeyValueConfigName(@Nullable String groupName, @Nonnull String collectionName) {
@@ -39,30 +32,28 @@ public final class KeyValueConfigName {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o)
+    if (this == o) {
       return true;
-    if (o == null || getClass() != o.getClass())
+    }
+    if (o == null || getClass() != o.getClass()) {
       return false;
-
+    }
     KeyValueConfigName that = (KeyValueConfigName) o;
-
-    if (groupName != null ? !groupName.equals(that.groupName) : that.groupName != null)
-      return false;
-    return collectionName.equals(that.collectionName);
+    return Objects.equals(groupName, that.groupName)
+        && Objects.equals(collectionName, that.collectionName);
   }
 
   @Override
   public int hashCode() {
-    int result = groupName != null ? groupName.hashCode() : 0;
-    result = 31 * result + collectionName.hashCode();
-    return result;
+    return Objects.hash(groupName, collectionName);
   }
 
   @Override
   public String toString() {
-    return "KeyValueConfigName{" +
-        "groupName='" + groupName + '\'' +
-        ", collectionName='" + collectionName + '\'' +
-        '}';
+    final StringBuilder sb = new StringBuilder("KeyValueConfigName{");
+    sb.append("groupName='").append(groupName).append('\'');
+    sb.append(", collectionName='").append(collectionName).append('\'');
+    sb.append('}');
+    return sb.toString();
   }
 }

@@ -1,10 +1,6 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -15,13 +11,15 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Abstract parent class for config property classes. Holds mutable state fields: {@link #value} the parsed config
- * property field, {@link #inputList} which is kind of a 'source' for parsed value. Reload process may change volatile
- * values of those fields, of course, if property value actually changed and validation passed. Collections of
- * validators and callbacks (of type {@link T}) are defined here and only operations around them are shared to
- * subclasses.
+ * Abstract parent class for config property classes. Holds mutable state fields: {@link #value} the
+ * parsed config property field, {@link #inputList} which is kind of a 'source' for parsed value.
+ * Reload process may change volatile values of those fields, of course, if property value actually
+ * changed and validation passed. Collections of validators and callbacks (of type {@link T}) are
+ * defined here and only operations around them are shared to subclasses.
  *
  * @param <T> type of the property value
  */
@@ -33,12 +31,15 @@ abstract class AbstractConfigProperty<T> {
 
   final String name;
   final Class<?> propertyClass;
-  final Collection<Predicate<T>> validators = new CopyOnWriteArraySet<>(); // of type Set for a reason
-  final Collection<BiConsumer<T, T>> callbacks = new CopyOnWriteArraySet<>(); // of type Set for a reason
+  final Collection<Predicate<T>> validators =
+      new CopyOnWriteArraySet<>(); // of type Set for a reason
+  final Collection<BiConsumer<T, T>> callbacks =
+      new CopyOnWriteArraySet<>(); // of type Set for a reason
 
   private PropertyCallback<T> propertyCallback; // initialized from subclass
   private volatile T value; // initialized from subclass, reset in callback
-  private volatile List<LoadedConfigProperty> inputList; // initialized from subclass, reset in callback
+  private volatile List<LoadedConfigProperty>
+      inputList; // initialized from subclass, reset in callback
 
   AbstractConfigProperty(String name, Class<?> propertyClass) {
     this.name = name;
@@ -69,8 +70,8 @@ abstract class AbstractConfigProperty<T> {
   }
 
   /**
-   * Binds this config property instance to given {@link PropertyCallback}. The latter is shared among config property
-   * instances of the same type.
+   * Binds this config property instance to given {@link PropertyCallback}. The latter is shared
+   * among config property instances of the same type.
    *
    * @param propertyCallback propertyCallback of certain type.
    */
@@ -80,7 +81,7 @@ abstract class AbstractConfigProperty<T> {
 
   /**
    * This method is being called from subclasses to assign a {@link #value} with initial value.
-   * 
+   *
    * @see PropertyCallback#computeValue(List, AbstractConfigProperty)
    */
   final void computeValue(List<LoadedConfigProperty> inputList) {
@@ -88,11 +89,12 @@ abstract class AbstractConfigProperty<T> {
   }
 
   /**
-   * Takes new value, validates it, resets {@code this.value} field and optionally calling callbacks.
-   * 
+   * Takes new value, validates it, resets {@code this.value} field and optionally calling
+   * callbacks.
+   *
    * @param value1 new value to set; may be null.
-   * @param inputList1 valueParser input list; contains additional info such as source, origin and string value
-   *        representation which in fact had built up given {@code value1} param.
+   * @param inputList1 valueParser input list; contains additional info such as source, origin and
+   *     string value representation which in fact had built up given {@code value1} param.
    * @param invokeCallbacks flag indicating whether it's needed to notify callbacks about changes.
    * @throws IllegalArgumentException in case new value fails against existing validators.
    */
@@ -118,8 +120,9 @@ abstract class AbstractConfigProperty<T> {
   }
 
   /**
-   * Helper method which applies given {@code mapper} lambda to the {@link #inputList} (if any). For example if one
-   * needs to retrieve more than just a {@link #value} info from this config property, like source, origin and etc.
+   * Helper method which applies given {@code mapper} lambda to the {@link #inputList} (if any). For
+   * example if one needs to retrieve more than just a {@link #value} info from this config
+   * property, like source, origin and etc.
    */
   final Optional<String> mapToString(Function<List<LoadedConfigProperty>, String> mapper) {
     return Optional.ofNullable(inputList).map(mapper);
@@ -130,21 +133,34 @@ abstract class AbstractConfigProperty<T> {
       callback.accept(t1, t2);
     } catch (Exception e) {
       LOGGER.error(
-          "Exception occurred on property-change callback: {}, property name: '{}', oldValue: {}, newValue: {}, cause: {}",
-          callback, name, t1, t2, e, e);
+          "Exception occurred on property-change callback: {}, "
+              + "property name: '{}', oldValue: {}, newValue: {}, cause: {}",
+          callback,
+          name,
+          t1,
+          t2,
+          e,
+          e);
     }
   }
 
-  private boolean isInputsEqual(List<LoadedConfigProperty> inputList, List<LoadedConfigProperty> inputList1) {
+  private boolean isInputsEqual(
+      List<LoadedConfigProperty> inputList, List<LoadedConfigProperty> inputList1) {
     if ((inputList == null && inputList1 != null) || (inputList != null && inputList1 == null)) {
       return false;
     }
 
-    Map<String, Optional<String>> inputMap = inputList.stream().collect(Collectors.toMap(
-        LoadedConfigProperty::name, LoadedConfigProperty::valueAsString));
+    Map<String, Optional<String>> inputMap =
+        inputList
+            .stream()
+            .collect(
+                Collectors.toMap(LoadedConfigProperty::name, LoadedConfigProperty::valueAsString));
 
-    Map<String, Optional<String>> inputMap1 = inputList1.stream().collect(Collectors.toMap(
-        LoadedConfigProperty::name, LoadedConfigProperty::valueAsString));
+    Map<String, Optional<String>> inputMap1 =
+        inputList1
+            .stream()
+            .collect(
+                Collectors.toMap(LoadedConfigProperty::name, LoadedConfigProperty::valueAsString));
 
     return inputMap.equals(inputMap1);
   }

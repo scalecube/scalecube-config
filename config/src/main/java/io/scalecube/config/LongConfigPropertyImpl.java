@@ -1,12 +1,13 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
-
 import java.util.Map;
 
-class LongConfigPropertyImpl extends AbstractSimpleConfigProperty<Long> implements LongConfigProperty {
+class LongConfigPropertyImpl extends AbstractSimpleConfigProperty<Long>
+    implements LongConfigProperty {
 
-  LongConfigPropertyImpl(String name,
+  LongConfigPropertyImpl(
+      String name,
       Map<String, LoadedConfigProperty> propertyMap,
       Map<String, Map<Class, PropertyCallback>> propertyCallbackMap) {
     super(name, Long.class, propertyMap, propertyCallbackMap, ConfigRegistryImpl.LONG_PARSER);

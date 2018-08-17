@@ -1,7 +1,6 @@
 package io.scalecube.config;
 
 import io.scalecube.config.utils.ThrowableUtil;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -12,8 +11,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Helper holder class. Contains parsed field of the corresponding object class, associated property name and computed
- * {@link #valueParser} function.
+ * Helper holder class. Contains parsed field of the corresponding object class, associated property
+ * name and computed {@link #valueParser} function.
  */
 class ObjectPropertyField {
   private final Field field;
@@ -24,7 +23,9 @@ class ObjectPropertyField {
     int modifiers = field.getModifiers();
     if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers)) {
       throw new IllegalArgumentException(
-          "ObjectPropertyField: 'static' or 'final' declaration is not supported (field: " + field + ")");
+          "ObjectPropertyField: 'static' or 'final' declaration is not supported (field: "
+              + field
+              + ")");
     }
 
     this.field = field;
@@ -40,9 +41,11 @@ class ObjectPropertyField {
         Type[] typeArguments = paramType.getActualTypeArguments();
         ParameterizedType valueType = ((ParameterizedType) typeArguments[1]);
         Type type = valueType.getActualTypeArguments()[0];
-        this.valueParser = MultimapConfigPropertyImpl.toMultimapPropertyParser(getValueParser(type));
+        this.valueParser =
+            MultimapConfigPropertyImpl.toMultimapPropertyParser(getValueParser(type));
       } else {
-        throw new IllegalArgumentException("ObjectPropertyField: unsupported type on field: " + field);
+        throw new IllegalArgumentException(
+            "ObjectPropertyField: unsupported type on field: " + field);
       }
     } else {
       this.valueParser = getValueParser(field.getType());
@@ -83,7 +86,8 @@ class ObjectPropertyField {
     } else if (type == Long.TYPE || type == Long.class) {
       return Long::parseLong;
     } else {
-      throw new IllegalArgumentException("ObjectPropertyField: unsupported type on field: " + field);
+      throw new IllegalArgumentException(
+          "ObjectPropertyField: unsupported type on field: " + field);
     }
   }
 

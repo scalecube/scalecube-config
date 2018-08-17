@@ -2,7 +2,6 @@ package io.scalecube.config;
 
 import io.scalecube.config.audit.ConfigEventListener;
 import io.scalecube.config.source.ConfigSource;
-
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,6 +10,8 @@ import java.util.LinkedList;
 import java.util.Map;
 
 /**
+ * Represents settings of config registry.
+ *
  * @author Anton Kharenko
  */
 public final class ConfigRegistrySettings {
@@ -84,15 +85,16 @@ public final class ConfigRegistrySettings {
 
   @Override
   public String toString() {
-    return "ConfigRegistrySettings{" +
-        "reloadIntervalSec=" + reloadIntervalSec +
-        ", recentConfigEventsNum=" + recentConfigEventsNum +
-        ", listeners=" + listeners +
-        ", sources=" + sources +
-        ", host='" + host + '\'' +
-        ", jmxEnabled=" + jmxEnabled +
-        ", jmxMBeanName='" + jmxMBeanName + '\'' +
-        '}';
+    final StringBuilder sb = new StringBuilder("ConfigRegistrySettings{");
+    sb.append("reloadIntervalSec=").append(reloadIntervalSec);
+    sb.append(", recentConfigEventsNum=").append(recentConfigEventsNum);
+    sb.append(", listeners=").append(listeners);
+    sb.append(", sources=").append(sources);
+    sb.append(", host='").append(host).append('\'');
+    sb.append(", jmxEnabled=").append(jmxEnabled);
+    sb.append(", jmxMBeanName='").append(jmxMBeanName).append('\'');
+    sb.append('}');
+    return sb.toString();
   }
 
   public static class Builder {
@@ -122,18 +124,40 @@ public final class ConfigRegistrySettings {
       return this;
     }
 
+    /**
+     * Add config source as the last one to be processed.
+     *
+     * @param name source alias name
+     * @param configSource config source instance
+     * @return builder instance
+     */
     public Builder addLastSource(String name, ConfigSource configSource) {
       sourceOrder.addLast(name);
       sources.put(name, configSource);
       return this;
     }
 
+    /**
+     * Add config source as the first one to be processed.
+     *
+     * @param name source alias name
+     * @param configSource config source instance
+     * @return builder instance
+     */
     public Builder addFirstSource(String name, ConfigSource configSource) {
       sourceOrder.addFirst(name);
       sources.put(name, configSource);
       return this;
     }
 
+    /**
+     * Add config source to be processed before another specified by <code>beforeName</code> source.
+     *
+     * @param beforeName source alias name before which newly added source will be processed
+     * @param name source alias name
+     * @param configSource config source instance
+     * @return builder instance
+     */
     public Builder addBeforeSource(String beforeName, String name, ConfigSource configSource) {
       int ind = sourceOrder.indexOf(beforeName);
       sourceOrder.add(ind, name);
@@ -155,5 +179,4 @@ public final class ConfigRegistrySettings {
       return new ConfigRegistrySettings(this);
     }
   }
-
 }

@@ -1,7 +1,6 @@
 package io.scalecube.config.source;
 
 import io.scalecube.config.ConfigProperty;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

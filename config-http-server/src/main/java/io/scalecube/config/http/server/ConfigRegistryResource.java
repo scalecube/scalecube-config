@@ -5,9 +5,7 @@ import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.source.ConfigSourceInfo;
-
 import java.util.Collection;
-
 import javax.annotation.security.PermitAll;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

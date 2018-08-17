@@ -13,44 +13,54 @@ import java.util.function.Predicate;
  */
 public interface MultimapConfigProperty<V> extends ConfigProperty {
   /**
-   * @return optional multimap value.
+   * Returns value.
+   *
+   * @return optional multimap value
    */
   Optional<Map<String, List<V>>> value();
 
   /**
-   * Shortcut on {@code value().orElse(defaultValue)}
+   * Shortcut on {@code value().orElse(defaultValue)}.
+   *
+   * @return existing value or default
    */
   Map<String, List<V>> value(Map<String, List<V>> defaultValue);
 
   /**
+   * Returns existing value or throws {@link NoSuchElementException} if value is null.
+   *
+   * @return existing value or exception
    * @throws NoSuchElementException if value is null
    */
   Map<String, List<V>> valueOrThrow();
 
   /**
-   * Adds reload callback to the list. Callbacks will be invoked in the order they were added, and only after validation
-   * have been passed.
+   * Adds reload callback to the list. Callbacks will be invoked in the order they were added, and
+   * only after validation have been passed.
    *
-   * @param callback reload callback, 1st argument is old value 2nd one is new value, both are nullable; though callback
-   *        may throw exception, this wouldn't stop other callbacks from execution.
+   * @param callback reload callback, 1st argument is old value 2nd one is new value, both are
+   *     nullable; though callback may throw exception, this wouldn't stop other callbacks from
+   *     execution
    */
   void addCallback(BiConsumer<Map<String, List<V>>, Map<String, List<V>>> callback);
 
   /**
-   * Adds reload callback to the list. Callbacks will be invoked in the order they were added, and only after validation
-   * have been passed.
+   * Adds reload callback to the list. Callbacks will be invoked in the order they were added, and
+   * only after validation have been passed.
    *
    * @param executor executor where reload callback will be executed.
-   * @param callback reload callback, 1st argument is old value 2nd one is new value, both are nullable; though callback
-   *        may throw exception, this wouldn't stop other callbacks from execution.
+   * @param callback reload callback, 1st argument is old value 2nd one is new value, both are
+   *     nullable; though callback may throw exception, this wouldn't stop other callbacks from
+   *     execution
    */
-  void addCallback(Executor executor, BiConsumer<Map<String, List<V>>, Map<String, List<V>>> callback);
+  void addCallback(
+      Executor executor, BiConsumer<Map<String, List<V>>, Map<String, List<V>>> callback);
 
   /**
-   * Adds validator to the list of validators. Validators will be invoked in the order they were added. An argument to
-   * predicate is nullable.
+   * Adds validator to the list of validators. Validators will be invoked in the order they were
+   * added. An argument to predicate is nullable.
    *
-   * @throws IllegalArgumentException in case existing value fails against passed {@code validator}.
+   * @throws IllegalArgumentException in case existing value fails against passed {@code validator}
    */
   void addValidator(Predicate<Map<String, List<V>>> validator);
 }

@@ -1,12 +1,9 @@
 package io.scalecube.config.keyvalue;
 
 import java.util.List;
-
 import javax.annotation.Nonnull;
 
-/**
- * Generic key-value config data access interface.
- */
+/** Generic key-value config data access interface. */
 public interface KeyValueConfigRepository {
 
   /**

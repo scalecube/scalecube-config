@@ -1,23 +1,19 @@
 package io.scalecube.config.mongo;
 
-import io.scalecube.config.keyvalue.KeyValueConfigEntity;
-import io.scalecube.config.keyvalue.KeyValueConfigName;
-import io.scalecube.config.keyvalue.KeyValueConfigRepository;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-
-import org.bson.RawBsonDocument;
-
+import io.scalecube.config.keyvalue.KeyValueConfigEntity;
+import io.scalecube.config.keyvalue.KeyValueConfigName;
+import io.scalecube.config.keyvalue.KeyValueConfigRepository;
 import java.io.ByteArrayInputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nonnull;
+import org.bson.RawBsonDocument;
 
 public class MongoConfigRepository implements KeyValueConfigRepository {
   private final MongoConfigConnector connector;
@@ -27,7 +23,8 @@ public class MongoConfigRepository implements KeyValueConfigRepository {
   }
 
   @Override
-  public List<KeyValueConfigEntity> findAll(@Nonnull KeyValueConfigName configName) throws Exception {
+  public List<KeyValueConfigEntity> findAll(@Nonnull KeyValueConfigName configName)
+      throws Exception {
     Objects.requireNonNull(configName);
 
     String collectionName = configName.getQualifiedName();
@@ -43,10 +40,14 @@ public class MongoConfigRepository implements KeyValueConfigRepository {
     ByteArrayInputStream bin = new ByteArrayInputStream(document.getByteBuffer().array());
     ObjectMapper objectMapper = MongoConfigObjectMapper.getInstance();
     ObjectReader objectReader = objectMapper.readerFor(MongoConfigEntity.class);
-    List<KeyValueConfigEntity> result = ((MongoConfigEntity) objectReader.readValue(bin)).getConfig();
+    List<KeyValueConfigEntity> result =
+        ((MongoConfigEntity) objectReader.readValue(bin)).getConfig();
 
     // set groupName on returned config key-value pairs
-    return result.stream().map(input -> input.setConfigName(configName)).collect(Collectors.toList());
+    return result
+        .stream()
+        .map(input -> input.setConfigName(configName))
+        .collect(Collectors.toList());
   }
 
   // Helper class for mapping bson document

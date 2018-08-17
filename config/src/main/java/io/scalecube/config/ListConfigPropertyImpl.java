@@ -1,25 +1,30 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
-
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-class ListConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<List<T>> implements ListConfigProperty<T> {
+class ListConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<List<T>>
+    implements ListConfigProperty<T> {
 
   static <T> Function<String, List<T>> toListPropertyParser(Function<String, T> valueParser) {
     return str -> Arrays.stream(str.split(",")).map(valueParser).collect(Collectors.toList());
   }
 
-  ListConfigPropertyImpl(String name,
+  ListConfigPropertyImpl(
+      String name,
       Map<String, LoadedConfigProperty> propertyMap,
       Map<String, Map<Class, PropertyCallback>> propertyCallbackMap,
       Function<String, T> valueParser) {
-    super(name, getListPropertyClass(valueParser), propertyMap, propertyCallbackMap, toListPropertyParser(valueParser));
+    super(
+        name,
+        getListPropertyClass(valueParser),
+        propertyMap,
+        propertyCallbackMap,
+        toListPropertyParser(valueParser));
   }
 
   @Override
@@ -46,24 +51,19 @@ class ListConfigPropertyImpl<T> extends AbstractSimpleConfigProperty<List<T>> im
       result = DurationList.class;
     }
     if (result == null) {
-      throw new IllegalArgumentException("ListConfigPropertyImpl: unsupported list valueParser " + valueParser);
+      throw new IllegalArgumentException(
+          "ListConfigPropertyImpl: unsupported list valueParser " + valueParser);
     }
     return result;
   }
 
-  private static class StringList {
-  }
+  private static class StringList {}
 
-  private static class DoubleList {
-  }
+  private static class DoubleList {}
 
-  private static class LongList {
-  }
+  private static class LongList {}
 
-  private static class IntList {
-  }
+  private static class IntList {}
 
-  private static class DurationList {
-  }
-
+  private static class DurationList {}
 }

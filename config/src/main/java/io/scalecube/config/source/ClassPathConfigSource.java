@@ -3,7 +3,6 @@ package io.scalecube.config.source;
 import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.utils.ConfigCollectorUtil;
 import io.scalecube.config.utils.ThrowableUtil;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -28,15 +27,22 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
 import javax.annotation.Nonnull;
 
 public class ClassPathConfigSource extends FilteredPathConfigSource {
   private final ClassLoader classLoader;
 
-  public ClassPathConfigSource(@Nonnull ClassLoader classLoader, @Nonnull List<Predicate<Path>> predicates) {
+  /**
+   * Creates provider of configuration properties with classpath as source.
+   *
+   * @param classLoader class loader
+   * @param predicates list of predicates to filter
+   */
+  public ClassPathConfigSource(
+      @Nonnull ClassLoader classLoader, @Nonnull List<Predicate<Path>> predicates) {
     super(predicates);
-    this.classLoader = Objects.requireNonNull(classLoader, "ClassPathConfigSource: classloader is required");
+    this.classLoader =
+        Objects.requireNonNull(classLoader, "ClassPathConfigSource: classloader is required");
   }
 
   public ClassPathConfigSource(@Nonnull List<Predicate<Path>> predicates) {
@@ -44,7 +50,8 @@ public class ClassPathConfigSource extends FilteredPathConfigSource {
   }
 
   @SafeVarargs
-  public ClassPathConfigSource(@Nonnull ClassLoader classLoader, @Nonnull Predicate<Path>... predicates) {
+  public ClassPathConfigSource(
+      @Nonnull ClassLoader classLoader, @Nonnull Predicate<Path>... predicates) {
     super(Arrays.asList(predicates));
     this.classLoader = classLoader;
   }
@@ -57,30 +64,40 @@ public class ClassPathConfigSource extends FilteredPathConfigSource {
   @Override
   public Map<String, ConfigProperty> loadConfig() {
     Collection<Path> pathCollection = new ArrayList<>();
-    getClassPathEntries(classLoader).stream()
+    getClassPathEntries(classLoader)
+        .stream()
         .filter(uri -> uri.getScheme().equals("file"))
-        .forEach(uri -> {
-          File file = new File(uri);
-          if (file.exists()) {
-            try {
-              if (file.isDirectory()) {
-                scanDirectory(file, "", Collections.emptySet(), pathCollection);
-              } else {
-                scanJar(file, pathCollection);
+        .forEach(
+            uri -> {
+              File file = new File(uri);
+              if (file.exists()) {
+                try {
+                  if (file.isDirectory()) {
+                    scanDirectory(file, "", Collections.emptySet(), pathCollection);
+                  } else {
+                    scanJar(file, pathCollection);
+                  }
+                } catch (Exception e) {
+                  throw ThrowableUtil.propagate(e);
+                }
               }
-            } catch (Exception e) {
-              throw ThrowableUtil.propagate(e);
-            }
-          }
-        });
+            });
 
     Map<Path, Map<String, String>> configMap = loadConfigMap(pathCollection);
 
     Map<String, ConfigProperty> result = new TreeMap<>();
-    ConfigCollectorUtil.filterAndCollectInOrder(predicates.iterator(), configMap,
-        (path, map) -> map.entrySet().forEach(
-            entry -> result.putIfAbsent(entry.getKey(),
-                LoadedConfigProperty.withNameAndValue(entry).origin(path.toString()).build())));
+    ConfigCollectorUtil.filterAndCollectInOrder(
+        predicates.iterator(),
+        configMap,
+        (path, map) ->
+            map.entrySet()
+                .forEach(
+                    entry ->
+                        result.putIfAbsent(
+                            entry.getKey(),
+                            LoadedConfigProperty.withNameAndValue(entry)
+                                .origin(path.toString())
+                                .build())));
 
     return result;
   }
@@ -105,7 +122,8 @@ public class ClassPathConfigSource extends FilteredPathConfigSource {
     return new LinkedHashSet<>(entries);
   }
 
-  private void scanDirectory(File directory, String prefix, Set<File> ancestors, Collection<Path> collector)
+  private void scanDirectory(
+      File directory, String prefix, Set<File> ancestors, Collection<Path> collector)
       throws IOException {
     File canonical = directory.getCanonicalFile();
     if (ancestors.contains(canonical)) {
@@ -147,14 +165,13 @@ public class ClassPathConfigSource extends FilteredPathConfigSource {
       try {
         jarFile.close();
       } catch (IOException ignore) {
+        // ignore
       }
     }
   }
 
   @Override
   public String toString() {
-    return "ClassPathConfigSource{" +
-        "classLoader=" + classLoader +
-        '}';
+    return "ClassPathConfigSource{" + "classLoader=" + classLoader + '}';
   }
 }

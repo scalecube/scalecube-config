@@ -1,16 +1,16 @@
 package io.scalecube.config.audit;
 
 import io.scalecube.config.ConfigProperty;
-
 import java.util.Date;
 import java.util.Objects;
-
 import javax.annotation.Nonnull;
 
 public final class ConfigEvent {
 
   public enum Type {
-    ADDED, REMOVED, UPDATED
+    ADDED,
+    REMOVED,
+    UPDATED
   }
 
   private final String name;
@@ -26,7 +26,8 @@ public final class ConfigEvent {
   private final String newSource;
   private final String newOrigin;
 
-  private ConfigEvent(String name, Type type, String host, ConfigProperty oldProp, ConfigProperty newProp) {
+  private ConfigEvent(
+      String name, Type type, String host, ConfigProperty oldProp, ConfigProperty newProp) {
     this.name = Objects.requireNonNull(name, "ConfigEvent: propName is required");
     this.timestamp = new Date();
     this.type = type;
@@ -41,18 +42,45 @@ public final class ConfigEvent {
     this.newOrigin = newProp != null ? newProp.origin().orElse(null) : null;
   }
 
-  public static ConfigEvent createAdded(@Nonnull String propName, String host, @Nonnull ConfigProperty newProp) {
+  /**
+   * Creates {@link Type#ADDED} event for particular property.
+   *
+   * @param propName property name
+   * @param host host
+   * @param newProp added property
+   * @return config event
+   */
+  public static ConfigEvent createAdded(
+      @Nonnull String propName, String host, @Nonnull ConfigProperty newProp) {
     Objects.requireNonNull(newProp, "ConfigEvent: newProp is required");
     return new ConfigEvent(propName, Type.ADDED, host, null, newProp);
   }
 
-  public static ConfigEvent createRemoved(@Nonnull String propName, String host, @Nonnull ConfigProperty oldProp) {
+  /**
+   * Creates {@link Type#REMOVED} event for particular property.
+   *
+   * @param propName property name
+   * @param host host
+   * @param oldProp removed property
+   * @return config event
+   */
+  public static ConfigEvent createRemoved(
+      @Nonnull String propName, String host, @Nonnull ConfigProperty oldProp) {
     Objects.requireNonNull(oldProp, "ConfigEvent: oldProp is required");
     return new ConfigEvent(propName, Type.REMOVED, host, oldProp, null);
   }
 
-  public static ConfigEvent createUpdated(@Nonnull String propName, String host, ConfigProperty oldProp,
-      ConfigProperty newProp) {
+  /**
+   * Creates {@link Type#UPDATED} event for particular property.
+   *
+   * @param propName property name
+   * @param host host
+   * @param oldProp old property
+   * @param newProp new property
+   * @return config event
+   */
+  public static ConfigEvent createUpdated(
+      @Nonnull String propName, String host, ConfigProperty oldProp, ConfigProperty newProp) {
     Objects.requireNonNull(newProp, "ConfigEvent: newProp is required");
     Objects.requireNonNull(oldProp, "ConfigEvent: oldProp is required");
     return new ConfigEvent(propName, Type.UPDATED, host, oldProp, newProp);
@@ -98,27 +126,34 @@ public final class ConfigEvent {
     return newOrigin;
   }
 
+  /**
+   * Checks if property is changed.
+   *
+   * @return true if property is changed
+   */
   public boolean isChanged() {
     if (type == Type.ADDED || type == Type.REMOVED) {
       return true;
     }
-    return !Objects.equals(this.oldSource, this.newSource) || !Objects.equals(this.oldOrigin, this.newOrigin)
+    return !Objects.equals(this.oldSource, this.newSource)
+        || !Objects.equals(this.oldOrigin, this.newOrigin)
         || !Objects.equals(this.oldValue, this.newValue);
   }
 
   @Override
   public String toString() {
-    return "ConfigEvent{" +
-        "name='" + name + '\'' +
-        ", timestamp=" + timestamp +
-        ", type=" + type +
-        ", host='" + host + '\'' +
-        ", oldValue='" + oldValue + '\'' +
-        ", oldSource='" + oldSource + '\'' +
-        ", oldOrigin='" + oldOrigin + '\'' +
-        ", newValue='" + newValue + '\'' +
-        ", newSource='" + newSource + '\'' +
-        ", newOrigin='" + newOrigin + '\'' +
-        '}';
+    final StringBuilder sb = new StringBuilder("ConfigEvent{");
+    sb.append("name='").append(name).append('\'');
+    sb.append(", timestamp=").append(timestamp);
+    sb.append(", type=").append(type);
+    sb.append(", host='").append(host).append('\'');
+    sb.append(", oldValue='").append(oldValue).append('\'');
+    sb.append(", oldSource='").append(oldSource).append('\'');
+    sb.append(", oldOrigin='").append(oldOrigin).append('\'');
+    sb.append(", newValue='").append(newValue).append('\'');
+    sb.append(", newSource='").append(newSource).append('\'');
+    sb.append(", newOrigin='").append(newOrigin).append('\'');
+    sb.append('}');
+    return sb.toString();
   }
 }

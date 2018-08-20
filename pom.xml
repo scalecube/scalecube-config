@@ -17,12 +17,12 @@
     ScaleCube Config is a configuration management library for JVM based distributed applications.
   </description>
   <inceptionYear>2017</inceptionYear>
-  <url>https://github.com/scalecube/config</url>
+  <url>https://github.com/scalecube/scalecube-config</url>
 
   <scm>
-    <url>https://github.com/scalecube/config</url>
-    <connection>scm:git:git@github.com:scalecube/config.git</connection>
-    <developerConnection>scm:git:git@github.com:scalecube/config.git</developerConnection>
+    <url>https://github.com/scalecube/scalecube-config</url>
+    <connection>scm:git:git@github.com:scalecube/scalecube-config.git</connection>
+    <developerConnection>scm:git:git@github.com:scalecube/scalecube-config.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
 

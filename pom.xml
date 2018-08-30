@@ -17,12 +17,12 @@
     ScaleCube Config is a configuration management library for JVM based distributed applications.
   </description>
   <inceptionYear>2017</inceptionYear>
-  <url>https://github.com/scalecube/config</url>
+  <url>https://github.com/scalecube/scalecube-config</url>
 
   <scm>
-    <url>https://github.com/scalecube/config</url>
-    <connection>scm:git:git@github.com:scalecube/config.git</connection>
-    <developerConnection>scm:git:git@github.com:scalecube/config.git</developerConnection>
+    <url>https://github.com/scalecube/scalecube-config</url>
+    <connection>scm:git:git@github.com:scalecube/scalecube-config.git</connection>
+    <developerConnection>scm:git:git@github.com:scalecube/scalecube-config.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
 
@@ -30,7 +30,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <jackson.version>2.9.5</jackson.version>
+    <jackson.version>2.9.6</jackson.version>
     <bson4jackson.version>2.7.0</bson4jackson.version>
     <mongo-java-driver.version>3.4.2</mongo-java-driver.version>
     <findbugs.version>2.0.3</findbugs.version>

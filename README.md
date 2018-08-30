@@ -87,14 +87,14 @@ After HTTP server is started explore configuration registry by browsing followin
 * [http://localhost:5050/_config/events](http://localhost:5050/_config/events)
 * [http://localhost:5050/_config/settings](http://localhost:5050/_config/settings)
 
-See more examples at [config-examples](https://github.com/scalecube/config/tree/master/config-examples/src/main/java/io/scalecube/config/examples) module.
+See more examples at [config-examples](https://github.com/scalecube/scalecube-config/tree/master/config-examples/src/main/java/io/scalecube/config/examples) module.
 
 ## Maven 
 
 Binaries and dependency information for Maven can be found at 
 [http://search.maven.org](http://search.maven.org/#search%7Cga%7C1%7Cio.scalecube.config).
 
-Change history and [version numbers](http://semver.org/) can be found at [CHANGES.md](https://github.com/scalecube/config/blob/master/CHANGES.md). 
+Change history and [version numbers](http://semver.org/) can be found at [CHANGES.md](https://github.com/scalecube/scalecube-config/blob/master/CHANGES.md). 
 
 Maven dependency: 
 
@@ -123,8 +123,8 @@ Maven dependency:
 
 ## Bugs and Feedback
 
-For bugs, questions and discussions please use the [GitHub Issues](https://github.com/scalecube/config/issues).
+For bugs, questions and discussions please use the [GitHub Issues](https://github.com/scalecube/scalecube-config/issues).
 
 ## License
 
-[Apache License, Version 2.0](https://github.com/scalecube/config/blob/master/LICENSE.txt)
+[Apache License, Version 2.0](https://github.com/scalecube/scalecube-config/blob/master/LICENSE.txt)

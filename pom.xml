@@ -30,7 +30,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <jackson.version>2.9.6</jackson.version>
+    <jackson.version>2.9.8</jackson.version>
     <bson4jackson.version>2.7.0</bson4jackson.version>
     <mongo-java-driver.version>3.4.2</mongo-java-driver.version>
     <findbugs.version>2.0.3</findbugs.version>

@@ -1,23 +1,34 @@
 package io.scalecube.config.vault;
 
-import static java.util.Objects.requireNonNull;
+//import static java.util.Objects.requireNonNull;
 
 import com.bettercloud.vault.EnvironmentLoader;
-import com.bettercloud.vault.SslConfig;
-import com.bettercloud.vault.Vault;
-import com.bettercloud.vault.VaultConfig;
-import com.bettercloud.vault.VaultException;
-import com.bettercloud.vault.response.LogicalResponse;
+//import com.bettercloud.vault.SslConfig;
+//import com.bettercloud.vault.Vault;
+//import com.bettercloud.vault.VaultConfig;
+//import com.bettercloud.vault.VaultException;
+//import com.bettercloud.vault.response.LogicalResponse;
 import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
-import io.scalecube.config.utils.ThrowableUtil;
+//import io.scalecube.config.utils.ThrowableUtil;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.vault.VaultException;
+import org.springframework.vault.authentication.TokenAuthentication;
+import org.springframework.vault.client.VaultEndpoint;
+import org.springframework.vault.core.VaultTemplate;
+import org.springframework.vault.support.VaultResponse;
+import org.springframework.web.client.ResourceAccessException;
 
 /**
  * This class is a {@link ConfigSource} implemented for Vault.
@@ -28,24 +39,39 @@ public class VaultConfigSource implements ConfigSource {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
 
-  private final Vault vault;
+  //  private Vault vault;
   private final String secretsPath;
+  private final VaultTemplate vaultTemplate;
 
-  /**
-   * Create a new {@link VaultConfigSource} with the given {@link Builder}.
-   *
-   * @param builder configuration to create vault access with.
-   */
-  private VaultConfigSource(Builder builder) {
-    this.secretsPath = builder.secretsPath();
-    vault = new Vault(builder.config);
+  public VaultConfigSource(String address, String token, String secretsPath) {
+    this.secretsPath = secretsPath;
+
+    try {
+      this.vaultTemplate = new VaultTemplate(VaultEndpoint.from(new URI(address)),
+          new TokenAuthentication(token));
+    } catch (URISyntaxException | IllegalArgumentException e) {
+      LOGGER.warn("Can't access by URI", e);
+      throw new ConfigSourceNotAvailableException(e);
+    }
   }
 
+//  /**
+//   * Create a new {@link VaultConfigSource} with the given {@link Builder}.
+//   *
+//   * @param builder configuration to create vault access with.
+//   */
+//  private VaultConfigSource(Builder builder) {
+//    this.secretsPath = builder.secretsPath();
+//    vault = new Vault(builder.config);
+//  }
+
   private void checkVaultStatus() throws VaultException {
-    if (vault.seal().sealStatus().getSealed()) {
+//    if (vault.seal().sealStatus().getSealed()) {
+    if (vaultTemplate.opsForSys().getUnsealStatus().isSealed()) {
       throw new VaultException("Vault is sealed");
     }
-    Boolean initialized = vault.debug().health().getInitialized();
+//    Boolean initialized = vault.debug().health().getInitialized();
+    Boolean initialized = vaultTemplate.opsForSys().health().isInitialized();
     if (!initialized) {
       throw new VaultException("Vault not yet initialized");
     }
@@ -55,15 +81,23 @@ public class VaultConfigSource implements ConfigSource {
   public Map<String, ConfigProperty> loadConfig() {
     try {
       checkVaultStatus();
-      LogicalResponse response = vault.logical().read(this.secretsPath);
-      return response
+//      LogicalResponse response = vault.logical().read(this.secretsPath);
+      Optional<VaultResponse> response = Optional.ofNullable(vaultTemplate.read(this.secretsPath));
+      return response.orElseThrow(() -> new VaultException("Seems path doesn't exists"))
           .getData()
           .entrySet()
           .stream()
+          .collect(Collectors.toMap(
+              e -> e.getKey(),
+              e -> String.valueOf(e.getValue())
+          ))
+          .entrySet()
+          .stream()
+//          .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), String.valueOf(e.getValue())))
           .map(LoadedConfigProperty::withNameAndValue)
           .map(LoadedConfigProperty.Builder::build)
           .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
-    } catch (VaultException vaultException) {
+    } catch (VaultException | ResourceAccessException vaultException) {
       LOGGER.warn("unable to load config properties", vaultException);
       throw new ConfigSourceNotAvailableException(vaultException);
     }
@@ -80,67 +114,67 @@ public class VaultConfigSource implements ConfigSource {
    *       (API)
    * </ul>
    */
-  public static Builder builder() {
-    return builder(new EnvironmentLoader());
-  }
+//  public static Builder builder() {
+//    return builder(new EnvironmentLoader());
+//  }
 
   /**
    * This builder method is used internally for test purposes. please use it only for tests
    *
    * @param environmentLoader an {@link EnvironmentLoader}
    */
-  static Builder builder(EnvironmentLoader environmentLoader) {
-    return builder(
-        environmentLoader.loadVariable("VAULT_ADDR"),
-        environmentLoader.loadVariable("VAULT_TOKEN"),
-        environmentLoader.loadVariable("VAULT_SECRETS_PATH"));
-  }
+//  static Builder builder(EnvironmentLoader environmentLoader) {
+//    return builder(
+//        environmentLoader.loadVariable("VAULT_ADDR"),
+//        environmentLoader.loadVariable("VAULT_TOKEN"),
+//        environmentLoader.loadVariable("VAULT_SECRETS_PATH"));
+//  }
 
-  public static Builder builder(String address, String token, String secretsPath) {
-    return new Builder(address, token, secretsPath);
-  }
+//  public static Builder builder(String address, String token, String secretsPath) {
+//    return new Builder(address, token, secretsPath);
+//  }
 
-  public static final class Builder {
-
-    final VaultConfig config = new VaultConfig();
-    private final String secretsPath;
-
-    Builder(String address, String token, String secretsPath) {
-      config
-          .address(requireNonNull(address, "Missing address"))
-          .token(requireNonNull(token, "Missing token"))
-          .sslConfig(new SslConfig());
-      this.secretsPath = requireNonNull(secretsPath, "Missing secretsPath");
-    }
-
-    public Builder connectTimeout(int connectTimeout) {
-      config.openTimeout(connectTimeout);
-      return this;
-    }
-
-    public Builder readTimeout(int readTimeout) {
-      config.readTimeout(readTimeout);
-      return this;
-    }
-
-    /**
-     * Builds vault config source.
-     *
-     * @return instance of {@link VaultConfigSource}
-     */
-    public VaultConfigSource build() {
-      try {
-        this.config.build();
-        return new VaultConfigSource(this);
-      } catch (VaultException propogateException) {
-        LOGGER.error(
-            "Unable to build " + VaultConfigSource.class.getSimpleName(), propogateException);
-        throw ThrowableUtil.propagate(propogateException);
-      }
-    }
-
-    public String secretsPath() {
-      return secretsPath;
-    }
-  }
+//  public static final class Builder {
+//
+//    final VaultConfig config = new VaultConfig();
+//    private final String secretsPath;
+//
+//    Builder(String address, String token, String secretsPath) {
+//      config
+//          .address(requireNonNull(address, "Missing address"))
+//          .token(requireNonNull(token, "Missing token"))
+//          .sslConfig(new SslConfig());
+//      this.secretsPath = requireNonNull(secretsPath, "Missing secretsPath");
+//    }
+//
+////    public Builder connectTimeout(int connectTimeout) {
+////      config.openTimeout(connectTimeout);
+////      return this;
+////    }
+//
+////    public Builder readTimeout(int readTimeout) {
+////      config.readTimeout(readTimeout);
+////      return this;
+////    }
+//
+//    /**
+//     * Builds vault config source.
+//     *
+//     * @return instance of {@link VaultConfigSource}
+//     */
+//    public VaultConfigSource build() {
+//      try {
+//        this.config.build();
+//        return new VaultConfigSource(this);
+//      } catch (VaultException propogateException) {
+//        LOGGER.error(
+//            "Unable to build " + VaultConfigSource.class.getSimpleName(), propogateException);
+//        throw ThrowableUtil.propagate(propogateException);
+//      }
+//    }
+//
+//    public String secretsPath() {
+//      return secretsPath;
+//    }
+//  }
 }

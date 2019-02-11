@@ -12,7 +12,9 @@ public class VaultContainerExtension implements AfterAllCallback, BeforeAllCallb
   static final String VAULT_IMAGE_NAME = "vault:0.9.6";
   static final int VAULT_PORT = 8200;
   static final String VAULT_TOKEN = "my-root-token";
-  /** the environment variable name for vault secret path */
+  /**
+   * the environment variable name for vault secret path
+   */
   static final String VAULT_SECRETS_PATH = "VAULT_SECRETS_PATH";
 
   // these 3 are actual values we would like to test with

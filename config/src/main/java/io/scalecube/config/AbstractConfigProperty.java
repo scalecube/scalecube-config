@@ -99,7 +99,7 @@ abstract class AbstractConfigProperty<T> {
    * @throws IllegalArgumentException in case new value fails against existing validators.
    */
   final void acceptValue(T value1, List<LoadedConfigProperty> inputList1, boolean invokeCallbacks) {
-    if ((value == null && value1 == null) || isInputsEqual(inputList, inputList1)) {
+    if ((value == null && value1 == null) || isInputsEqual(inputList1)) {
       return;
     }
 
@@ -144,8 +144,11 @@ abstract class AbstractConfigProperty<T> {
     }
   }
 
-  private boolean isInputsEqual(
-      List<LoadedConfigProperty> inputList, List<LoadedConfigProperty> inputList1) {
+  boolean isMyProperty(LoadedConfigProperty property) {
+    return this.name.equals(property.name());
+  }
+
+  private boolean isInputsEqual(List<LoadedConfigProperty> inputList1) {
     if ((inputList == null && inputList1 != null) || (inputList != null && inputList1 == null)) {
       return false;
     }

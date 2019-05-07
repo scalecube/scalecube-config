@@ -37,18 +37,7 @@ public interface ConfigRegistry {
    * @return property instance
    */
   <T> ObjectConfigProperty<T> objectProperty(String prefix, Class<T> cfgClass);
-  
-  /**
-   * Returns dynamic typed object property stored in the source as json.
-   *
-   * @param documentKey the name of the json in the store
-   * @param cfgClass a class of config object instance
-   * @param <T> a type of config object
-   * @return property instance
-   */
-  <T> ObjectConfigProperty<T> jsonDocumentProperty(String documentKey, Class<T> cfgClass);
 
-  
   /**
    * Returns dynamic typed object property.
    *
@@ -58,6 +47,16 @@ public interface ConfigRegistry {
    * @return property instance
    */
   <T> ObjectConfigProperty<T> objectProperty(Map<String, String> bindingMap, Class<T> cfgClass);
+
+  /**
+   * Returns dynamic typed object property stored in the source as json.
+   *
+   * @param documentKey the name of the json in the store
+   * @param cfgClass a class of config object instance
+   * @param <T> a type of config object
+   * @return property instance
+   */
+  <T> ObjectConfigProperty<T> jsonDocumentProperty(String documentKey, Class<T> cfgClass);
 
   /**
    * Returns current value of object property or defaults.

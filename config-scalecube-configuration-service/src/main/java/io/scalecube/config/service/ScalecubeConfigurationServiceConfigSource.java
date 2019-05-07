@@ -3,22 +3,27 @@ package io.scalecube.config.service;
 import static io.scalecube.services.gateway.clientsdk.Client.http;
 import static io.scalecube.services.gateway.clientsdk.ClientSettings.builder;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.PrettyPrinter;
+import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
+import io.scalecube.config.utils.ObjectMapperHolder;
 import io.scalecube.configuration.api.ConfigurationService;
 import io.scalecube.configuration.api.EntriesRequest;
 import io.scalecube.configuration.api.FetchResponse;
-import io.scalecube.services.gateway.clientsdk.ClientMessage;
+import io.scalecube.services.annotations.Service;
+import io.scalecube.services.annotations.ServiceMethod;
 import io.scalecube.services.transport.jackson.JacksonCodec;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Mono;
 import reactor.netty.http.HttpResources;
 
 public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
@@ -54,7 +59,8 @@ public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
   public Map<String, ConfigProperty> loadConfig() {
     try {
       return service
-          .fetchAll(requestEntries)
+          .entries(requestEntries)
+          .flatMapIterable(Function.identity())
           .collectMap(FetchResponse::key, Parsing::fromFetchResponse)
           .block();
     } catch (Exception e) {
@@ -65,10 +71,18 @@ public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
   }
 
   static class Parsing {
+    private static ObjectWriter writer = ObjectMapperHolder.getInstance().writer(new MinimalPrettyPrinter());
+
     static ConfigProperty fromFetchResponse(FetchResponse fetchResponse) {
-      return LoadedConfigProperty.withNameAndValue(
-              fetchResponse.key(), fetchResponse.value().toString())
-          .build();
+      try {
+        return LoadedConfigProperty.withNameAndValue(
+                fetchResponse.key(), writer.writeValueAsString(fetchResponse.value()))
+            .build();
+      } catch (JsonProcessingException ignoredException) {
+        return LoadedConfigProperty.withNameAndValue(
+                fetchResponse.key(), fetchResponse.value().toString())
+            .build();
+      }
     }
   }
 }

@@ -7,9 +7,10 @@
     <version>0.3.10-SNAPSHOT</version>
   </parent>
   <properties>
-    <enforcer.skip>true</enforcer.skip>
+    <scalecube.version>2.5.7-SNAPSHOT</scalecube.version>
   </properties>
   <artifactId>config-scalecube-configuration-service</artifactId>
+
   <dependencies>
     <dependency>
       <groupId>io.scalecube</groupId>
@@ -19,21 +20,26 @@
     <dependency>
       <groupId>io.scalecube</groupId>
       <artifactId>scalecube-configuration-api</artifactId>
-      <version>2.1.6-SNAPSHOT</version>
+      <version>2.1.5-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.scalecube</groupId>
       <artifactId>scalecube-services-gateway-clientsdk</artifactId>
-      <version>2.5.4</version>
+      <version>${scalecube.version}</version>
     </dependency>
     <dependency>
       <groupId>io.scalecube</groupId>
       <artifactId>scalecube-services-transport-jackson</artifactId>
-      <version>2.5.4</version>
+      <version>${scalecube.version}</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

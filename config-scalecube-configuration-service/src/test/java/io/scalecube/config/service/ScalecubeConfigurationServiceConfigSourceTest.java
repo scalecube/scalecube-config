@@ -1,30 +1,16 @@
 package io.scalecube.config.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import com.fasterxml.jackson.databind.ObjectReader;
 import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.ObjectConfigProperty;
-import io.scalecube.config.StringConfigProperty;
-import io.scalecube.config.utils.ObjectMapperHolder;
-import java.io.IOException;
-import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.DirectProcessor;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxProcessor;
-import reactor.core.publisher.FluxSink;
-import reactor.test.StepVerifier;
 
 class ScalecubeConfigurationServiceConfigSourceTest {
 
@@ -60,7 +46,6 @@ class ScalecubeConfigurationServiceConfigSourceTest {
           System.out.println(newv);
           latch.countDown();
         });
-    Assertions.assertTrue(configProperty.value().isPresent());
     if (!latch.await(5, TimeUnit.SECONDS)) {
       fail();
     }

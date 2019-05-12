@@ -15,7 +15,10 @@ import io.scalecube.config.utils.ObjectMapperHolder;
 import io.scalecube.configuration.api.ConfigurationService;
 import io.scalecube.configuration.api.EntriesRequest;
 import io.scalecube.configuration.api.FetchResponse;
+import io.scalecube.services.gateway.clientsdk.ClientSettings.Builder;
 import io.scalecube.services.transport.jackson.JacksonCodec;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -50,20 +53,48 @@ public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
    *
    * @param token the API token
    * @param repository the name of the repository
+   * @param schema the type of objects this service should prooduce
    */
   public ScalecubeConfigurationServiceConfigSource(
       String token, String repository, Class<?> schema) {
+    this(token, repository, schema, defaultUrl());
+  }
+
+  private static URL defaultUrl() {
+    try {
+      return new URL("https", "configuration-service-http.genesis.om2.com", 443, "/");
+    } catch (MalformedURLException ignoredException) {
+      return null;
+    }
+  }
+  /**
+   * Create a configuration source that connects to the production environment of scalecube
+   * configuration service.
+   *
+   * @param token the API token
+   * @param repository the name of the repository
+   * @param schema the type of objects this service should prooduce
+   * @param service the URL of this service
+   */
+  public ScalecubeConfigurationServiceConfigSource(
+      String token, String repository, Class<?> schema, URL service) {
     this.parsing = new Parsing<>(schema);
-    this.service =
-        http(builder()
-                .host("configuration-service-http.genesis.om2.com")
-                .port(443)
-                .secure()
-                .contentType(JacksonCodec.CONTENT_TYPE)
-                .loopResources(HttpResources.get())
-                .build())
-            .forService(ConfigurationService.class);
+    Builder builder =
+        builder()
+            .host(service.getHost())
+            .port(service.getPort())
+            .contentType(JacksonCodec.CONTENT_TYPE)
+            .loopResources(HttpResources.get());
+    if ("https".equals(service.getProtocol()) || "wss".equals(service.getProtocol())) {
+      builder = builder.secure();
+    }
+    this.service = http(builder.build()).forService(ConfigurationService.class);
     requestEntries = new EntriesRequest(token, repository);
+  }
+
+  ScalecubeConfigurationServiceConfigSource(Class<?> schema, ConfigurationService service) {
+    this.service = service;
+    this.parsing = new Parsing<>(schema);
   }
 
   @Override

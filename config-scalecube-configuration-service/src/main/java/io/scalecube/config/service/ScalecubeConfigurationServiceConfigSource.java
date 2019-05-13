@@ -122,20 +122,24 @@ public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
     }
 
     ConfigProperty fromFetchResponse(FetchResponse fetchResponse) {
-      if (schema.equals(Object.class) || !fetchResponse.value().getClass().isAssignableFrom(schema)) {
+      if (schema.isInstance(fetchResponse.value())) {
         try {
           return LoadedConfigProperty.withNameAndValue(
                   fetchResponse.key(), writer.writeValueAsString(fetchResponse.value()))
               .build();
         } catch (JsonProcessingException ignoredException) {
-          return LoadedConfigProperty.withNameAndValue(
-                  fetchResponse.key(), fetchResponse.value().toString())
-              .build();
         }
-      } else {
-        T value = ObjectMapperHolder.getInstance().convertValue(fetchResponse.value(), schema);
-        return LoadedObjectConfigProperty.forNameAndValue(fetchResponse.key(), value);
+      } // fallback to simple string
+      try {
+        String valueAsString =
+            writer.writeValueAsString(
+                ObjectMapperHolder.getInstance().convertValue(fetchResponse.value(), schema));
+        return LoadedObjectConfigProperty.forNameAndValue(fetchResponse.key(), valueAsString);
+      } catch (Exception ignoredException) {
       }
+      return LoadedConfigProperty.withNameAndValue(
+              fetchResponse.key(), String.valueOf(fetchResponse.value()))
+          .build();
     }
   }
 }

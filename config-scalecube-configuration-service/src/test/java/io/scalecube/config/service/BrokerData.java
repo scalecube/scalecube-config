@@ -1,68 +1,28 @@
 package io.scalecube.config.service;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSetter;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class BrokerData {
 
-  private String brokerID;
-  private ApiKey[] apiKeys;
+  private String BrokerID;
+  private ApiKey[] APIKeys;
 
-  @JsonCreator
-  public BrokerData(
-      @JsonProperty("BrokerID") String brokerID, @JsonProperty("APIKeys") ApiKey[] apiKeys) {
-    this.brokerID = brokerID;
-    this.apiKeys = apiKeys;
+  public BrokerData(String BrokerID, ApiKey[] APIKeys) {
+    this.BrokerID = BrokerID;
+    this.APIKeys = APIKeys;
   }
 
-  @JsonCreator
   public BrokerData() {}
 
-  @JsonSetter("BrokerID")
-  public void setBrokerID(@JsonProperty("BrokerID") String brokerID) {
-    this.brokerID = brokerID;
-  }
-
   /** @return the brokerID */
-  @JsonGetter("BrokerID")
   public String getBrokerID() {
-    return this.brokerID;
+    return this.BrokerID;
   }
 
-  /** @return the aPIKeys */
-  @JsonGetter("APIKeys")
-  public ApiKey[] getApikeys() {
-    return this.apiKeys;
-  }
-
-  /**
-   * @param apiKeys the aPIKeys to set
-   * @return
-   */
-  @JsonSetter("APIKeys")
-  public void setApikeys(@JsonProperty("APIKeys") ApiKey[] apiKeys) {
-    this.apiKeys = apiKeys;
-  }
-
-  /* (non-Javadoc)
-   * @see java.lang.Object#toString()
-   */
-  @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append('{').append('"').append("brokerID").append('"').append(':');
-    builder.append('"').append(this.brokerID).append('"');
-    builder.append(',').append('"').append("apiKeys").append('"').append(':');
-    builder.append(
-        Stream.of(this.apiKeys).map(ApiKey::toString).collect(Collectors.joining(",", "[", "]")));
-    builder.append("}");
-    return builder.toString();
+  /** @return the apiKeys */
+  public ApiKey[] getApiKeys() {
+    return this.APIKeys;
   }
 
   /* (non-Javadoc)
@@ -72,8 +32,8 @@ public class BrokerData {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + Arrays.hashCode(this.apiKeys);
-    result = prime * result + Objects.hash(brokerID);
+    result = prime * result + Arrays.hashCode(this.APIKeys);
+    result = prime * result + Objects.hash(BrokerID);
     return result;
   }
 
@@ -92,6 +52,6 @@ public class BrokerData {
       return false;
     }
     BrokerData other = (BrokerData) obj;
-    return Arrays.equals(apiKeys, other.apiKeys) && Objects.equals(brokerID, other.brokerID);
+    return Arrays.equals(APIKeys, other.APIKeys) && Objects.equals(BrokerID, other.BrokerID);
   }
 }

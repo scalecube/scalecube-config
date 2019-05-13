@@ -1,5 +1,6 @@
 package io.scalecube.config.utils;
 
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -7,6 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 
 /**
  * Holder class for {@link ObjectMapper}.
@@ -15,17 +19,18 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
  */
 public class ObjectMapperHolder {
 
-  private static final ObjectMapper objectMapper =
-      new ObjectMapper().registerModule(new Jdk8Module()).registerModule(new JavaTimeModule());
+  private static ObjectMapper objectMapper = initMapper();
 
-  static {
-    objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    objectMapper.configure(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS, true);
-    objectMapper.configure(MapperFeature.OVERRIDE_PUBLIC_ACCESS_MODIFIERS, true);
-    objectMapper.configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true);
+  private static ObjectMapper initMapper() {
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+    mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
+    mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    mapper.configure(SerializationFeature.WRITE_ENUMS_USING_TO_STRING, true);
+    mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+    mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    return mapper;
   }
 
   public static ObjectMapper getInstance() {

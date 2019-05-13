@@ -40,11 +40,8 @@ public class LocalMockServiceFixture implements Fixture {
         .then(
             answer -> {
               SaveRequest request = (SaveRequest) answer.getArguments()[0];
-              PrettyPrinter printer = new MinimalPrettyPrinter();
-
               String value =
                   ObjectMapperHolder.getInstance()
-                      .writer(printer)
                       .writeValueAsString(request.value());
               FetchResponse response = new FetchResponse(request.key(), value);
               responses.add(response);

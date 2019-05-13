@@ -30,7 +30,7 @@ public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
   private static final Logger LOGGER =
       LoggerFactory.getLogger(ScalecubeConfigurationServiceConfigSource.class);
 
-  private ConfigurationService service;
+  ConfigurationService service;
 
   private EntriesRequest requestEntries;
 
@@ -122,7 +122,7 @@ public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
     }
 
     ConfigProperty fromFetchResponse(FetchResponse fetchResponse) {
-      if (schema.equals(Object.class)) {
+      if (schema.equals(Object.class) || !fetchResponse.value().getClass().isAssignableFrom(schema)) {
         try {
           return LoadedConfigProperty.withNameAndValue(
                   fetchResponse.key(), writer.writeValueAsString(fetchResponse.value()))

@@ -47,7 +47,6 @@
     <module>config-http-server</module>
     <module>config-examples</module>
     <module>config-vault</module>
-    <module>config-scalecube-configuration-service</module>
   </modules>
 
   <dependencyManagement>

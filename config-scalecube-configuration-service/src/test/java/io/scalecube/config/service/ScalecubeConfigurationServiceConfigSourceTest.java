@@ -49,7 +49,7 @@ class ScalecubeConfigurationServiceConfigSourceTest {
     TimeUnit.SECONDS.sleep(2); // wait for the property to be empty
 
     ObjectConfigProperty<BrokerData> configProperty =
-        configRegistry.jsonDocumentProperty(documentKey, BrokerData.class);
+        configRegistry.jsonObjectProperty(documentKey, BrokerData.class);
     configProperty.addCallback(this.onNewValue(latch));
     BrokerData expected =
         new BrokerData(
@@ -92,7 +92,7 @@ class ScalecubeConfigurationServiceConfigSourceTest {
     TimeUnit.SECONDS.sleep(2); // wait for the property to be empty
 
     ObjectConfigProperty<BrokerData> configProperty =
-        configRegistry.jsonDocumentProperty(documentKey, BrokerData.class);
+        configRegistry.jsonObjectProperty(documentKey, BrokerData.class);
 
     configProperty.addCallback(this.onNewValue(latchForFirst, latchForSecond));
 

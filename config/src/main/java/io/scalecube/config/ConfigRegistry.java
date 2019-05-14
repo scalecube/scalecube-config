@@ -56,7 +56,7 @@ public interface ConfigRegistry {
    * @param <T> a type of config object
    * @return property instance
    */
-  <T> ObjectConfigProperty<T> jsonDocumentProperty(String documentKey, Class<T> cfgClass);
+  <T> ObjectConfigProperty<T> jsonObjectProperty(String documentKey, Class<T> cfgClass);
 
   /**
    * Returns current value of object property or defaults.

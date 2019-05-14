@@ -64,7 +64,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<TestConfig> configClass = TestConfig.class;
     ObjectConfigProperty<TestConfig> objectProperty =
-        configRegistry.jsonDocumentProperty("testObjectProperty", configClass);
+        configRegistry.jsonObjectProperty("testObjectProperty", configClass);
 
     TestConfig config = objectProperty.value(null);
     assertNotNull(config);
@@ -89,7 +89,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<TestConfig> configClass = TestConfig.class;
     ObjectConfigProperty<TestConfig> objectProperty =
-        configRegistry.jsonDocumentProperty(documentKey, configClass);
+        configRegistry.jsonObjectProperty(documentKey, configClass);
 
     objectProperty.addValidator(
         input ->
@@ -124,7 +124,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<TestConfig> configClass = TestConfig.class;
     ObjectConfigProperty<TestConfig> objectProperty =
-        configRegistry.jsonDocumentProperty(documentKey, configClass);
+        configRegistry.jsonObjectProperty(documentKey, configClass);
 
     objectProperty.addValidator(input -> input.isEnabled && input.maxCount >= 1);
     objectProperty.addCallback((o1, o2) -> sideEffect.apply(o1, o2));
@@ -159,7 +159,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<SimpleConfig> configClass = SimpleConfig.class;
     ObjectConfigProperty<SimpleConfig> objectProperty =
-        configRegistry.jsonDocumentProperty(documentKey, configClass);
+        configRegistry.jsonObjectProperty(documentKey, configClass);
     objectProperty.addCallback((cfg1, cfg2) -> sideEffect.apply(cfg1, cfg2));
 
     SimpleConfig config = objectProperty.value(null);
@@ -190,7 +190,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<ConfigValueSoonWillDisappear> configClass = ConfigValueSoonWillDisappear.class;
     ObjectConfigProperty<ConfigValueSoonWillDisappear> objectProperty =
-        configRegistry.jsonDocumentProperty(documentName, configClass);
+        configRegistry.jsonObjectProperty(documentName, configClass);
     objectProperty.addCallback((cfg1, cfg2) -> sideEffect.apply(cfg1, cfg2));
 
     ConfigValueSoonWillDisappear config = objectProperty.value(null);
@@ -231,7 +231,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<ConfigValueWillBeAdded> configClass = ConfigValueWillBeAdded.class;
     ObjectConfigProperty<ConfigValueWillBeAdded> objectProperty =
-        configRegistry.jsonDocumentProperty(documentKey, configClass);
+        configRegistry.jsonObjectProperty(documentKey, configClass);
     objectProperty.addCallback((cfg1, cfg2) -> sideEffect.apply(cfg1, cfg2));
 
     assertFalse(objectProperty.value().isPresent());
@@ -254,7 +254,7 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
     Class<NotDefinedObjectPropertyConfig> configClass = NotDefinedObjectPropertyConfig.class;
     ObjectConfigProperty<NotDefinedObjectPropertyConfig> objectProperty =
-        configRegistry.jsonDocumentProperty(configClass.getName(), configClass);
+        configRegistry.jsonObjectProperty(configClass.getName(), configClass);
 
     assertFalse(objectProperty.value().isPresent());
     assertNull(objectProperty.value(null));
@@ -290,7 +290,7 @@ class JsonDocumentConfigPropertyTest {
     Class<PartiallyDefinedValueConfig> configClass = PartiallyDefinedValueConfig.class;
     PartiallyDefinedValueConfig config =
         configRegistry
-            .jsonDocumentProperty("testPartiallyDefinedValueConfig", configClass)
+            .jsonObjectProperty("testPartiallyDefinedValueConfig", configClass)
             .value()
             .get();
 
@@ -311,7 +311,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<ConfigClassWithStaticOrFinalField> configClass = ConfigClassWithStaticOrFinalField.class;
     ConfigClassWithStaticOrFinalField config =
-        configRegistry.jsonDocumentProperty(documentKey, configClass).value().get();
+        configRegistry.jsonObjectProperty(documentKey, configClass).value().get();
 
     assertEquals(42, config.anInt);
     // fields with modifier 'final' are not taken into account, even if defined in config source
@@ -325,7 +325,7 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<ConnectorSettings> objectProperty =
-        configRegistry.jsonDocumentProperty("connector", ConnectorSettings.class);
+        configRegistry.jsonObjectProperty("connector", ConnectorSettings.class);
 
     assertThrows(
         IllegalArgumentException.class,
@@ -348,7 +348,7 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<ConnectorSettings> objectProperty =
-        configRegistry.jsonDocumentProperty(documentKey, ConnectorSettings.class);
+        configRegistry.jsonObjectProperty(documentKey, ConnectorSettings.class);
     objectProperty.addValidator(Objects::nonNull);
     objectProperty.addValidator(settings -> settings.user != null && settings.password != null);
     objectProperty.addCallback((i1, i2) -> sideEffect.apply(i1, i2));
@@ -374,7 +374,7 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<IntObjectSettings> objectProperty =
-        configRegistry.jsonDocumentProperty(documentKey, IntObjectSettings.class);
+        configRegistry.jsonObjectProperty(documentKey, IntObjectSettings.class);
     objectProperty.addValidator(Objects::nonNull);
     objectProperty.addValidator(settings -> settings.anInt >= 1);
     objectProperty.addCallback((i1, i2) -> sideEffect.apply(i1, i2));
@@ -395,7 +395,7 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<IntObjectSettings> objectProperty =
-        configRegistry.jsonDocumentProperty("com.acme", IntObjectSettings.class);
+        configRegistry.jsonObjectProperty("com.acme", IntObjectSettings.class);
 
     assertThrows(
         IllegalArgumentException.class,

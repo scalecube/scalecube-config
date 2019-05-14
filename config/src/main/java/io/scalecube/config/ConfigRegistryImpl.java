@@ -119,7 +119,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
-  public <T> ObjectConfigProperty<T> jsonDocumentProperty(String documentKey, Class<T> cfgClass) {
+  public <T> ObjectConfigProperty<T> jsonObjectProperty(String documentKey, Class<T> cfgClass) {
     return new JsonDocumentConfigPropertyImpl(
         documentKey, cfgClass, propertyMap, propertyCallbackMap);
   }

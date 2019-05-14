@@ -112,7 +112,7 @@ public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
     }
   }
 
-  static class Parsing<T> {
+  private static class Parsing<T> {
     private Class<T> schema;
     private ObjectWriter writer;
 
@@ -121,7 +121,7 @@ public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
       writer = ObjectMapperHolder.getInstance().writer(new MinimalPrettyPrinter()).forType(schema);
     }
 
-    ConfigProperty fromFetchResponse(FetchResponse fetchResponse) {
+    public ConfigProperty fromFetchResponse(FetchResponse fetchResponse) {
       if (schema.isInstance(fetchResponse.value())) {
         try {
           return LoadedConfigProperty.withNameAndValue(

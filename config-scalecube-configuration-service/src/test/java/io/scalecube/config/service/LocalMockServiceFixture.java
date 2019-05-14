@@ -4,16 +4,17 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.PrettyPrinter;
-import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.source.SystemPropertiesConfigSource;
 import io.scalecube.config.utils.ObjectMapperHolder;
 import io.scalecube.configuration.api.Acknowledgment;
 import io.scalecube.configuration.api.ConfigurationService;
+import io.scalecube.configuration.api.DeleteRequest;
+import io.scalecube.configuration.api.FetchRequest;
 import io.scalecube.configuration.api.FetchResponse;
 import io.scalecube.configuration.api.SaveRequest;
+import io.scalecube.services.exceptions.InternalServiceException;
 import io.scalecube.test.fixtures.Fixture;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,14 +41,36 @@ public class LocalMockServiceFixture implements Fixture {
         .then(
             answer -> {
               SaveRequest request = (SaveRequest) answer.getArguments()[0];
-              String value =
-                  ObjectMapperHolder.getInstance()
-                      .writeValueAsString(request.value());
+              String value = ObjectMapperHolder.getInstance().writeValueAsString(request.value());
               FetchResponse response = new FetchResponse(request.key(), value);
               responses.add(response);
               return Mono.just(acknowledgment);
             });
-
+    when(service.delete(any()))
+        .then(
+            answer -> {
+              DeleteRequest request = (DeleteRequest) answer.getArguments()[0];
+              responses.removeIf(response -> request.key().equals(response.key()));
+              return Mono.just(acknowledgment);
+            });
+    when(service.fetch(any()))
+        .then(
+            answer -> {
+              FetchRequest request = (FetchRequest) answer.getArguments()[0];
+              return Mono.just(
+                      responses
+                          .stream()
+                          .filter(response -> request.key().equals(response.key()))
+                          .findFirst())
+                  .flatMap(
+                      o ->
+                          o.isPresent()
+                              ? Mono.just(o.get())
+                              : Mono.error(
+                                  () ->
+                                      new InternalServiceException(
+                                          500, "Key '" + request.key() + "' not found")));
+            });
     configRegistry =
         ConfigRegistry.create(
             ConfigRegistrySettings.builder()
@@ -55,7 +78,7 @@ public class LocalMockServiceFixture implements Fixture {
                 .addLastSource(
                     "ScalecubeConfigurationService",
                     new ScalecubeConfigurationServiceConfigSource(BrokerData.class, service))
-                .reloadIntervalSec(3)
+                .reloadIntervalSec(1)
                 .build());
   }
 

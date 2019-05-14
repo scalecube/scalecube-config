@@ -46,7 +46,7 @@ public class ProductionServiceFixture implements Fixture {
                 .addLastSource("ScalecubeConfigurationService", configSource)
                 .addFirstSource("System", new SystemPropertiesConfigSource())
                 .addLastSource("ENV", new SystemEnvironmentConfigSource())
-                .reloadIntervalSec(3)
+                .reloadIntervalSec(1)
                 .build());
   }
 

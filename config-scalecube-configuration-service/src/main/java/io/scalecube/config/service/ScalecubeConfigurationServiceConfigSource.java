@@ -67,6 +67,7 @@ public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
       return null;
     }
   }
+
   /**
    * Create a configuration source that connects to the production environment of scalecube
    * configuration service.
@@ -128,14 +129,16 @@ public class ScalecubeConfigurationServiceConfigSource implements ConfigSource {
                   fetchResponse.key(), writer.writeValueAsString(fetchResponse.value()))
               .build();
         } catch (JsonProcessingException ignoredException) {
+          // fallback to simple string
         }
-      } // fallback to simple string
+      }
       try {
         String valueAsString =
             writer.writeValueAsString(
                 ObjectMapperHolder.getInstance().convertValue(fetchResponse.value(), schema));
         return LoadedObjectConfigProperty.forNameAndValue(fetchResponse.key(), valueAsString);
       } catch (Exception ignoredException) {
+        // fallback to simple string
       }
       return LoadedConfigProperty.withNameAndValue(
               fetchResponse.key(), String.valueOf(fetchResponse.value()))

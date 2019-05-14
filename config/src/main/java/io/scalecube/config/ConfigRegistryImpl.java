@@ -92,9 +92,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   public void init() {
     loadAndNotify();
-    if (this.schedule ==null) {
+    if (this.schedule == null) {
       synchronized (this) {
-        if (this.schedule ==null) {
+        if (this.schedule == null) {
           this.schedule = reloadExecutor.scheduleAtFixedRate(
               () -> {
                 try {

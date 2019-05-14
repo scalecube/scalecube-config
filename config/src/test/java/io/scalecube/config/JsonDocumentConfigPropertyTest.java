@@ -371,7 +371,7 @@ class JsonDocumentConfigPropertyTest {
   }
 
   @Test
-  void testValidationNotPassed() {
+  public void testValidationNotPassed() {
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put("com.acme", "{\"anInt\":1}").build()));
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);

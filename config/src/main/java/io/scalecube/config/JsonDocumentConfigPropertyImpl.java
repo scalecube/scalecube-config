@@ -21,22 +21,21 @@ import org.slf4j.LoggerFactory;
 class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
     implements ObjectConfigProperty<T> {
 
-  volatile T value;
+  protected volatile T value;
   private static final Logger LOGGER =
       LoggerFactory.getLogger(JsonDocumentConfigPropertyImpl.class);
   private final ObjectReader reader;
-  private final PropertyCallback<T> propertyCallback;
 
   JsonDocumentConfigPropertyImpl(
       String documentKey,
       Class<T> cfgClass,
       Map<String, LoadedConfigProperty> propertyMap,
       Map<String, Map<Class, PropertyCallback>> propertyCallbackMap) {
-    
+
     super(documentKey, cfgClass);
     reader = ObjectMapperHolder.getInstance().readerFor(cfgClass);
-    propertyCallback = new PropertyCallback<>(this::valueParser);
-    
+    PropertyCallback<T> propertyCallback = new PropertyCallback<>(this::valueParser);
+
     setPropertyCallback(propertyCallback);
     synchronized (propertyCallbackMap) {
       propertyCallbackMap

@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -73,6 +74,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   private final Map<String, Map<Class, PropertyCallback>> propertyCallbackMap =
       new ConcurrentHashMap<>();
 
+  private ScheduledFuture<?> schedule;
+
   private final LinkedHashMap<ConfigEvent, Object> recentConfigEvents =
       new LinkedHashMap<ConfigEvent, Object>() {
         @Override
@@ -81,25 +84,31 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         }
       };
 
+
   ConfigRegistryImpl(ConfigRegistrySettings settings) {
     Objects.requireNonNull(settings, "ConfigRegistrySettings can't be null");
     this.settings = settings;
   }
 
-  void init() {
+  public void init() {
     loadAndNotify();
-
-    reloadExecutor.scheduleAtFixedRate(
-        () -> {
-          try {
-            loadAndNotify();
-          } catch (Exception e) {
-            LOGGER.error("Exception on config reload, cause: {}", e, e);
-          }
-        },
-        settings.getReloadIntervalSec(),
-        settings.getReloadIntervalSec(),
-        TimeUnit.SECONDS);
+    if (this.schedule ==null) {
+      synchronized (this) {
+        if (this.schedule ==null) {
+          this.schedule = reloadExecutor.scheduleAtFixedRate(
+              () -> {
+                try {
+                  loadAndNotify();
+                } catch (Exception e) {
+                  LOGGER.error("Exception on config reload, cause: {}", e, e);
+                }
+              },
+              settings.getReloadIntervalSec(),
+              settings.getReloadIntervalSec(),
+              TimeUnit.SECONDS);
+        }
+      }
+    }
 
     if (settings.isJmxEnabled()) {
       registerJmxMBean();

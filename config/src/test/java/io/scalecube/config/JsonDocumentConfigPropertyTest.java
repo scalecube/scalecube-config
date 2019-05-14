@@ -42,14 +42,14 @@ class JsonDocumentConfigPropertyTest {
   private TestInfo testInfo;
 
   @BeforeEach
-  void setUp(TestInfo testInfo) {
+  public void setUp(TestInfo testInfo) {
     this.testInfo = testInfo;
   }
 
   // Normal scenarios
 
   @Test
-  void testObjectProperty() throws Exception {
+  public void testObjectProperty() throws Exception {
     when(configSource.loadConfig())
         .thenAnswer(
             answer ->
@@ -74,7 +74,7 @@ class JsonDocumentConfigPropertyTest {
   }
 
   @Test
-  void testObjectPropertyValidationPassed() {
+  public void testObjectPropertyValidationPassed() {
 
     String documentKey = "testObjectPropertyValidationPassed";
     when(configSource.loadConfig())
@@ -106,7 +106,7 @@ class JsonDocumentConfigPropertyTest {
   }
 
   @Test
-  void testReloadObjectPropertyValidationPassed() throws Exception {
+  public void testReloadObjectPropertyValidationPassed() throws Exception {
     String documentKey = testInfo.getTestMethod().get().getName();
     when(configSource.loadConfig())
         .thenReturn(
@@ -146,7 +146,7 @@ class JsonDocumentConfigPropertyTest {
   }
 
   @Test
-  void testCallbacksNotAppliedOnReloadWhenNothingChanged() throws Exception {
+  public void testCallbacksNotAppliedOnReloadWhenNothingChanged() throws Exception {
     String documentKey = "testCallbacksNotAppliedOnReloadWhenNothingChanged";
     when(configSource.loadConfig())
         .thenReturn(
@@ -176,7 +176,7 @@ class JsonDocumentConfigPropertyTest {
   }
 
   @Test
-  void testObjectValuesRemovedOnReloadAndNoValidationDefined() throws Exception {
+  public void testObjectValuesRemovedOnReloadAndNoValidationDefined() throws Exception {
     String documentName = "testObjectValuesRemovedOnReloadAndNoValidationDefined";
     when(configSource.loadConfig())
         .thenReturn(
@@ -220,7 +220,7 @@ class JsonDocumentConfigPropertyTest {
   }
 
   @Test
-  void testObjectValuesAddedOnReloadAndNoValidationDefined() throws Exception {
+  public void testObjectValuesAddedOnReloadAndNoValidationDefined() throws Exception {
     String documentKey = testInfo.getTestMethod().get().getName();
     when(configSource.loadConfig())
         .thenReturn(
@@ -248,7 +248,7 @@ class JsonDocumentConfigPropertyTest {
   }
 
   @Test
-  void testObjectPropertyNotDefinedInConfigSource() {
+  public void testObjectPropertyNotDefinedInConfigSource() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().build()));
 
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
@@ -260,26 +260,8 @@ class JsonDocumentConfigPropertyTest {
     assertNull(objectProperty.value(null));
   }
 
-  //  @Test
-  //  void testFailedValueParsingOnObjectProperty() {
-  //    String documentKey = "testFailedValueParsingOnObjectProperty";
-  //    when(configSource.loadConfig())
-  //        .thenReturn(
-  //            toConfigProps(
-  //                mapBuilder()
-  //                    .put(documentKey, "{\"incorrectInt\":\"int\",\"str\":\"just a string\"}")
-  //                    .build()));
-  //
-  //    ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
-  //
-  //    Class<IncorrectIntegerValueConfig> configClass = IncorrectIntegerValueConfig.class;
-  //
-  //
-  //    configRegistry.jsonDocumentProperty(documentKey, configClass).value();
-  //  }
-
   @Test
-  void testPartiallyDefinedValueConfig() {
+  public void testPartiallyDefinedValueConfig() {
     when(configSource.loadConfig())
         .thenReturn(
             toConfigProps(
@@ -299,7 +281,7 @@ class JsonDocumentConfigPropertyTest {
   }
 
   @Test
-  void testSkipStaticOrFinalFieldInObjectPropertryClass() {
+  public void testSkipStaticOrFinalFieldInObjectPropertryClass() {
     String documentKey = testInfo.getTestMethod().get().getName();
 
     when(configSource.loadConfig())
@@ -321,7 +303,7 @@ class JsonDocumentConfigPropertyTest {
   // Failure scenarios
 
   @Test
-  void testValueAbsentAndValidationNotPassed() {
+  public void testValueAbsentAndValidationNotPassed() {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<ConnectorSettings> objectProperty =
@@ -338,7 +320,7 @@ class JsonDocumentConfigPropertyTest {
   }
 
   @Test
-  void testValueRemovedOnReloadValidationNotPassed() throws Exception {
+  public void testValueRemovedOnReloadValidationNotPassed() throws Exception {
     String documentKey = "connector";
     when(configSource.loadConfig())
         .thenReturn(
@@ -365,7 +347,7 @@ class JsonDocumentConfigPropertyTest {
   }
 
   @Test
-  void testValueParserFailingOnReload() throws Exception {
+  public void testValueParserFailingOnReload() throws Exception {
     String documentKey = "com.acme";
     when(configSource.loadConfig())
         .thenReturn(toConfigProps(mapBuilder().put(documentKey, "{\"anInt\":1}").build()))
@@ -425,7 +407,7 @@ class JsonDocumentConfigPropertyTest {
 
   public static class ConfigClassWithStaticOrFinalField {
     static final Logger LOGGER = LoggerFactory.getLogger("logger");
-    static final ConfigClassWithStaticOrFinalField defaultInstance =
+    public static final ConfigClassWithStaticOrFinalField defaultInstance =
         new ConfigClassWithStaticOrFinalField();
 
     public int anInt = 1;

@@ -144,7 +144,7 @@ abstract class AbstractConfigProperty<T> {
     }
   }
 
-  boolean isMyProperty(LoadedConfigProperty property) {
+  protected boolean isMyProperty(LoadedConfigProperty property) {
     return this.name.equals(property.name());
   }
 

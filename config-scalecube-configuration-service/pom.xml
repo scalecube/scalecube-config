@@ -9,6 +9,7 @@
   <properties>
     <scalecube.version>2.5.7-SNAPSHOT</scalecube.version>
     <scalecube-configuration.version>2.1.5</scalecube-configuration.version>
+    <junit-jupiter.version>5.3.2</junit-jupiter.version>
   </properties>
   <artifactId>config-scalecube-configuration-service</artifactId>
 
@@ -17,6 +18,11 @@
       <groupId>io.scalecube</groupId>
       <artifactId>config</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.scalecube</groupId>

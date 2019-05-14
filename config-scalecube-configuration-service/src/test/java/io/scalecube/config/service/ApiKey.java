@@ -5,6 +5,16 @@ import java.util.Objects;
 
 public class ApiKey {
 
+  private String APIKey;
+  private String[] Permissions;
+
+  public ApiKey() {}
+
+  public ApiKey(String apiKey, String[] permissions) {
+    this.APIKey = apiKey;
+    this.Permissions = permissions;
+  }
+
   /** @return the apiKey */
   public String getApiKey() {
     return this.APIKey;
@@ -14,16 +24,6 @@ public class ApiKey {
   public String[] getPermissions() {
     return this.Permissions;
   }
-
-  private String APIKey;
-  private String[] Permissions;
-
-  public ApiKey(String apiKey, String[] permissions) {
-    this.APIKey = apiKey;
-    this.Permissions = permissions;
-  }
-
-  public ApiKey() {}
 
   /* (non-Javadoc)
    * @see java.lang.Object#hashCode()

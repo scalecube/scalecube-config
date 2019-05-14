@@ -8,6 +8,7 @@
   </parent>
   <properties>
     <scalecube.version>2.5.7-SNAPSHOT</scalecube.version>
+    <scalecube-configuration.version>2.1.5</scalecube-configuration.version>
   </properties>
   <artifactId>config-scalecube-configuration-service</artifactId>
 
@@ -20,7 +21,7 @@
     <dependency>
       <groupId>io.scalecube</groupId>
       <artifactId>scalecube-configuration-api</artifactId>
-      <version>2.1.5-SNAPSHOT</version>
+      <version>${scalecube-configuration.version}</version>
     </dependency>
     <dependency>
       <groupId>io.scalecube</groupId>

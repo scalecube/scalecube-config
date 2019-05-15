@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.ObjectMapperHolder;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,6 @@ import org.slf4j.LoggerFactory;
 class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
     implements ObjectConfigProperty<T> {
 
-  protected volatile T value;
   private static final Logger LOGGER =
       LoggerFactory.getLogger(JsonDocumentConfigPropertyImpl.class);
   private final ObjectReader reader;
@@ -64,12 +64,8 @@ class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
         return value = reader.readValue(source);
       }
       return null;
-    } catch (JsonProcessingException ignoredException) {
-      LOGGER.warn("JSON parse  failed", ignoredException);
-      return value;
-    } catch (IOException ignoredException) {
-      // return old value
-      return value;
+    } catch (IOException cause) {
+      throw new IllegalArgumentException("JSON parse  failed", cause);
     }
   }
 

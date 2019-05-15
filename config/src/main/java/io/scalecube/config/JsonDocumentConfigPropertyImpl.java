@@ -1,15 +1,12 @@
 package io.scalecube.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectReader;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.ObjectMapperHolder;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,8 +46,7 @@ class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
   }
 
   private T valueParser(List<LoadedConfigProperty> properties) {
-    return properties
-        .stream()
+    return properties.stream()
         .filter(this::isMyProperty)
         .findFirst()
         .flatMap(LoadedConfigProperty::valueAsString)
@@ -61,7 +57,7 @@ class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
   private T parse(String source) {
     try {
       if (source != null) {
-        return value = reader.readValue(source);
+        return reader.readValue(source);
       }
       return null;
     } catch (IOException cause) {
@@ -71,6 +67,6 @@ class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
 
   @Override
   public T value(T defaultValue) {
-    return Optional.ofNullable(value).orElse(defaultValue);
+    return value().orElse(defaultValue);
   }
 }

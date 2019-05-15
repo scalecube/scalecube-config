@@ -9,6 +9,11 @@ public class JsonObjectExample {
 
   private static final int RELOAD_INTERVAL_SEC = 3;
 
+  /**
+   * Main method of example of how to read json value from config registry.
+   *
+   * @param args program arguments
+   */
   public static void main(String[] args) {
     System.setProperty("jsonKey", "{\"name\":\"property\",\"value\":1322134}");
     System.setProperty("intKey", "12345");

@@ -143,6 +143,8 @@ class JsonDocumentConfigPropertyTest {
     assertEquals(Duration.ofSeconds(1), config1.timeout); // note value retained after reload
     assertTrue(config1.isEnabled); // note value retained after reload
     verify(sideEffect).apply(config, config1);
+    //as oppose to ObjectConfigProperty, in JSON if the value did not change - no execution will happen.
+    // that's why it's never().
   }
 
   @Test
@@ -367,7 +369,8 @@ class JsonDocumentConfigPropertyTest {
 
     assertTrue(objectProperty.value().isPresent());
     assertEquals(1, objectProperty.value().get().anInt);
-    verify(sideEffect, times(1)).apply(any(), any());
+    verify(sideEffect, never()).apply(any(), any()); 
+    //as oppose to ObjectConfigProperty, in JSON it's all or nothing. that's why it's never(). 
   }
 
   @Test

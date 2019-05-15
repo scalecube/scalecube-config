@@ -1,18 +1,14 @@
 package io.scalecube.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectReader;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.ObjectMapperHolder;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of {@link ObjectConfigProperty}.
@@ -22,15 +18,13 @@ import org.slf4j.LoggerFactory;
 class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
     implements ObjectConfigProperty<T> {
 
-  private static final Logger LOGGER =
-      LoggerFactory.getLogger(JsonDocumentConfigPropertyImpl.class);
   private final ObjectReader reader;
 
   JsonDocumentConfigPropertyImpl(
       String documentKey,
       Class<T> cfgClass,
       Map<String, LoadedConfigProperty> propertyMap,
-      Map<String, Map<Class, PropertyCallback>> propertyCallbackMap) {
+      Map<String, Map<Class<?>, PropertyCallback<?>>> propertyCallbackMap) {
 
     super(documentKey, cfgClass);
     reader = ObjectMapperHolder.getInstance().readerFor(cfgClass);
@@ -71,6 +65,6 @@ class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
 
   @Override
   public T value(T defaultValue) {
-    return Optional.ofNullable(value).orElse(defaultValue);
+    return value().orElse(defaultValue);
   }
 }

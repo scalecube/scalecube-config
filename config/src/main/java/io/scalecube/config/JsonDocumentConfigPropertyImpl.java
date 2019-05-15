@@ -8,8 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of {@link ObjectConfigProperty}.
@@ -19,8 +17,6 @@ import org.slf4j.LoggerFactory;
 class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
     implements ObjectConfigProperty<T> {
 
-  private static final Logger LOGGER =
-      LoggerFactory.getLogger(JsonDocumentConfigPropertyImpl.class);
   private final ObjectReader reader;
 
   JsonDocumentConfigPropertyImpl(

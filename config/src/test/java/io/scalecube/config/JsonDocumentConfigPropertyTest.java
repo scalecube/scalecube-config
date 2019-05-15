@@ -367,7 +367,7 @@ class JsonDocumentConfigPropertyTest {
 
     assertTrue(objectProperty.value().isPresent());
     assertEquals(1, objectProperty.value().get().anInt);
-    verify(sideEffect, times(1)).apply(any(), any());
+    verify(sideEffect, times(0)).apply(any(), any());
   }
 
   @Test

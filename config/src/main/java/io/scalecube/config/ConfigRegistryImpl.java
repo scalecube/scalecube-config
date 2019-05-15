@@ -119,6 +119,12 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
+  public <T> ObjectConfigProperty<T> jsonObjectProperty(String documentKey, Class<T> cfgClass) {
+    return new JsonDocumentConfigPropertyImpl(
+        documentKey, cfgClass, propertyMap, propertyCallbackMap);
+  }
+
+  @Override
   public <T> ObjectConfigProperty<T> objectProperty(String prefix, Class<T> cfgClass) {
     Map<String, String> bindingMap =
         Arrays.stream(cfgClass.getDeclaredFields())

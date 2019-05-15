@@ -370,7 +370,6 @@ class JsonDocumentConfigPropertyTest {
     assertTrue(objectProperty.value().isPresent());
     assertEquals(1, objectProperty.value().get().anInt);
     verify(sideEffect, never()).apply(any(), any()); 
-    //as oppose to ObjectConfigProperty, in JSON it's all or nothing. that's why it's never(). 
   }
 
   @Test

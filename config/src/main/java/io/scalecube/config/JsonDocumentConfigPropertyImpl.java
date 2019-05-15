@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -43,8 +42,7 @@ class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
   }
 
   private T valueParser(List<LoadedConfigProperty> properties) {
-    return properties
-        .stream()
+    return properties.stream()
         .filter(this::isMyProperty)
         .findFirst()
         .flatMap(LoadedConfigProperty::valueAsString)
@@ -55,7 +53,7 @@ class JsonDocumentConfigPropertyImpl<T> extends AbstractConfigProperty<T>
   private T parse(String source) {
     try {
       if (source != null) {
-        return value = reader.readValue(source);
+        return reader.readValue(source);
       }
       return null;
     } catch (IOException cause) {

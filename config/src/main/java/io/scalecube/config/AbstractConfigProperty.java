@@ -37,7 +37,7 @@ abstract class AbstractConfigProperty<T> {
       new CopyOnWriteArraySet<>(); // of type Set for a reason
 
   private PropertyCallback<T> propertyCallback; // initialized from subclass
-  protected volatile T value; // initialized from subclass, reset in callback
+  private volatile T value; // initialized from subclass, reset in callback
   private volatile List<LoadedConfigProperty>
       inputList; // initialized from subclass, reset in callback
 

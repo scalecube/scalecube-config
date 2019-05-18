@@ -122,12 +122,6 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
-  public <T> ObjectConfigProperty<T> jsonObjectProperty(String documentKey, Class<T> cfgClass) {
-    return new JsonDocumentConfigPropertyImpl(
-        documentKey, cfgClass, propertyMap, propertyCallbackMap);
-  }
-
-  @Override
   public <T> ObjectConfigProperty<T> objectProperty(String name, Function<String, T> mapper) {
     return new ApplyMapper<>(
         new StringConfigPropertyImpl(name, propertyMap, propertyCallbackMap), mapper);
@@ -537,18 +531,29 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
     @Override
     public void addCallback(BiConsumer<T, T> callback) {
-      configProperty.addCallback((v0, v1) -> callback.accept(mapper.apply(v0), mapper.apply(v1)));
+      configProperty.addCallback(
+          (v0, v1) -> {
+            T t0 = Optional.ofNullable(v0).map(mapper).orElse(null);
+            T t1 = Optional.ofNullable(v1).map(mapper).orElse(null);
+            callback.accept(t0, t1);
+          });
     }
 
     @Override
     public void addCallback(Executor executor, BiConsumer<T, T> callback) {
       configProperty.addCallback(
-          executor, (v0, v1) -> callback.accept(mapper.apply(v0), mapper.apply(v1)));
+          executor,
+          (v0, v1) -> {
+            T t0 = Optional.ofNullable(v0).map(mapper).orElse(null);
+            T t1 = Optional.ofNullable(v1).map(mapper).orElse(null);
+            callback.accept(t0, t1);
+          });
     }
 
     @Override
     public void addValidator(Predicate<T> validator) {
-      configProperty.addValidator(value -> validator.test(mapper.apply(value)));
+      configProperty.addValidator(
+          value -> validator.test(Optional.ofNullable(value).map(mapper).orElse(null)));
     }
   }
 }

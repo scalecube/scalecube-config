@@ -1,13 +1,18 @@
 package io.scalecube.config.examples;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.audit.Slf4JConfigEventListener;
 import io.scalecube.config.source.SystemPropertiesConfigSource;
+import io.scalecube.config.utils.ThrowableUtil;
+import java.util.function.Function;
 
 public class JsonObjectExample {
 
   private static final int RELOAD_INTERVAL_SEC = 3;
+
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   /**
    * Main method of example of how to read json value from config registry.
@@ -16,7 +21,6 @@ public class JsonObjectExample {
    */
   public static void main(String[] args) {
     System.setProperty("jsonKey", "{\"name\":\"property\",\"value\":1322134}");
-    System.setProperty("intKey", "12345");
 
     ConfigRegistrySettings configRegistrySettings =
         ConfigRegistrySettings.builder()
@@ -28,10 +32,8 @@ public class JsonObjectExample {
 
     ConfigRegistry configRegistry = ConfigRegistry.create(configRegistrySettings);
 
-    int intKey = configRegistry.intProperty("intKey").value(-1);
-    System.out.println("intKey = " + intKey);
-
-    JsonEntity entity = configRegistry.jsonObjectProperty("jsonKey", JsonEntity.class).value(null);
+    JsonEntity entity =
+        configRegistry.objectProperty("jsonKey", mapper(JsonEntity.class)).value(null);
     System.out.println("entity = " + entity);
   }
 
@@ -39,9 +41,27 @@ public class JsonObjectExample {
     private String name;
     private Integer value;
 
+    public void setName(String name) {
+      this.name = name;
+    }
+
+    public void setValue(Integer value) {
+      this.value = value;
+    }
+
     @Override
     public String toString() {
       return name + ":" + value;
     }
+  }
+
+  private static <T> Function<String, T> mapper(Class<T> clazz) {
+    return value -> {
+      try {
+        return objectMapper.readValue(value, clazz);
+      } catch (Exception e) {
+        throw ThrowableUtil.propagate(e);
+      }
+    };
   }
 }

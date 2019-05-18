@@ -1,9 +1,9 @@
 package io.scalecube.config.jmx;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import io.scalecube.config.ConfigPropertyInfo;
 import io.scalecube.config.ConfigRegistry;
-import io.scalecube.config.utils.ObjectMapperHolder;
-import io.scalecube.config.utils.ThrowableUtil;
+import io.scalecube.config.audit.ConfigEvent;
+import io.scalecube.config.source.ConfigSourceInfo;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.stream.Collectors;
@@ -21,7 +21,7 @@ public class JmxConfigRegistry implements JmxConfigRegistryMBean {
     return configRegistry
         .getConfigProperties()
         .stream()
-        .map(this::writeValueAsString)
+        .map(ConfigPropertyInfo::toString)
         .collect(Collectors.toList());
   }
 
@@ -30,7 +30,7 @@ public class JmxConfigRegistry implements JmxConfigRegistryMBean {
     return configRegistry
         .getConfigSources()
         .stream()
-        .map(this::writeValueAsString)
+        .map(ConfigSourceInfo::toString)
         .collect(Collectors.toList());
   }
 
@@ -39,20 +39,12 @@ public class JmxConfigRegistry implements JmxConfigRegistryMBean {
     return configRegistry
         .getRecentConfigEvents()
         .stream()
-        .map(this::writeValueAsString)
+        .map(ConfigEvent::toString)
         .collect(Collectors.toList());
   }
 
   @Override
   public Collection<String> getSettings() {
-    return Collections.singletonList(writeValueAsString(configRegistry.getSettings()));
-  }
-
-  private String writeValueAsString(Object input) {
-    try {
-      return ObjectMapperHolder.getInstance().writeValueAsString(input);
-    } catch (JsonProcessingException e) {
-      throw ThrowableUtil.propagate(e);
-    }
+    return Collections.singletonList(configRegistry.getSettings().toString());
   }
 }

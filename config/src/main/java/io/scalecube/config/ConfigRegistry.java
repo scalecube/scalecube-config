@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -49,16 +48,6 @@ public interface ConfigRegistry {
    * @return property instance
    */
   <T> ObjectConfigProperty<T> objectProperty(Map<String, String> bindingMap, Class<T> cfgClass);
-
-  /**
-   * Returns dynamic typed object property stored in the source as json.
-   *
-   * @param documentKey the name of the json in the store
-   * @param cfgClass a class of config object instance
-   * @param <T> a type of config object
-   * @return property instance
-   */
-  <T> ObjectConfigProperty<T> jsonObjectProperty(String documentKey, Class<T> cfgClass);
 
   /**
    * Returns dynamic typed object property.

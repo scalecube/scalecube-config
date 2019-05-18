@@ -12,16 +12,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.scalecube.config.source.ConfigSource;
+import io.scalecube.config.utils.ThrowableUtil;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +43,8 @@ import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class JsonDocumentConfigPropertyTest {
+
+  private static ObjectMapper objectMapper = initMapper();
 
   @Mock private ConfigSource configSource;
 
@@ -49,7 +60,7 @@ class JsonDocumentConfigPropertyTest {
   // Normal scenarios
 
   @Test
-  public void testObjectProperty() throws Exception {
+  public void testObjectProperty() {
     when(configSource.loadConfig())
         .thenAnswer(
             answer ->
@@ -63,8 +74,9 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     Class<TestConfig> configClass = TestConfig.class;
+
     ObjectConfigProperty<TestConfig> objectProperty =
-        configRegistry.jsonObjectProperty("testObjectProperty", configClass);
+        configRegistry.objectProperty("testObjectProperty", mapper(configClass));
 
     TestConfig config = objectProperty.value(null);
     assertNotNull(config);
@@ -89,7 +101,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<TestConfig> configClass = TestConfig.class;
     ObjectConfigProperty<TestConfig> objectProperty =
-        configRegistry.jsonObjectProperty(documentKey, configClass);
+        configRegistry.objectProperty(documentKey, mapper(configClass));
 
     objectProperty.addValidator(
         input ->
@@ -124,7 +136,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<TestConfig> configClass = TestConfig.class;
     ObjectConfigProperty<TestConfig> objectProperty =
-        configRegistry.jsonObjectProperty(documentKey, configClass);
+        configRegistry.objectProperty(documentKey, mapper(configClass));
 
     objectProperty.addValidator(input -> input.isEnabled && input.maxCount >= 1);
     objectProperty.addCallback((o1, o2) -> sideEffect.apply(o1, o2));
@@ -161,7 +173,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<SimpleConfig> configClass = SimpleConfig.class;
     ObjectConfigProperty<SimpleConfig> objectProperty =
-        configRegistry.jsonObjectProperty(documentKey, configClass);
+        configRegistry.objectProperty(documentKey, mapper(configClass));
     objectProperty.addCallback((cfg1, cfg2) -> sideEffect.apply(cfg1, cfg2));
 
     SimpleConfig config = objectProperty.value(null);
@@ -192,7 +204,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<ConfigValueSoonWillDisappear> configClass = ConfigValueSoonWillDisappear.class;
     ObjectConfigProperty<ConfigValueSoonWillDisappear> objectProperty =
-        configRegistry.jsonObjectProperty(documentName, configClass);
+        configRegistry.objectProperty(documentName, mapper(configClass));
     objectProperty.addCallback((cfg1, cfg2) -> sideEffect.apply(cfg1, cfg2));
 
     ConfigValueSoonWillDisappear config = objectProperty.value(null);
@@ -233,7 +245,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<ConfigValueWillBeAdded> configClass = ConfigValueWillBeAdded.class;
     ObjectConfigProperty<ConfigValueWillBeAdded> objectProperty =
-        configRegistry.jsonObjectProperty(documentKey, configClass);
+        configRegistry.objectProperty(documentKey, mapper(configClass));
     objectProperty.addCallback((cfg1, cfg2) -> sideEffect.apply(cfg1, cfg2));
 
     assertFalse(objectProperty.value().isPresent());
@@ -256,7 +268,7 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
     Class<NotDefinedObjectPropertyConfig> configClass = NotDefinedObjectPropertyConfig.class;
     ObjectConfigProperty<NotDefinedObjectPropertyConfig> objectProperty =
-        configRegistry.jsonObjectProperty(configClass.getName(), configClass);
+        configRegistry.objectProperty(configClass.getName(), mapper(configClass));
 
     assertFalse(objectProperty.value().isPresent());
     assertNull(objectProperty.value(null));
@@ -274,7 +286,7 @@ class JsonDocumentConfigPropertyTest {
     Class<PartiallyDefinedValueConfig> configClass = PartiallyDefinedValueConfig.class;
     PartiallyDefinedValueConfig config =
         configRegistry
-            .jsonObjectProperty("testPartiallyDefinedValueConfig", configClass)
+            .objectProperty("testPartiallyDefinedValueConfig", mapper(configClass))
             .value()
             .get();
 
@@ -295,7 +307,7 @@ class JsonDocumentConfigPropertyTest {
 
     Class<ConfigClassWithStaticOrFinalField> configClass = ConfigClassWithStaticOrFinalField.class;
     ConfigClassWithStaticOrFinalField config =
-        configRegistry.jsonObjectProperty(documentKey, configClass).value().get();
+        configRegistry.objectProperty(documentKey, mapper(configClass)).value().get();
 
     assertEquals(42, config.anInt);
     // fields with modifier 'final' are not taken into account, even if defined in config source
@@ -309,7 +321,7 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<ConnectorSettings> objectProperty =
-        configRegistry.jsonObjectProperty("connector", ConnectorSettings.class);
+        configRegistry.objectProperty("connector", mapper(ConnectorSettings.class));
 
     assertThrows(
         IllegalArgumentException.class,
@@ -332,7 +344,7 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<ConnectorSettings> objectProperty =
-        configRegistry.jsonObjectProperty(documentKey, ConnectorSettings.class);
+        configRegistry.objectProperty(documentKey, mapper(ConnectorSettings.class));
     objectProperty.addValidator(Objects::nonNull);
     objectProperty.addValidator(settings -> settings.user != null && settings.password != null);
     objectProperty.addCallback((i1, i2) -> sideEffect.apply(i1, i2));
@@ -358,7 +370,7 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<IntObjectSettings> objectProperty =
-        configRegistry.jsonObjectProperty(documentKey, IntObjectSettings.class);
+        configRegistry.objectProperty(documentKey, mapper(IntObjectSettings.class));
     objectProperty.addValidator(Objects::nonNull);
     objectProperty.addValidator(settings -> settings.anInt >= 1);
     objectProperty.addCallback((i1, i2) -> sideEffect.apply(i1, i2));
@@ -369,7 +381,7 @@ class JsonDocumentConfigPropertyTest {
 
     assertTrue(objectProperty.value().isPresent());
     assertEquals(1, objectProperty.value().get().anInt);
-    verify(sideEffect, never()).apply(any(), any()); 
+    verify(sideEffect, never()).apply(any(), any());
   }
 
   @Test
@@ -379,7 +391,7 @@ class JsonDocumentConfigPropertyTest {
     ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
 
     ObjectConfigProperty<IntObjectSettings> objectProperty =
-        configRegistry.jsonObjectProperty("com.acme", IntObjectSettings.class);
+        configRegistry.objectProperty("com.acme", mapper(IntObjectSettings.class));
 
     assertThrows(
         IllegalArgumentException.class,
@@ -391,6 +403,35 @@ class JsonDocumentConfigPropertyTest {
     public int maxCount;
     public Duration timeout;
     public boolean isEnabled;
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      TestConfig that = (TestConfig) o;
+
+      if (maxCount != that.maxCount) {
+        return false;
+      }
+      if (isEnabled != that.isEnabled) {
+        return false;
+      }
+      return Objects.equals(timeout, that.timeout);
+
+    }
+
+    @Override
+    public int hashCode() {
+      int result = maxCount;
+      result = 31 * result + (timeout != null ? timeout.hashCode() : 0);
+      result = 31 * result + (isEnabled ? 1 : 0);
+      return result;
+    }
   }
 
   public static class IncorrectIntegerValueConfig {
@@ -435,6 +476,31 @@ class JsonDocumentConfigPropertyTest {
   public static class ConfigValueWillBeAdded {
     public int i = -1;
     public int j = -1;
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      ConfigValueWillBeAdded that = (ConfigValueWillBeAdded) o;
+
+      if (i != that.i) {
+        return false;
+      }
+      return j == that.j;
+
+    }
+
+    @Override
+    public int hashCode() {
+      int result = i;
+      result = 31 * result + j;
+      return result;
+    }
   }
 
   public interface SideEffect {
@@ -448,5 +514,29 @@ class JsonDocumentConfigPropertyTest {
 
   public static class IntObjectSettings {
     public int anInt;
+  }
+
+  private static ObjectMapper initMapper() {
+    ObjectMapper mapper =
+        new ObjectMapper().registerModule(new Jdk8Module()).registerModule(new JavaTimeModule());
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+    mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
+    mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    mapper.configure(SerializationFeature.WRITE_ENUMS_USING_TO_STRING, true);
+
+    mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+    mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    return mapper;
+  }
+
+  private static  <T> Function<String, T> mapper(Class<T> clazz) {
+    return value -> {
+      try {
+        return objectMapper.readValue(value, clazz);
+      } catch (Exception e) {
+        throw ThrowableUtil.propagate(e);
+      }
+    };
   }
 }

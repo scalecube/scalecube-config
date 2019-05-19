@@ -85,16 +85,21 @@ public final class ConfigRegistrySettings {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("ConfigRegistrySettings{");
-    sb.append("reloadIntervalSec=").append(reloadIntervalSec);
-    sb.append(", recentConfigEventsNum=").append(recentConfigEventsNum);
-    sb.append(", listeners=").append(listeners);
-    sb.append(", sources=").append(sources);
-    sb.append(", host='").append(host).append('\'');
-    sb.append(", jmxEnabled=").append(jmxEnabled);
-    sb.append(", jmxMBeanName='").append(jmxMBeanName).append('\'');
-    sb.append('}');
-    return sb.toString();
+    return "{\"reloadIntervalSec\":\" "
+        + reloadIntervalSec
+        + "\",\"recentConfigEventsNum\":\""
+        + recentConfigEventsNum
+        + "\",\"host\":\""
+        + host
+        + "\",\"jmxEnabled\":\""
+        + jmxEnabled
+        + "\",\"jmxMBeanName\":\""
+        + jmxMBeanName
+        + "\",\"listeners\":\""
+        + listeners
+        + "\",\"sources\":\""
+        + sources
+        + "\"}";
   }
 
   public static class Builder {

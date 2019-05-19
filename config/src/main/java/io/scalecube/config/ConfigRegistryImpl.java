@@ -119,9 +119,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
-  public <T> ObjectConfigProperty<T> jsonObjectProperty(String documentKey, Class<T> cfgClass) {
-    return new JsonDocumentConfigPropertyImpl(
-        documentKey, cfgClass, propertyMap, propertyCallbackMap);
+  public <T> ObjectConfigProperty<T> objectProperty(String name, Function<String, T> mapper) {
+    return new MappedObjectConfigProperty<>(
+        new StringConfigPropertyImpl(name, propertyMap, propertyCallbackMap), mapper);
   }
 
   @Override
@@ -316,18 +316,14 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   @Override
   public Set<String> allProperties() {
-    return propertyMap
-        .values()
-        .stream()
+    return propertyMap.values().stream()
         .map(LoadedConfigProperty::name)
         .collect(Collectors.toSet());
   }
 
   @Override
   public Collection<ConfigPropertyInfo> getConfigProperties() {
-    return propertyMap
-        .values()
-        .stream()
+    return propertyMap.values().stream()
         .map(
             property -> {
               ConfigPropertyInfo info = new ConfigPropertyInfo();
@@ -460,15 +456,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         detectedChanges.stream().filter(ConfigEvent::isChanged).collect(Collectors.toList()));
 
     // re-compute values and invoke callbacks
-    detectedChanges
-        .stream()
+    detectedChanges.stream()
         .filter(event -> propertyCallbackMap.containsKey(event.getName()))
         .flatMap(
             event ->
-                propertyCallbackMap
-                    .get(event.getName())
-                    .values()
-                    .stream()
+                propertyCallbackMap.get(event.getName()).values().stream()
                     .map(callback -> new SimpleImmutableEntry<>(callback, event)))
         .collect(
             Collectors.groupingBy(

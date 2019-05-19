@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Config registry base facade interface.
@@ -49,14 +50,14 @@ public interface ConfigRegistry {
   <T> ObjectConfigProperty<T> objectProperty(Map<String, String> bindingMap, Class<T> cfgClass);
 
   /**
-   * Returns dynamic typed object property stored in the source as json.
+   * Returns dynamic typed object property.
    *
-   * @param documentKey the name of the json in the store
-   * @param cfgClass a class of config object instance
+   * @param name property name
+   * @param mapper which transform the given property value to the given class instance
    * @param <T> a type of config object
    * @return property instance
    */
-  <T> ObjectConfigProperty<T> jsonObjectProperty(String documentKey, Class<T> cfgClass);
+  <T> ObjectConfigProperty<T> objectProperty(String name, Function<String, T> mapper);
 
   /**
    * Returns current value of object property or defaults.

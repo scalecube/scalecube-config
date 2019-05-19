@@ -142,18 +142,26 @@ public final class ConfigEvent {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("ConfigEvent{");
-    sb.append("name='").append(name).append('\'');
-    sb.append(", timestamp=").append(timestamp);
-    sb.append(", type=").append(type);
-    sb.append(", host='").append(host).append('\'');
-    sb.append(", oldValue='").append(oldValue).append('\'');
-    sb.append(", oldSource='").append(oldSource).append('\'');
-    sb.append(", oldOrigin='").append(oldOrigin).append('\'');
-    sb.append(", newValue='").append(newValue).append('\'');
-    sb.append(", newSource='").append(newSource).append('\'');
-    sb.append(", newOrigin='").append(newOrigin).append('\'');
-    sb.append('}');
-    return sb.toString();
+    return "{\"name\":\" "
+        + name
+        + "\",\"timestamp\":\""
+        + timestamp
+        + "\",\"type\":\""
+        + type
+        + "\",\"host\":\""
+        + host
+        + "\",\"oldValue\":\""
+        + oldValue
+        + "\",\"oldSource\":\""
+        + oldSource
+        + "\",\"oldOrigin\":\""
+        + oldOrigin
+        + "\",\"newValue\":\""
+        + newValue
+        + "\",\"newSource\":\""
+        + newSource
+        + "\",\"newOrigin\":\""
+        + newOrigin
+        + "\"}";
   }
 }

@@ -32,6 +32,8 @@ import javax.annotation.Nonnull;
 public class ClassPathConfigSource extends FilteredPathConfigSource {
   private final ClassLoader classLoader;
 
+  private Map<String, ConfigProperty> loadedConfig;
+
   /**
    * Creates provider of configuration properties with classpath as source.
    *
@@ -63,9 +65,12 @@ public class ClassPathConfigSource extends FilteredPathConfigSource {
 
   @Override
   public Map<String, ConfigProperty> loadConfig() {
+    if (loadedConfig != null) {
+      return loadedConfig;
+    }
+
     Collection<Path> pathCollection = new ArrayList<>();
-    getClassPathEntries(classLoader)
-        .stream()
+    getClassPathEntries(classLoader).stream()
         .filter(uri -> uri.getScheme().equals("file"))
         .forEach(
             uri -> {
@@ -99,7 +104,7 @@ public class ClassPathConfigSource extends FilteredPathConfigSource {
                                 .origin(path.toString())
                                 .build())));
 
-    return result;
+    return loadedConfig = result;
   }
 
   private Collection<URI> getClassPathEntries(ClassLoader classLoader) {

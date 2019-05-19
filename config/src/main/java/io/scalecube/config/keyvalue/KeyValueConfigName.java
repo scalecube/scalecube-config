@@ -2,8 +2,6 @@ package io.scalecube.config.keyvalue;
 
 import java.util.Objects;
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /** Generic key-value config name. Comes in two parts: group name and config collection name. */
 public final class KeyValueConfigName {
@@ -13,7 +11,7 @@ public final class KeyValueConfigName {
   /** A config collection name. Not null. */
   private final String collectionName;
 
-  public KeyValueConfigName(@Nullable String groupName, @Nonnull String collectionName) {
+  public KeyValueConfigName(String groupName, String collectionName) {
     this.groupName = groupName;
     this.collectionName = Objects.requireNonNull(collectionName);
   }

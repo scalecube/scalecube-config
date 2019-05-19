@@ -155,7 +155,8 @@ class JsonDocumentConfigPropertyTest {
     assertEquals(Duration.ofSeconds(1), config1.timeout); // note value retained after reload
     assertTrue(config1.isEnabled); // note value retained after reload
     verify(sideEffect).apply(config, config1);
-    //as oppose to ObjectConfigProperty, in JSON if the value did not change - no execution will happen.
+    // as oppose to ObjectConfigProperty, in JSON if the value did not change - no execution will
+    // happen.
     // that's why it's never().
   }
 
@@ -400,9 +401,9 @@ class JsonDocumentConfigPropertyTest {
   }
 
   public static class TestConfig {
-    public int maxCount;
-    public Duration timeout;
-    public boolean isEnabled;
+    private int maxCount;
+    private Duration timeout;
+    private boolean isEnabled;
 
     @Override
     public boolean equals(Object o) {
@@ -422,7 +423,6 @@ class JsonDocumentConfigPropertyTest {
         return false;
       }
       return Objects.equals(timeout, that.timeout);
-
     }
 
     @Override
@@ -435,13 +435,13 @@ class JsonDocumentConfigPropertyTest {
   }
 
   public static class IncorrectIntegerValueConfig {
-    public int incorrectInt;
-    public String str;
+    private int incorrectInt;
+    private String str;
   }
 
   public static class PartiallyDefinedValueConfig {
-    public double d1 = 1e7;
-    public double d2 = 1e7;
+    private double d1 = 1e7;
+    private double d2 = 1e7;
   }
 
   public static class NotDefinedObjectPropertyConfig {
@@ -449,33 +449,33 @@ class JsonDocumentConfigPropertyTest {
   }
 
   public static class ConfigClassWithStaticOrFinalField {
-    static final Logger LOGGER = LoggerFactory.getLogger("logger");
+    public static final Logger LOGGER = LoggerFactory.getLogger("logger");
     public static final ConfigClassWithStaticOrFinalField defaultInstance =
         new ConfigClassWithStaticOrFinalField();
 
-    public int anInt = 1;
-    public final int finalInt = 1;
+    private int anInt = 1;
+    private final int finalInt = 1;
   }
 
   public static class SimpleConfig {
-    public int anInt = 100;
-    public double aDouble = 200.0;
+    private int anInt = 100;
+    private double aDouble = 200.0;
   }
 
   public static class ConfigValueSoonWillDisappear {
-    public boolean isEnabled1;
-    public boolean isEnabled2;
+    private boolean isEnabled1;
+    private boolean isEnabled2;
   }
 
   public static class ConfigValueSoonWillDisappearPartially {
-    public long x;
-    public long primLong;
-    public Long objLong;
+    private long x;
+    private long primLong;
+    private Long objLong;
   }
 
   public static class ConfigValueWillBeAdded {
-    public int i = -1;
-    public int j = -1;
+    private int i = -1;
+    private int j = -1;
 
     @Override
     public boolean equals(Object o) {
@@ -492,7 +492,6 @@ class JsonDocumentConfigPropertyTest {
         return false;
       }
       return j == that.j;
-
     }
 
     @Override
@@ -508,17 +507,19 @@ class JsonDocumentConfigPropertyTest {
   }
 
   public static class ConnectorSettings {
-    public String user;
-    public String password;
+    private String user;
+    private String password;
   }
 
   public static class IntObjectSettings {
-    public int anInt;
+    private int anInt;
   }
 
   private static ObjectMapper initMapper() {
     ObjectMapper mapper =
-        new ObjectMapper().registerModule(new Jdk8Module()).registerModule(new JavaTimeModule());
+        new ObjectMapper() //
+            .registerModule(new Jdk8Module())
+            .registerModule(new JavaTimeModule());
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
@@ -530,7 +531,7 @@ class JsonDocumentConfigPropertyTest {
     return mapper;
   }
 
-  private static  <T> Function<String, T> mapper(Class<T> clazz) {
+  private static <T> Function<String, T> mapper(Class<T> clazz) {
     return value -> {
       try {
         return objectMapper.readValue(value, clazz);

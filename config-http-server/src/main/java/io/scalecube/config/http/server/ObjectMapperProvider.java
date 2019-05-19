@@ -30,7 +30,9 @@ public class ObjectMapperProvider implements ContextResolver<ObjectMapper> {
 
     private static ObjectMapper initMapper() {
       ObjectMapper mapper =
-          new ObjectMapper().registerModule(new Jdk8Module()).registerModule(new JavaTimeModule());
+          new ObjectMapper() //
+              .registerModule(new Jdk8Module())
+              .registerModule(new JavaTimeModule());
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
       mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
       mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);

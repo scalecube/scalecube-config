@@ -22,14 +22,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.management.MBeanInfo;
@@ -123,7 +120,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   @Override
   public <T> ObjectConfigProperty<T> objectProperty(String name, Function<String, T> mapper) {
-    return new ApplyMapper<>(
+    return new MappedObjectConfigProperty<>(
         new StringConfigPropertyImpl(name, propertyMap, propertyCallbackMap), mapper);
   }
 
@@ -501,59 +498,6 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       } else {
         LOGGER.debug("Loaded config properties from {}, source: {}", source, name);
       }
-    }
-  }
-
-  private static class ApplyMapper<T> implements ObjectConfigProperty<T> {
-
-    private final StringConfigProperty configProperty;
-    private final Function<String, T> mapper;
-
-    private ApplyMapper(StringConfigProperty configProperty, Function<String, T> mapper) {
-      this.configProperty = configProperty;
-      this.mapper = mapper;
-    }
-
-    @Override
-    public String name() {
-      return configProperty.name();
-    }
-
-    @Override
-    public Optional<T> value() {
-      return configProperty.value().map(mapper);
-    }
-
-    @Override
-    public T value(T defaultValue) {
-      return value().orElse(defaultValue);
-    }
-
-    @Override
-    public void addCallback(BiConsumer<T, T> callback) {
-      configProperty.addCallback(
-          (v0, v1) -> {
-            T t0 = Optional.ofNullable(v0).map(mapper).orElse(null);
-            T t1 = Optional.ofNullable(v1).map(mapper).orElse(null);
-            callback.accept(t0, t1);
-          });
-    }
-
-    @Override
-    public void addCallback(Executor executor, BiConsumer<T, T> callback) {
-      configProperty.addCallback(
-          executor,
-          (v0, v1) -> {
-            T t0 = Optional.ofNullable(v0).map(mapper).orElse(null);
-            T t1 = Optional.ofNullable(v1).map(mapper).orElse(null);
-            callback.accept(t0, t1);
-          });
-    }
-
-    @Override
-    public void addValidator(Predicate<T> validator) {
-      configProperty.addValidator(
-          value -> validator.test(Optional.ofNullable(value).map(mapper).orElse(null)));
     }
   }
 }

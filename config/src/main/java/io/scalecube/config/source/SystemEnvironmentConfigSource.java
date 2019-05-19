@@ -12,6 +12,8 @@ import java.util.stream.Stream;
 public class SystemEnvironmentConfigSource implements ConfigSource {
   private final List<String> namespaces;
 
+  private Map<String, ConfigProperty> loadedConfig;
+
   public SystemEnvironmentConfigSource() {
     this.namespaces = Collections.emptyList();
   }
@@ -26,6 +28,10 @@ public class SystemEnvironmentConfigSource implements ConfigSource {
 
   @Override
   public Map<String, ConfigProperty> loadConfig() {
+    if (loadedConfig != null) {
+      return loadedConfig;
+    }
+
     Map<String, String> env = System.getenv();
     Map<String, ConfigProperty> result = new TreeMap<>();
     Stream<String> namespaces1 = namespaces.stream();
@@ -36,6 +42,7 @@ public class SystemEnvironmentConfigSource implements ConfigSource {
         result.put(propName, LoadedConfigProperty.forNameAndValue(propName, entry.getValue()));
       }
     }
-    return result;
+
+    return loadedConfig = result;
   }
 }

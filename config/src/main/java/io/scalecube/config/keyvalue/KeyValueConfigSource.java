@@ -24,7 +24,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +59,7 @@ public class KeyValueConfigSource implements ConfigSource {
     this.configNames = configureConfigNames(builder.groupList, builder.collectionName);
   }
 
-  private List<KeyValueConfigName> configureConfigNames(
+  private static List<KeyValueConfigName> configureConfigNames(
       List<String> groupList, String collectionName) {
     List<String> result = new ArrayList<>();
     result.addAll(groupList);
@@ -71,12 +70,11 @@ public class KeyValueConfigSource implements ConfigSource {
         .collect(Collectors.toList());
   }
 
-  public static Builder withRepository(@Nonnull KeyValueConfigRepository repository) {
+  public static Builder withRepository(KeyValueConfigRepository repository) {
     return new Builder(repository);
   }
 
-  public static Builder withRepository(
-      @Nonnull KeyValueConfigRepository repository, @Nonnull String collectionName) {
+  public static Builder withRepository(KeyValueConfigRepository repository, String collectionName) {
     return new Builder(repository, collectionName);
   }
 

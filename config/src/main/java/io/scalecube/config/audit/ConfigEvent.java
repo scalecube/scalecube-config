@@ -3,7 +3,6 @@ package io.scalecube.config.audit;
 import io.scalecube.config.ConfigProperty;
 import java.util.Date;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 
 public final class ConfigEvent {
 
@@ -50,8 +49,7 @@ public final class ConfigEvent {
    * @param newProp added property
    * @return config event
    */
-  public static ConfigEvent createAdded(
-      @Nonnull String propName, String host, @Nonnull ConfigProperty newProp) {
+  public static ConfigEvent createAdded(String propName, String host, ConfigProperty newProp) {
     Objects.requireNonNull(newProp, "ConfigEvent: newProp is required");
     return new ConfigEvent(propName, Type.ADDED, host, null, newProp);
   }
@@ -64,8 +62,7 @@ public final class ConfigEvent {
    * @param oldProp removed property
    * @return config event
    */
-  public static ConfigEvent createRemoved(
-      @Nonnull String propName, String host, @Nonnull ConfigProperty oldProp) {
+  public static ConfigEvent createRemoved(String propName, String host, ConfigProperty oldProp) {
     Objects.requireNonNull(oldProp, "ConfigEvent: oldProp is required");
     return new ConfigEvent(propName, Type.REMOVED, host, oldProp, null);
   }
@@ -80,21 +77,21 @@ public final class ConfigEvent {
    * @return config event
    */
   public static ConfigEvent createUpdated(
-      @Nonnull String propName, String host, ConfigProperty oldProp, ConfigProperty newProp) {
+      String propName, String host, ConfigProperty oldProp, ConfigProperty newProp) {
     Objects.requireNonNull(newProp, "ConfigEvent: newProp is required");
     Objects.requireNonNull(oldProp, "ConfigEvent: oldProp is required");
     return new ConfigEvent(propName, Type.UPDATED, host, oldProp, newProp);
   }
 
-  public @Nonnull String getName() {
+  public String getName() {
     return name;
   }
 
-  public @Nonnull Date getTimestamp() {
+  public Date getTimestamp() {
     return timestamp;
   }
 
-  public @Nonnull Type getType() {
+  public Type getType() {
     return type;
   }
 

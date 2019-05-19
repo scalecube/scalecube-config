@@ -12,18 +12,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import org.bson.RawBsonDocument;
 
 public class MongoConfigRepository implements KeyValueConfigRepository {
   private final MongoConfigConnector connector;
 
-  public MongoConfigRepository(@Nonnull MongoConfigConnector connector) {
+  public MongoConfigRepository(MongoConfigConnector connector) {
     this.connector = Objects.requireNonNull(connector);
   }
 
   @Override
-  public List<KeyValueConfigEntity> findAll(@Nonnull KeyValueConfigName configName)
+  public List<KeyValueConfigEntity> findAll(KeyValueConfigName configName)
       throws Exception {
     Objects.requireNonNull(configName);
 

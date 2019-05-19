@@ -12,7 +12,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import org.bson.RawBsonDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,7 @@ public class MongoConfigEventListener implements ConfigEventListener {
   private final String collectionName;
 
   public MongoConfigEventListener(
-      @Nonnull MongoConfigConnector connector, @Nonnull String collectionName) {
+       MongoConfigConnector connector,  String collectionName) {
     this.connector = connector;
     this.collectionName = collectionName;
   }

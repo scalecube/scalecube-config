@@ -1,7 +1,6 @@
 package io.scalecube.config.keyvalue;
 
 import java.util.Objects;
-import javax.annotation.Nonnull;
 
 /** Generic entity class for key-value config data source. */
 public final class KeyValueConfigEntity {
@@ -38,7 +37,7 @@ public final class KeyValueConfigEntity {
    * @param configName config name from where this entity object was loaded.
    * @return copy of this object with configName.
    */
-  public KeyValueConfigEntity setConfigName(@Nonnull KeyValueConfigName configName) {
+  public KeyValueConfigEntity setConfigName(KeyValueConfigName configName) {
     Objects.requireNonNull(configName);
     KeyValueConfigEntity entity = new KeyValueConfigEntity();
     entity.configName = configName;

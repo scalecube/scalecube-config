@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
 public class DirectoryConfigSource extends FilteredPathConfigSource {
   private final Path basePath;
@@ -29,8 +28,7 @@ public class DirectoryConfigSource extends FilteredPathConfigSource {
    * @param basePath directory path
    * @param predicates list of predicates to filter
    */
-  public DirectoryConfigSource(
-      @Nonnull String basePath, @Nonnull List<Predicate<Path>> predicates) {
+  public DirectoryConfigSource(String basePath, List<Predicate<Path>> predicates) {
     super(predicates);
     this.basePath =
         Paths.get(Objects.requireNonNull(basePath, "DirectoryConfigSource: basePath is required"));
@@ -43,7 +41,7 @@ public class DirectoryConfigSource extends FilteredPathConfigSource {
    * @param predicates predicates to filter
    */
   @SafeVarargs
-  public DirectoryConfigSource(@Nonnull String basePath, @Nonnull Predicate<Path>... predicates) {
+  public DirectoryConfigSource(String basePath, Predicate<Path>... predicates) {
     this(basePath, Arrays.asList(predicates));
   }
 

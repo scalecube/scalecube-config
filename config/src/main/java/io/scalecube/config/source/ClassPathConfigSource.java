@@ -27,10 +27,11 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import javax.annotation.Nonnull;
 
 public class ClassPathConfigSource extends FilteredPathConfigSource {
   private final ClassLoader classLoader;
+
+  private Map<String, ConfigProperty> loadedConfig;
 
   /**
    * Creates provider of configuration properties with classpath as source.
@@ -38,31 +39,33 @@ public class ClassPathConfigSource extends FilteredPathConfigSource {
    * @param classLoader class loader
    * @param predicates list of predicates to filter
    */
-  public ClassPathConfigSource(
-      @Nonnull ClassLoader classLoader, @Nonnull List<Predicate<Path>> predicates) {
+  public ClassPathConfigSource(ClassLoader classLoader, List<Predicate<Path>> predicates) {
     super(predicates);
     this.classLoader =
         Objects.requireNonNull(classLoader, "ClassPathConfigSource: classloader is required");
   }
 
-  public ClassPathConfigSource(@Nonnull List<Predicate<Path>> predicates) {
+  public ClassPathConfigSource(List<Predicate<Path>> predicates) {
     this(ClassPathConfigSource.class.getClassLoader(), predicates);
   }
 
   @SafeVarargs
-  public ClassPathConfigSource(
-      @Nonnull ClassLoader classLoader, @Nonnull Predicate<Path>... predicates) {
+  public ClassPathConfigSource(ClassLoader classLoader, Predicate<Path>... predicates) {
     super(Arrays.asList(predicates));
     this.classLoader = classLoader;
   }
 
   @SafeVarargs
-  public ClassPathConfigSource(@Nonnull Predicate<Path>... predicates) {
+  public ClassPathConfigSource(Predicate<Path>... predicates) {
     this(ClassPathConfigSource.class.getClassLoader(), Arrays.asList(predicates));
   }
 
   @Override
   public Map<String, ConfigProperty> loadConfig() {
+    if (loadedConfig != null) {
+      return loadedConfig;
+    }
+
     Collection<Path> pathCollection = new ArrayList<>();
     getClassPathEntries(classLoader)
         .stream()
@@ -99,7 +102,7 @@ public class ClassPathConfigSource extends FilteredPathConfigSource {
                                 .origin(path.toString())
                                 .build())));
 
-    return result;
+    return loadedConfig = result;
   }
 
   private Collection<URI> getClassPathEntries(ClassLoader classLoader) {

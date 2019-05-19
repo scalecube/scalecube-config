@@ -1,7 +1,6 @@
 package io.scalecube.config.keyvalue;
 
 import java.util.List;
-import javax.annotation.Nonnull;
 
 /** Generic key-value config data access interface. */
 public interface KeyValueConfigRepository {
@@ -13,5 +12,5 @@ public interface KeyValueConfigRepository {
    * @return list of key-value entries.
    * @throws Exception in case of any issue happened when accessing config data source.
    */
-  List<KeyValueConfigEntity> findAll(@Nonnull KeyValueConfigName configName) throws Exception;
+  List<KeyValueConfigEntity> findAll(KeyValueConfigName configName) throws Exception;
 }

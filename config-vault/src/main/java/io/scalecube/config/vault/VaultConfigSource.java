@@ -133,7 +133,7 @@ public class VaultConfigSource implements ConfigSource {
 
     final VaultConfig config = new VaultConfig();
     private final String secretsPath;
-    Duration renewEvery = null;
+    private Duration renewEvery = null;
 
     Builder(String address, String token, String secretsPath) {
       config

@@ -13,7 +13,11 @@ import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.ThrowableUtil;
+import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -30,6 +34,7 @@ public class VaultConfigSource implements ConfigSource {
 
   private final Vault vault;
   private final String secretsPath;
+  private final Duration renewEvery;
 
   /**
    * Create a new {@link VaultConfigSource} with the given {@link Builder}.
@@ -38,7 +43,34 @@ public class VaultConfigSource implements ConfigSource {
    */
   private VaultConfigSource(Builder builder) {
     this.secretsPath = builder.secretsPath();
+    this.renewEvery = builder.renewEvery;
     vault = new Vault(builder.config);
+
+    if (renewEvery != null) {
+      long initialDelay = renewEvery.toMillis();
+      long period = renewEvery.toMillis();
+      TimeUnit unit = TimeUnit.MILLISECONDS;
+      ThreadFactory factory =
+          r -> {
+            Thread thread = new Thread(r);
+            thread.setDaemon(true);
+            thread.setName(VaultConfigSource.class.getSimpleName() + " token renewer");
+            return thread;
+          };
+      Executors.newScheduledThreadPool(1, factory)
+          .scheduleAtFixedRate(
+              () -> {
+                try {
+                  vault.auth().renewSelf();
+                  LOGGER.info("renew token success");
+                } catch (VaultException vaultException) {
+                  LOGGER.error("failed to renew token", vaultException);
+                }
+              },
+              initialDelay,
+              period,
+              unit);
+    }
   }
 
   private void checkVaultStatus() throws VaultException {
@@ -56,10 +88,7 @@ public class VaultConfigSource implements ConfigSource {
     try {
       checkVaultStatus();
       LogicalResponse response = vault.logical().read(this.secretsPath);
-      return response
-          .getData()
-          .entrySet()
-          .stream()
+      return response.getData().entrySet().stream()
           .map(LoadedConfigProperty::withNameAndValue)
           .map(LoadedConfigProperty.Builder::build)
           .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
@@ -104,6 +133,7 @@ public class VaultConfigSource implements ConfigSource {
 
     final VaultConfig config = new VaultConfig();
     private final String secretsPath;
+    Duration renewEvery = null;
 
     Builder(String address, String token, String secretsPath) {
       config
@@ -120,6 +150,11 @@ public class VaultConfigSource implements ConfigSource {
 
     public Builder readTimeout(int readTimeout) {
       config.readTimeout(readTimeout);
+      return this;
+    }
+
+    public Builder renewEvery(Duration duration) {
+      renewEvery = duration;
       return this;
     }
 

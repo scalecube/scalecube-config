@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +43,16 @@ public class VaultConfigSource implements ConfigSource {
    * @param builder configuration to create vault access with.
    */
   private VaultConfigSource(Builder builder) {
-    this.secretsPath = builder.secretsPath();
+    this.secretsPath = builder.secretsPath;
     this.renewEvery = builder.renewEvery;
-    vault = new Vault(builder.config);
+    try {
+      this.vault =
+          new Vault(
+              builder.config.apply(new VaultConfig().sslConfig(new SslConfig().build())).build());
+    } catch (VaultException e) {
+      LOGGER.error("Unable to build " + VaultConfigSource.class.getSimpleName(), e);
+      throw ThrowableUtil.propagate(e);
+    }
 
     if (renewEvery != null) {
       long initialDelay = renewEvery.toMillis();
@@ -131,30 +139,25 @@ public class VaultConfigSource implements ConfigSource {
 
   public static final class Builder {
 
-    final VaultConfig config = new VaultConfig();
     private final String secretsPath;
+    private Function<VaultConfig, VaultConfig> config;
     private Duration renewEvery = null;
 
     Builder(String address, String token, String secretsPath) {
-      config
-          .address(requireNonNull(address, "Missing address"))
-          .token(requireNonNull(token, "Missing token"))
-          .sslConfig(new SslConfig());
+      config =
+          c ->
+              c.address(requireNonNull(address, "Missing address"))
+                  .token(requireNonNull(token, "Missing token"));
       this.secretsPath = requireNonNull(secretsPath, "Missing secretsPath");
-    }
-
-    public Builder connectTimeout(int connectTimeout) {
-      config.openTimeout(connectTimeout);
-      return this;
-    }
-
-    public Builder readTimeout(int readTimeout) {
-      config.readTimeout(readTimeout);
-      return this;
     }
 
     public Builder renewEvery(Duration duration) {
       renewEvery = duration;
+      return this;
+    }
+
+    public Builder config(UnaryOperator<VaultConfig> config) {
+      this.config = this.config.andThen(config);
       return this;
     }
 
@@ -164,18 +167,7 @@ public class VaultConfigSource implements ConfigSource {
      * @return instance of {@link VaultConfigSource}
      */
     public VaultConfigSource build() {
-      try {
-        this.config.build();
-        return new VaultConfigSource(this);
-      } catch (VaultException propogateException) {
-        LOGGER.error(
-            "Unable to build " + VaultConfigSource.class.getSimpleName(), propogateException);
-        throw ThrowableUtil.propagate(propogateException);
-      }
-    }
-
-    public String secretsPath() {
-      return secretsPath;
+      return new VaultConfigSource(this);
     }
   }
 }

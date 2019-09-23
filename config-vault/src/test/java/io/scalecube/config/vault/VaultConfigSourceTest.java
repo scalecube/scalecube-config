@@ -148,7 +148,11 @@ class VaultConfigSourceTest {
     ConfigRegistrySettings settings =
         ConfigRegistrySettings.builder()
             .addLastSource(
-                "vault", VaultConfigSource.builder(address, rootToken, VAULT_SECRETS_PATH1).build())
+                "vault",
+                VaultConfigSource.builder()
+                    .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
+                    .secretsPath(VAULT_SECRETS_PATH1)
+                    .build())
             .reloadIntervalSec(1)
             .build();
     ConfigRegistry configRegistry = ConfigRegistry.create(settings);
@@ -177,7 +181,11 @@ class VaultConfigSourceTest {
     ConfigRegistrySettings settings =
         ConfigRegistrySettings.builder()
             .addLastSource(
-                "vault", VaultConfigSource.builder(address, rootToken, VAULT_SECRETS_PATH1).build())
+                "vault",
+                VaultConfigSource.builder()
+                    .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
+                    .secretsPath(VAULT_SECRETS_PATH1)
+                    .build())
             .reloadIntervalSec(1)
             .build();
     ConfigRegistry configRegistry = ConfigRegistry.create(settings);
@@ -227,7 +235,11 @@ class VaultConfigSourceTest {
     ConfigRegistrySettings settings =
         ConfigRegistrySettings.builder()
             .addLastSource(
-                "vault", VaultConfigSource.builder(address, rootToken, VAULT_SECRETS_PATH1).build())
+                "vault",
+                VaultConfigSource.builder()
+                    .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
+                    .secretsPath(VAULT_SECRETS_PATH1)
+                    .build())
             .reloadIntervalSec(1)
             .build();
 

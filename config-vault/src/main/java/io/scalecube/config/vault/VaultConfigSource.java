@@ -3,7 +3,6 @@ package io.scalecube.config.vault;
 import static java.util.Objects.requireNonNull;
 
 import com.bettercloud.vault.EnvironmentLoader;
-import com.bettercloud.vault.SslConfig;
 import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
@@ -33,6 +32,9 @@ public class VaultConfigSource implements ConfigSource {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
 
+  public static final String VAULT_SECRETS_PATH = "VAULT_SECRETS_PATH";
+  public static final String VAULT_RENEW_PERIOD = "VAULT_RENEW_PERIOD";
+
   private final Vault vault;
   private final String secretsPath;
   private final Duration renewEvery;
@@ -42,17 +44,23 @@ public class VaultConfigSource implements ConfigSource {
    *
    * @param builder configuration to create vault access with.
    */
-  private VaultConfigSource(Builder builder) {
-    this.secretsPath = builder.secretsPath;
-    this.renewEvery = builder.renewEvery;
-    try {
-      this.vault =
-          new Vault(
-              builder.config.apply(new VaultConfig().sslConfig(new SslConfig().build())).build());
-    } catch (VaultException e) {
-      LOGGER.error("Unable to build " + VaultConfigSource.class.getSimpleName(), e);
-      throw ThrowableUtil.propagate(e);
-    }
+  private VaultConfigSource(Builder builder) throws VaultException {
+    EnvironmentLoader environmentLoader =
+        builder.environmentLoader != null ? builder.environmentLoader : new EnvironmentLoader();
+    secretsPath =
+        requireNonNull(
+            builder.secretsPath != null
+                ? builder.secretsPath
+                : environmentLoader.loadVariable(VAULT_SECRETS_PATH),
+            "Missing secretsPath");
+    renewEvery =
+        builder.renewEvery != null
+            ? builder.renewEvery
+            : duration(environmentLoader.loadVariable(VAULT_RENEW_PERIOD));
+    VaultConfig vaultConfig =
+        builder.config.apply(new VaultConfig()).environmentLoader(environmentLoader).build();
+    String token = builder.tokenSupplier.getToken(environmentLoader, vaultConfig);
+    vault = new Vault(vaultConfig.token(token));
 
     if (renewEvery != null) {
       long initialDelay = renewEvery.toMillis();
@@ -69,7 +77,7 @@ public class VaultConfigSource implements ConfigSource {
           .scheduleAtFixedRate(
               () -> {
                 try {
-                  vault.auth().renewSelf();
+                  this.vault.auth().renewSelf();
                   LOGGER.info("renew token success");
                 } catch (VaultException vaultException) {
                   LOGGER.error("failed to renew token", vaultException);
@@ -89,6 +97,10 @@ public class VaultConfigSource implements ConfigSource {
     if (!initialized) {
       throw new VaultException("Vault not yet initialized");
     }
+  }
+
+  private Duration duration(String duration) {
+    return duration != null ? Duration.parse(duration) : null;
   }
 
   @Override
@@ -127,28 +139,19 @@ public class VaultConfigSource implements ConfigSource {
    * @param environmentLoader an {@link EnvironmentLoader}
    */
   static Builder builder(EnvironmentLoader environmentLoader) {
-    return builder(
-        environmentLoader.loadVariable("VAULT_ADDR"),
-        environmentLoader.loadVariable("VAULT_TOKEN"),
-        environmentLoader.loadVariable("VAULT_SECRETS_PATH"));
-  }
-
-  public static Builder builder(String address, String token, String secretsPath) {
-    return new Builder(address, token, secretsPath);
+    return new Builder(environmentLoader);
   }
 
   public static final class Builder {
 
-    private final String secretsPath;
-    private Function<VaultConfig, VaultConfig> config;
-    private Duration renewEvery = null;
+    private Function<VaultConfig, VaultConfig> config = Function.identity();
+    private VaultTokenSupplier tokenSupplier = new VaultTokenSupplier() {};
+    private EnvironmentLoader environmentLoader;
+    private String secretsPath;
+    private Duration renewEvery;
 
-    Builder(String address, String token, String secretsPath) {
-      config =
-          c ->
-              c.address(requireNonNull(address, "Missing address"))
-                  .token(requireNonNull(token, "Missing token"));
-      this.secretsPath = requireNonNull(secretsPath, "Missing secretsPath");
+    private Builder(EnvironmentLoader environmentLoader) {
+      this.environmentLoader = environmentLoader;
     }
 
     public Builder renewEvery(Duration duration) {
@@ -156,8 +159,18 @@ public class VaultConfigSource implements ConfigSource {
       return this;
     }
 
+    public Builder secretsPath(String secretsPath) {
+      this.secretsPath = secretsPath;
+      return this;
+    }
+
     public Builder config(UnaryOperator<VaultConfig> config) {
       this.config = this.config.andThen(config);
+      return this;
+    }
+
+    public Builder tokenSupplier(VaultTokenSupplier supplier) {
+      this.tokenSupplier = supplier;
       return this;
     }
 
@@ -167,7 +180,12 @@ public class VaultConfigSource implements ConfigSource {
      * @return instance of {@link VaultConfigSource}
      */
     public VaultConfigSource build() {
-      return new VaultConfigSource(this);
+      try {
+        return new VaultConfigSource(this);
+      } catch (VaultException e) {
+        LOGGER.error("Unable to build " + VaultConfigSource.class.getSimpleName(), e);
+        throw ThrowableUtil.propagate(e);
+      }
     }
   }
 }

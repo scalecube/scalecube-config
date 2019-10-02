@@ -168,7 +168,7 @@ class VaultConfigSourceTest {
   }
 
   @Test
-  void shouldWorkWhenRegistryIsReloadedAndVaultIsDown() throws InterruptedException {
+  void shouldWorkWhenRegistryIsReloadedAndVaultIsDown() {
     String PASSWORD_PROPERTY_NAME = "password";
     String PASSWORD_PROPERTY_VALUE = "123456";
     String secret = PASSWORD_PROPERTY_NAME + "=" + PASSWORD_PROPERTY_VALUE;
@@ -195,7 +195,11 @@ class VaultConfigSourceTest {
     vaultInstance.close();
     assertFalse(vaultInstance.container().isRunning());
 
-    TimeUnit.SECONDS.sleep(2);
+    try {
+      TimeUnit.SECONDS.sleep(2);
+    } catch (InterruptedException e) {
+      fail(e);
+    }
 
     assertThat(configProperty.value().get(), containsString(PASSWORD_PROPERTY_VALUE));
   }

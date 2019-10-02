@@ -29,7 +29,7 @@ public class VaultInstance implements AutoCloseable {
   private static final int VAULT_PORT = 8200;
   private static final AtomicInteger PORT_COUNTER = new AtomicInteger(VAULT_PORT);
   private static final String UNSEAL_KEY_LOG = "Unseal Key: ";
-  private static final String ROOT_TOKEN_LOG = "Root Token: ";;
+  private static final String ROOT_TOKEN_LOG = "Root Token: ";
 
   private final VaultContainer container;
   private final String unsealKey;

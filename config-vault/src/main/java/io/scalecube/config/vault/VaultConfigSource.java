@@ -1,7 +1,5 @@
 package io.scalecube.config.vault;
 
-import static java.util.Objects.requireNonNull;
-
 import com.bettercloud.vault.EnvironmentLoader;
 import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultConfig;
@@ -14,6 +12,7 @@ import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.ThrowableUtil;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -32,12 +31,19 @@ public class VaultConfigSource implements ConfigSource {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
 
-  public static final String VAULT_SECRETS_PATH = "VAULT_SECRETS_PATH";
-  public static final String VAULT_RENEW_PERIOD = "VAULT_RENEW_PERIOD";
+  private static final ThreadFactory THREAD_FACTORY =
+      r -> {
+        Thread thread = new Thread(r);
+        thread.setDaemon(true);
+        thread.setName(VaultConfigSource.class.getSimpleName().toLowerCase() + "-token-renewer");
+        return thread;
+      };
+
+  private static final String VAULT_SECRETS_PATH = "VAULT_SECRETS_PATH";
+  private static final String VAULT_RENEW_PERIOD = "VAULT_RENEW_PERIOD";
 
   private final Vault vault;
   private final String secretsPath;
-  private final Duration renewEvery;
 
   /**
    * Create a new {@link VaultConfigSource} with the given {@link Builder}.
@@ -47,46 +53,45 @@ public class VaultConfigSource implements ConfigSource {
   private VaultConfigSource(Builder builder) throws VaultException {
     EnvironmentLoader environmentLoader =
         builder.environmentLoader != null ? builder.environmentLoader : new EnvironmentLoader();
+
     secretsPath =
-        requireNonNull(
+        Objects.requireNonNull(
             builder.secretsPath != null
                 ? builder.secretsPath
                 : environmentLoader.loadVariable(VAULT_SECRETS_PATH),
             "Missing secretsPath");
-    renewEvery =
-        builder.renewEvery != null
-            ? builder.renewEvery
-            : duration(environmentLoader.loadVariable(VAULT_RENEW_PERIOD));
+
     VaultConfig vaultConfig =
         builder.config.apply(new VaultConfig()).environmentLoader(environmentLoader).build();
     String token = builder.tokenSupplier.getToken(environmentLoader, vaultConfig);
     vault = new Vault(vaultConfig.token(token));
 
+    Duration renewEvery =
+        builder.renewEvery != null
+            ? builder.renewEvery
+            : duration(environmentLoader.loadVariable(VAULT_RENEW_PERIOD));
+
     if (renewEvery != null) {
-      long initialDelay = renewEvery.toMillis();
-      long period = renewEvery.toMillis();
-      TimeUnit unit = TimeUnit.MILLISECONDS;
-      ThreadFactory factory =
-          r -> {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName(VaultConfigSource.class.getSimpleName() + " token renewer");
-            return thread;
-          };
-      Executors.newScheduledThreadPool(1, factory)
-          .scheduleAtFixedRate(
-              () -> {
-                try {
-                  this.vault.auth().renewSelf();
-                  LOGGER.info("renew token success");
-                } catch (VaultException vaultException) {
-                  LOGGER.error("failed to renew token", vaultException);
-                }
-              },
-              initialDelay,
-              period,
-              unit);
+      scheduleVaultTokenRenew(renewEvery);
     }
+  }
+
+  private void scheduleVaultTokenRenew(Duration renewEvery) {
+    long initialDelay = renewEvery.toMillis();
+    long period = renewEvery.toMillis();
+    Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY)
+        .scheduleAtFixedRate(
+            () -> {
+              try {
+                this.vault.auth().renewSelf();
+                LOGGER.info("renew token success");
+              } catch (VaultException vaultException) {
+                LOGGER.error("failed to renew token", vaultException);
+              }
+            },
+            initialDelay,
+            period,
+            TimeUnit.MILLISECONDS);
   }
 
   private void checkVaultStatus() throws VaultException {

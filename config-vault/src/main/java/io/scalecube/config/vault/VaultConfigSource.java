@@ -9,13 +9,8 @@ import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
-import io.scalecube.config.utils.ThrowableUtil;
-import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -31,18 +26,9 @@ public class VaultConfigSource implements ConfigSource {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
 
-  private static final ThreadFactory THREAD_FACTORY =
-      r -> {
-        Thread thread = new Thread(r);
-        thread.setDaemon(true);
-        thread.setName(VaultConfigSource.class.getSimpleName().toLowerCase() + "-token-renewer");
-        return thread;
-      };
-
   private static final String VAULT_SECRETS_PATH = "VAULT_SECRETS_PATH";
-  private static final String VAULT_RENEW_PERIOD = "VAULT_RENEW_PERIOD";
 
-  private final Vault vault;
+  private final VaultSupplier vaultSupplier;
   private final String secretsPath;
 
   /**
@@ -50,51 +36,18 @@ public class VaultConfigSource implements ConfigSource {
    *
    * @param builder configuration to create vault access with.
    */
-  private VaultConfigSource(Builder builder) throws VaultException {
-    EnvironmentLoader environmentLoader =
-        builder.environmentLoader != null ? builder.environmentLoader : new EnvironmentLoader();
-
+  private VaultConfigSource(Builder builder) {
+    vaultSupplier =
+        new VaultSupplier(builder.config, builder.tokenSupplier, builder.environmentLoader);
     secretsPath =
         Objects.requireNonNull(
             builder.secretsPath != null
                 ? builder.secretsPath
-                : environmentLoader.loadVariable(VAULT_SECRETS_PATH),
+                : builder.environmentLoader.loadVariable(VAULT_SECRETS_PATH),
             "Missing secretsPath");
-
-    VaultConfig vaultConfig =
-        builder.config.apply(new VaultConfig()).environmentLoader(environmentLoader).build();
-    String token = builder.tokenSupplier.getToken(environmentLoader, vaultConfig);
-    vault = new Vault(vaultConfig.token(token));
-
-    Duration renewEvery =
-        builder.renewEvery != null
-            ? builder.renewEvery
-            : duration(environmentLoader.loadVariable(VAULT_RENEW_PERIOD));
-
-    if (renewEvery != null) {
-      scheduleVaultTokenRenew(renewEvery);
-    }
   }
 
-  private void scheduleVaultTokenRenew(Duration renewEvery) {
-    long initialDelay = renewEvery.toMillis();
-    long period = renewEvery.toMillis();
-    Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY)
-        .scheduleAtFixedRate(
-            () -> {
-              try {
-                this.vault.auth().renewSelf();
-                LOGGER.info("renew token success");
-              } catch (VaultException vaultException) {
-                LOGGER.error("failed to renew token", vaultException);
-              }
-            },
-            initialDelay,
-            period,
-            TimeUnit.MILLISECONDS);
-  }
-
-  private void checkVaultStatus() throws VaultException {
+  private void checkVaultStatus(Vault vault) throws VaultException {
     if (vault.seal().sealStatus().getSealed()) {
       throw new VaultException("Vault is sealed");
     }
@@ -104,15 +57,12 @@ public class VaultConfigSource implements ConfigSource {
     }
   }
 
-  private Duration duration(String duration) {
-    return duration != null ? Duration.parse(duration) : null;
-  }
-
   @Override
   public Map<String, ConfigProperty> loadConfig() {
     try {
-      checkVaultStatus();
-      LogicalResponse response = vault.logical().read(this.secretsPath);
+      Vault vault = vaultSupplier.get();
+      checkVaultStatus(vault);
+      LogicalResponse response = vault.logical().read(secretsPath);
       return response.getData().entrySet().stream()
           .map(LoadedConfigProperty::withNameAndValue)
           .map(LoadedConfigProperty.Builder::build)
@@ -135,7 +85,7 @@ public class VaultConfigSource implements ConfigSource {
    * </ul>
    */
   public static Builder builder() {
-    return builder(new EnvironmentLoader());
+    return builder(Builder.ENVIRONMENT_LOADER);
   }
 
   /**
@@ -144,25 +94,23 @@ public class VaultConfigSource implements ConfigSource {
    * @param environmentLoader an {@link EnvironmentLoader}
    */
   static Builder builder(EnvironmentLoader environmentLoader) {
-    return new Builder(environmentLoader);
+    final Builder builder = new Builder();
+    if (environmentLoader != null) {
+      builder.environmentLoader = environmentLoader;
+    }
+    return builder;
   }
 
   public static final class Builder {
 
+    private static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
+
     private Function<VaultConfig, VaultConfig> config = Function.identity();
     private VaultTokenSupplier tokenSupplier = new VaultTokenSupplier() {};
-    private EnvironmentLoader environmentLoader;
+    private EnvironmentLoader environmentLoader = ENVIRONMENT_LOADER;
     private String secretsPath;
-    private Duration renewEvery;
 
-    private Builder(EnvironmentLoader environmentLoader) {
-      this.environmentLoader = environmentLoader;
-    }
-
-    public Builder renewEvery(Duration duration) {
-      renewEvery = duration;
-      return this;
-    }
+    private Builder() {}
 
     public Builder secretsPath(String secretsPath) {
       this.secretsPath = secretsPath;
@@ -185,12 +133,7 @@ public class VaultConfigSource implements ConfigSource {
      * @return instance of {@link VaultConfigSource}
      */
     public VaultConfigSource build() {
-      try {
-        return new VaultConfigSource(this);
-      } catch (VaultException e) {
-        LOGGER.error("Unable to build " + VaultConfigSource.class.getSimpleName(), e);
-        throw ThrowableUtil.propagate(e);
-      }
+      return new VaultConfigSource(this);
     }
   }
 }

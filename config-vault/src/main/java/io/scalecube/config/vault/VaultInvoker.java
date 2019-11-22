@@ -54,9 +54,9 @@ public class VaultInvoker {
       checkResponse(response.getRestResponse());
       return response;
     } catch (VaultException e) {
-      LOGGER.warn("Exception occurred during invoking Vault", e);
       // try recreate Vault according to https://www.vaultproject.io/api/overview#http-status-codes
       if (e.getHttpStatusCode() == 403) {
+        LOGGER.warn("Authentication details are incorrect, occurred during invoking Vault", e);
         vault = recreateVault(vault);
         return call.apply(vault);
       }
@@ -132,9 +132,9 @@ public class VaultInvoker {
         LOGGER.warn("Vault token is not renewable now");
       }
     } catch (VaultException e) {
-      LOGGER.error("Could not refresh the Vault token", e);
       // try recreate Vault according to https://www.vaultproject.io/api/overview#http-status-codes
       if (e.getHttpStatusCode() == 403) {
+        LOGGER.warn("Could not renew the Vault token", e);
         //noinspection UnusedAssignment
         vault = recreateVault(vault);
       }

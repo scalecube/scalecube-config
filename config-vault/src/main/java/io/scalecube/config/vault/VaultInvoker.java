@@ -121,12 +121,16 @@ public class VaultInvoker {
             ttl,
             bodyAsString(response.getRestResponse()));
       }
-      if (ttl > 1) {
-        long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
-        timer.schedule(new RenewTokenTask(), delay);
+      if (response.isAuthRenewable()) {
+        if (ttl > 1) {
+          long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
+          timer.schedule(new RenewTokenTask(), delay);
+        } else {
+          LOGGER.warn("Token TTL ({}) is not enough for scheduling", ttl);
+          vault = recreateVault(vault);
+        }
       } else {
-        LOGGER.warn("Token TTL ({}) is not enough for scheduling", ttl);
-        vault = recreateVault(vault);
+        LOGGER.warn("Vault token is not renewable now");
       }
     } catch (VaultException e) {
       LOGGER.error("Could not refresh the Vault token", e);

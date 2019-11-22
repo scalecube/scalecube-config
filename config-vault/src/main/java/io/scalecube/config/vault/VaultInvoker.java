@@ -47,7 +47,7 @@ public class VaultInvoker {
     Vault vault = this.vault;
     try {
       if (vault == null) {
-        vault = initVault(null);
+        vault = recreateVault(null);
       }
       T response = call.apply(vault);
       checkResponse(response.getRestResponse());
@@ -56,18 +56,16 @@ public class VaultInvoker {
       LOGGER.warn("Exception occurred during invoking Vault", e);
       // try recreate Vault according to https://www.vaultproject.io/api/overview#http-status-codes
       if (e.getHttpStatusCode() == 403) {
-        vault = initVault(vault);
-        if (vault != null) {
-          return call.apply(vault);
-        }
+        vault = recreateVault(vault);
+        return call.apply(vault);
       }
       throw e;
     }
   }
 
-  private synchronized Vault initVault(Vault prev) {
+  private synchronized Vault recreateVault(Vault prev) {
     try {
-      if (prev != vault) {
+      if (prev != vault && vault != null) {
         return vault;
       }
       if (timer != null) {
@@ -86,15 +84,15 @@ public class VaultInvoker {
       Vault vault = new Vault(vaultConfig.token(token));
       checkVault(vault);
       LookupResponse lookupSelf = vault.auth().lookupSelf();
-      LOGGER.info("Initialized new vault");
+      LOGGER.info("Initialized new Vault");
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("More Vault details: {}", bodyAsString(lookupSelf.getRestResponse()));
       }
       if (lookupSelf.isRenewable()) {
-        final long ttl = lookupSelf.getTTL();
+        long ttl = lookupSelf.getTTL();
         long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
         timer = new Timer("VaultScheduler", true);
-        timer.schedule(new RefreshTokenTask(), delay);
+        timer.schedule(new RenewTokenTask(), delay);
         LOGGER.info("Renew token timer was set to {}ms, (TTL = {}s)", delay, ttl);
       } else {
         LOGGER.warn("Vault token is not renewable");
@@ -124,17 +122,17 @@ public class VaultInvoker {
       }
       if (ttl > 1) {
         long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
-        timer.schedule(new RefreshTokenTask(), delay);
+        timer.schedule(new RenewTokenTask(), delay);
       } else {
-        LOGGER.warn("TTL ({}) is not enough for scheduling", ttl);
-        vault = initVault(vault);
+        LOGGER.warn("Token TTL ({}) is not enough for scheduling", ttl);
+        vault = recreateVault(vault);
       }
     } catch (VaultException e) {
       LOGGER.error("Could not refresh the Vault token", e);
       // try recreate Vault according to https://www.vaultproject.io/api/overview#http-status-codes
       if (e.getHttpStatusCode() == 403) {
         //noinspection UnusedAssignment
-        vault = initVault(vault);
+        vault = recreateVault(vault);
       }
     }
   }
@@ -186,7 +184,7 @@ public class VaultInvoker {
             new String(restResponse.getBody(), StandardCharsets.UTF_8));
         return;
       default:
-        final String body = new String(restResponse.getBody(), StandardCharsets.UTF_8);
+        String body = new String(restResponse.getBody(), StandardCharsets.UTF_8);
         LOGGER.warn("Vault responded with code: {}, message: {}", status, body);
         throw new VaultException(body, status);
     }
@@ -197,7 +195,7 @@ public class VaultInvoker {
     T apply(Vault vault) throws VaultException;
   }
 
-  private class RefreshTokenTask extends TimerTask {
+  private class RenewTokenTask extends TimerTask {
 
     @Override
     public void run() {

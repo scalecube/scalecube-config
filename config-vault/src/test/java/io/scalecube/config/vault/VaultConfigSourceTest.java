@@ -104,10 +104,7 @@ class VaultConfigSourceTest {
         new MockEnvironmentLoader(baseLoader).put(VAULT_SECRETS_PATH, "secrets/unknown/path");
     VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader4).build();
 
-    assumeTrue(vaultConfigSource.loadConfig().isEmpty());
-
-    // root token
-    // assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
+    assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
   }
 
   @Test

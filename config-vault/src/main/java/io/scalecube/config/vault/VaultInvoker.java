@@ -99,7 +99,6 @@ public class VaultInvoker {
         LOGGER.warn("Vault token is not renewable");
       }
       this.vault = vault;
-
     } catch (VaultException e) {
       LOGGER.error("Could not initialize and validate the vault", e);
       throw new ConfigSourceNotAvailableException(e);
@@ -143,18 +142,6 @@ public class VaultInvoker {
   }
 
   /**
-   * We should refresh tokens from Vault before they expire, so we add a MIN_REFRESH_MARGIN margin.
-   * If the token is valid for less than MIN_REFRESH_MARGIN * 2, we use duration / 2 instead.
-   */
-  private long suggestedRefreshInterval(long duration) {
-    return duration < MIN_REFRESH_MARGIN * 2 ? duration / 2 : duration - MIN_REFRESH_MARGIN;
-  }
-
-  private String bodyAsString(RestResponse response) {
-    return new String(response.getBody(), StandardCharsets.UTF_8);
-  }
-
-  /**
    * Checks vault is active. See
    * https://www.vaultproject.io/api/system/health.html#read-health-information.
    *
@@ -165,8 +152,7 @@ public class VaultInvoker {
     if (restResponse.getStatus() == 200) {
       return;
     }
-    String message = new String(restResponse.getBody(), StandardCharsets.UTF_8);
-    throw new VaultException(message, restResponse.getStatus());
+    throw new VaultException(bodyAsString(restResponse), restResponse.getStatus());
   }
 
   /**
@@ -185,14 +171,26 @@ public class VaultInvoker {
         return;
       case 404:
         LOGGER.warn(
-            "Invalid path (doesn't exist or have no permissions to view). {}",
-            new String(restResponse.getBody(), StandardCharsets.UTF_8));
+            "Invalid path (non-existent or have no permissions to view), message: {}",
+            bodyAsString(restResponse));
         return;
       default:
-        String body = new String(restResponse.getBody(), StandardCharsets.UTF_8);
+        String body = bodyAsString(restResponse);
         LOGGER.warn("Vault responded with code: {}, message: {}", status, body);
         throw new VaultException(body, status);
     }
+  }
+
+  /**
+   * We should refresh tokens from Vault before they expire, so we add a MIN_REFRESH_MARGIN margin.
+   * If the token is valid for less than MIN_REFRESH_MARGIN * 2, we use duration / 2 instead.
+   */
+  private long suggestedRefreshInterval(long duration) {
+    return duration < MIN_REFRESH_MARGIN * 2 ? duration / 2 : duration - MIN_REFRESH_MARGIN;
+  }
+
+  private String bodyAsString(RestResponse response) {
+    return new String(response.getBody(), StandardCharsets.UTF_8);
   }
 
   @FunctionalInterface

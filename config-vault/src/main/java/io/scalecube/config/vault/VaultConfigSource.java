@@ -45,6 +45,9 @@ public class VaultConfigSource implements ConfigSource {
   public Map<String, ConfigProperty> loadConfig() {
     try {
       LogicalResponse response = vault.invoke(vault -> vault.logical().read(secretsPath));
+      if (response.getRestResponse().getStatus() == 404) {
+        throw new ConfigSourceNotAvailableException("unable to load config properties");
+      }
       return response.getData().entrySet().stream()
           .map(LoadedConfigProperty::withNameAndValue)
           .map(LoadedConfigProperty.Builder::build)

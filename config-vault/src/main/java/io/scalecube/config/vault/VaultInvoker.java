@@ -10,6 +10,7 @@ import com.bettercloud.vault.response.VaultResponse;
 import com.bettercloud.vault.rest.RestResponse;
 import io.scalecube.config.ConfigSourceNotAvailableException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +66,7 @@ public class VaultInvoker {
 
   private synchronized Vault recreateVault(Vault prev) {
     try {
-      if (prev != vault && vault != null) {
+      if (!Objects.equals(prev, vault) && vault != null) {
         return vault;
       }
       if (timer != null) {
@@ -204,8 +205,8 @@ public class VaultInvoker {
   }
 
   public static class Builder {
-    static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
-    static final VaultTokenSupplier TOKEN_SUPPLIER = new EnvironmentVaultTokenSupplier();
+    public static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
+    public static final VaultTokenSupplier TOKEN_SUPPLIER = new EnvironmentVaultTokenSupplier();
 
     private Function<VaultConfig, VaultConfig> options = Function.identity();
     private VaultTokenSupplier tokenSupplier = TOKEN_SUPPLIER;

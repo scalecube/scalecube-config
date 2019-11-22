@@ -93,7 +93,7 @@ public class VaultInvoker {
         long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
         timer = new Timer("VaultScheduler", true);
         timer.schedule(new RenewTokenTask(), delay);
-        LOGGER.info("Renew token timer was set to {}ms, (TTL = {}s)", delay, ttl);
+        LOGGER.info("Renew token timer was set to {}s, (TTL = {}s)", delay, ttl);
       } else {
         LOGGER.warn("Vault token is not renewable");
       }

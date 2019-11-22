@@ -1,7 +1,6 @@
 package io.scalecube.config.vault;
 
 import com.bettercloud.vault.EnvironmentLoader;
-import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
 import com.bettercloud.vault.response.LogicalResponse;
@@ -28,41 +27,24 @@ public class VaultConfigSource implements ConfigSource {
 
   private static final String VAULT_SECRETS_PATH = "VAULT_SECRETS_PATH";
 
-  private final VaultSupplier vaultSupplier;
+  private final VaultInvoker vault;
   private final String secretsPath;
 
   /**
-   * Create a new {@link VaultConfigSource} with the given {@link Builder}.
+   * Create a new {@link VaultConfigSource}.
    *
-   * @param builder configuration to create vault access with.
+   * @param vault vault invoker.
+   * @param secretsPath secret path.
    */
-  private VaultConfigSource(Builder builder) {
-    vaultSupplier =
-        new VaultSupplier(builder.config, builder.tokenSupplier, builder.environmentLoader);
-    secretsPath =
-        Objects.requireNonNull(
-            builder.secretsPath != null
-                ? builder.secretsPath
-                : builder.environmentLoader.loadVariable(VAULT_SECRETS_PATH),
-            "Missing secretsPath");
-  }
-
-  private void checkVaultStatus(Vault vault) throws VaultException {
-    if (vault.seal().sealStatus().getSealed()) {
-      throw new VaultException("Vault is sealed");
-    }
-    Boolean initialized = vault.debug().health().getInitialized();
-    if (!initialized) {
-      throw new VaultException("Vault not yet initialized");
-    }
+  private VaultConfigSource(VaultInvoker vault, String secretsPath) {
+    this.vault = vault;
+    this.secretsPath = secretsPath;
   }
 
   @Override
   public Map<String, ConfigProperty> loadConfig() {
     try {
-      Vault vault = vaultSupplier.get();
-      checkVaultStatus(vault);
-      LogicalResponse response = vault.logical().read(secretsPath);
+      LogicalResponse response = vault.invoke(vault -> vault.logical().read(secretsPath));
       return response.getData().entrySet().stream()
           .map(LoadedConfigProperty::withNameAndValue)
           .map(LoadedConfigProperty.Builder::build)
@@ -85,7 +67,7 @@ public class VaultConfigSource implements ConfigSource {
    * </ul>
    */
   public static Builder builder() {
-    return builder(Builder.ENVIRONMENT_LOADER);
+    return new Builder();
   }
 
   /**
@@ -103,11 +85,9 @@ public class VaultConfigSource implements ConfigSource {
 
   public static final class Builder {
 
-    private static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
-
-    private Function<VaultConfig, VaultConfig> config = Function.identity();
-    private VaultTokenSupplier tokenSupplier = new VaultTokenSupplier() {};
-    private EnvironmentLoader environmentLoader = ENVIRONMENT_LOADER;
+    private Function<VaultInvoker.Builder, VaultInvoker.Builder> vault = Function.identity();
+    private VaultInvoker invoker;
+    private EnvironmentLoader environmentLoader = VaultInvoker.Builder.ENVIRONMENT_LOADER;
     private String secretsPath;
 
     private Builder() {}
@@ -117,13 +97,23 @@ public class VaultConfigSource implements ConfigSource {
       return this;
     }
 
-    public Builder config(UnaryOperator<VaultConfig> config) {
-      this.config = this.config.andThen(config);
+    public Builder invoker(VaultInvoker invoker) {
+      this.invoker = invoker;
+      return this;
+    }
+
+    public Builder vault(UnaryOperator<VaultInvoker.Builder> config) {
+      this.vault = this.vault.andThen(config);
+      return this;
+    }
+
+    public Builder config(UnaryOperator<VaultConfig> vaultConfig) {
+      this.vault = this.vault.andThen(c -> c.options(vaultConfig));
       return this;
     }
 
     public Builder tokenSupplier(VaultTokenSupplier supplier) {
-      this.tokenSupplier = supplier;
+      this.vault = this.vault.andThen(c -> c.tokenSupplier(supplier));
       return this;
     }
 
@@ -133,7 +123,17 @@ public class VaultConfigSource implements ConfigSource {
      * @return instance of {@link VaultConfigSource}
      */
     public VaultConfigSource build() {
-      return new VaultConfigSource(this);
+      VaultInvoker vaultInvoker =
+          invoker != null
+              ? invoker
+              : vault.apply(new VaultInvoker.Builder(environmentLoader)).build();
+      secretsPath =
+          Objects.requireNonNull(
+              secretsPath != null
+                  ? secretsPath
+                  : environmentLoader.loadVariable(VAULT_SECRETS_PATH),
+              "Missing secretsPath");
+      return new VaultConfigSource(vaultInvoker, secretsPath);
     }
   }
 }

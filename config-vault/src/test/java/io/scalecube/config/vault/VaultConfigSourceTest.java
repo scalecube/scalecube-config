@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -395,6 +396,100 @@ class VaultConfigSourceTest {
             TimeUnit.SECONDS.sleep(1);
           }
         });
+  }
+
+  @Test
+  void testTokenSupplierGeneratesNewRenewableTokenWithExplicitMaxTtl() throws Exception {
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder(loader1)
+            .tokenSupplier(
+                (environmentLoader, config) ->
+                    vaultContainerExtension
+                        .vaultInstance()
+                        .createToken("-period=3s -renewable=true -explicit-max-ttl=6s")
+                        .getAuthClientToken())
+            .build();
+
+    for (int i = 0; i < 10; i++) {
+      Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+      ConfigProperty actual = loadConfig.get("top_secret");
+
+      assertThat(actual, notNullValue());
+      assertThat(actual.name(), equalTo("top_secret"));
+      assertThat(actual.valueAsString(""), equalTo("password1"));
+
+      TimeUnit.SECONDS.sleep(1);
+    }
+  }
+
+  @Test
+  void testRenewableTokenWhichWillBeRevoked() {
+    String token =
+        vaultContainerExtension
+            .vaultInstance()
+            .createToken("-period=5s -renewable=true")
+            .getAuthClientToken();
+
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder(loader1)
+            .tokenSupplier((environmentLoader, config) -> token)
+            .build();
+
+    assertThrows(
+        ConfigSourceNotAvailableException.class,
+        () -> {
+          for (int i = 0; i < 10; i++) {
+            Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+            ConfigProperty actual = loadConfig.get("top_secret");
+
+            assertThat(actual, notNullValue());
+            assertThat(actual.name(), equalTo("top_secret"));
+            assertThat(actual.valueAsString(""), equalTo("password1"));
+
+            TimeUnit.SECONDS.sleep(1);
+
+            if (i == 0) {
+              vaultContainerExtension
+                  .vaultInstance()
+                  .execInContainer("vault token revoke " + token);
+            }
+          }
+        });
+  }
+
+  @Test
+  void testTokenSupplierGeneratesNewRenewableTokenWhichWillBeRevoked() throws Exception {
+    AtomicReference<String> tokenRef = new AtomicReference<>();
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder(loader1)
+            .tokenSupplier(
+                (environmentLoader, config) -> {
+                  String token =
+                      vaultContainerExtension
+                          .vaultInstance()
+                          .createToken("-period=10s -renewable=true")
+                          .getAuthClientToken();
+                  tokenRef.set(token);
+                  return token;
+                })
+            .build();
+
+    for (int i = 0; i < 10; i++) {
+      Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+      ConfigProperty actual = loadConfig.get("top_secret");
+
+      assertThat(actual, notNullValue());
+      assertThat(actual.name(), equalTo("top_secret"));
+      assertThat(actual.valueAsString(""), equalTo("password1"));
+
+      TimeUnit.SECONDS.sleep(1);
+
+      if (i / 2 == 0) {
+        vaultContainerExtension
+            .vaultInstance()
+            .execInContainer("vault token revoke " + tokenRef.get());
+      }
+    }
   }
 
   private static class MockEnvironmentLoader extends EnvironmentLoader {

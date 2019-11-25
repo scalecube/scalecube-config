@@ -13,7 +13,7 @@
   <properties>
     <log4j.version>2.5</log4j.version>
     <vault-java-driver.version>5.0.0</vault-java-driver.version>
-    <org.testcontainers.vault.version>1.12.1</org.testcontainers.vault.version>
+    <org.testcontainers.vault.version>1.12.3</org.testcontainers.vault.version>
   </properties>
 
   <dependencies>

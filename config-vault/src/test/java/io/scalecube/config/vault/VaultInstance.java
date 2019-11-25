@@ -5,7 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.bettercloud.vault.SslConfig;
 import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultConfig;
+import com.bettercloud.vault.response.AuthResponse;
+import com.bettercloud.vault.rest.RestResponse;
 import io.scalecube.config.utils.ThrowableUtil;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -14,6 +17,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Container.ExecResult;
 import org.testcontainers.containers.ContainerLaunchException;
@@ -24,6 +29,8 @@ import org.testcontainers.utility.LogUtils;
 import org.testcontainers.vault.VaultContainer;
 
 public class VaultInstance implements AutoCloseable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(VaultInstance.class);
 
   private static final String VAULT_IMAGE_NAME = "vault:1.2.3";
   private static final int VAULT_PORT = 8200;
@@ -87,6 +94,32 @@ public class VaultInstance implements AutoCloseable {
     ExecResult execResult =
         invoke(() -> container.execInContainer("/bin/sh", "-c", command.toString()));
     assertEquals(0, execResult.getExitCode(), execResult.toString());
+  }
+
+  /**
+   * Creates a new token with given options. See
+   * https://www.vaultproject.io/docs/commands/token/create.html.
+   *
+   * @param options command options,
+   *     https://www.vaultproject.io/docs/commands/token/create.html#command-options
+   * @return key-value result outcome
+   */
+  public AuthResponse createToken(String... options) {
+    StringBuilder command = new StringBuilder().append("vault token create -format=json ");
+    for (String secret : options) {
+      command.append(secret).append(" ");
+    }
+    String stdout = execInContainer(command.toString()).replaceAll("\\r?\\n", "");
+    return new AuthResponse(
+        new RestResponse(200, "application/json", stdout.getBytes(StandardCharsets.UTF_8)), 0);
+  }
+
+  public String execInContainer(String command) {
+    LOGGER.debug("execInContainer command: {}", command);
+    ExecResult execResult = invoke(() -> container.execInContainer("/bin/sh", "-c", command));
+    assertEquals(0, execResult.getExitCode(), execResult.toString());
+    LOGGER.debug("execInContainer result: {}", execResult.getStdout());
+    return execResult.getStdout();
   }
 
   public String address() {

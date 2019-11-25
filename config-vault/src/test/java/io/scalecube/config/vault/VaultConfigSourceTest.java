@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.LongAdder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -103,10 +105,7 @@ class VaultConfigSourceTest {
         new MockEnvironmentLoader(baseLoader).put(VAULT_SECRETS_PATH, "secrets/unknown/path");
     VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader4).build();
 
-    assumeTrue(vaultConfigSource.loadConfig().isEmpty());
-
-    // root token
-    // assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
+    assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
   }
 
   @Test
@@ -131,10 +130,7 @@ class VaultConfigSourceTest {
                     .put(VAULT_SECRETS_PATH, "secrets/unknown/path"))
             .build();
 
-    assumeTrue(vaultConfigSource.loadConfig().isEmpty());
-
-    // root token
-    // assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
+    assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
   }
 
   @Test
@@ -223,7 +219,7 @@ class VaultConfigSourceTest {
     } catch (ConfigSourceNotAvailableException expectedException) {
       assertThat(expectedException.getCause(), instanceOf(VaultException.class));
       String message = expectedException.getCause().getMessage();
-      assertThat(message, containsString("Vault is sealed"));
+      assertThat(message, containsString("Vault responded with HTTP status code: 503"));
     }
   }
 
@@ -276,6 +272,224 @@ class VaultConfigSourceTest {
     }
     TimeUnit.SECONDS.sleep(2);
     assertThat(configProperty.value().get(), containsString("new_password"));
+  }
+
+  @Test
+  void testRenewableToken() throws InterruptedException {
+    String token =
+        vaultContainerExtension
+            .vaultInstance()
+            .createToken("-period=3s -renewable=true")
+            .getAuthClientToken();
+
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder(loader1)
+            .tokenSupplier((environmentLoader, config) -> token)
+            .build();
+
+    for (int i = 0; i < 10; i++) {
+      Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+      ConfigProperty actual = loadConfig.get("top_secret");
+
+      assertThat(actual, notNullValue());
+      assertThat(actual.name(), equalTo("top_secret"));
+      assertThat(actual.valueAsString(""), equalTo("password1"));
+
+      TimeUnit.SECONDS.sleep(1);
+    }
+  }
+
+  @Test
+  void testNonrenewableToken() {
+    String token =
+        vaultContainerExtension
+            .vaultInstance()
+            .createToken("-period=3s -renewable=false")
+            .getAuthClientToken();
+
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder(loader1)
+            .tokenSupplier((environmentLoader, config) -> token)
+            .build();
+
+    LongAdder times = new LongAdder();
+
+    assertThrows(
+        ConfigSourceNotAvailableException.class,
+        () -> {
+          for (int i = 0; i < 10; i++) {
+            Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+            ConfigProperty actual = loadConfig.get("top_secret");
+
+            assertThat(actual, notNullValue());
+            assertThat(actual.name(), equalTo("top_secret"));
+            assertThat(actual.valueAsString(""), equalTo("password1"));
+
+            times.increment();
+
+            TimeUnit.SECONDS.sleep(1);
+          }
+        });
+
+    assumeTrue(times.sum() > 1, "at least once was loaded");
+  }
+
+  @Test
+  void testRenewableTokenWithExplicitMaxTtl() {
+    String token =
+        vaultContainerExtension
+            .vaultInstance()
+            .createToken("-period=3s -renewable=true -explicit-max-ttl=6s")
+            .getAuthClientToken();
+
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder(loader1)
+            .tokenSupplier((environmentLoader, config) -> token)
+            .build();
+
+    LongAdder times = new LongAdder();
+
+    assertThrows(
+        ConfigSourceNotAvailableException.class,
+        () -> {
+          for (int i = 0; i < 10; i++) {
+            Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+            ConfigProperty actual = loadConfig.get("top_secret");
+
+            assertThat(actual, notNullValue());
+            assertThat(actual.name(), equalTo("top_secret"));
+            assertThat(actual.valueAsString(""), equalTo("password1"));
+
+            times.increment();
+
+            TimeUnit.SECONDS.sleep(1);
+          }
+        });
+
+    assumeTrue(times.sum() > 5, "at least 5 times was loaded");
+  }
+
+  @Test
+  void testRenewableTokenWithUseLimit() {
+    String token =
+        vaultContainerExtension
+            .vaultInstance()
+            .createToken("-period=3s -renewable=true -use-limit=6")
+            .getAuthClientToken();
+
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder(loader1)
+            .tokenSupplier((environmentLoader, config) -> token)
+            .build();
+
+    assertThrows(
+        ConfigSourceNotAvailableException.class,
+        () -> {
+          for (int i = 0; i < 10; i++) {
+            Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+            ConfigProperty actual = loadConfig.get("top_secret");
+
+            assertThat(actual, notNullValue());
+            assertThat(actual.name(), equalTo("top_secret"));
+            assertThat(actual.valueAsString(""), equalTo("password1"));
+
+            TimeUnit.SECONDS.sleep(1);
+          }
+        });
+  }
+
+  @Test
+  void testTokenSupplierGeneratesNewRenewableTokenWithExplicitMaxTtl() throws Exception {
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder(loader1)
+            .tokenSupplier(
+                (environmentLoader, config) ->
+                    vaultContainerExtension
+                        .vaultInstance()
+                        .createToken("-period=3s -renewable=true -explicit-max-ttl=6s")
+                        .getAuthClientToken())
+            .build();
+
+    for (int i = 0; i < 10; i++) {
+      Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+      ConfigProperty actual = loadConfig.get("top_secret");
+
+      assertThat(actual, notNullValue());
+      assertThat(actual.name(), equalTo("top_secret"));
+      assertThat(actual.valueAsString(""), equalTo("password1"));
+
+      TimeUnit.SECONDS.sleep(1);
+    }
+  }
+
+  @Test
+  void testRenewableTokenWhichWillBeRevoked() {
+    String token =
+        vaultContainerExtension
+            .vaultInstance()
+            .createToken("-period=5s -renewable=true")
+            .getAuthClientToken();
+
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder(loader1)
+            .tokenSupplier((environmentLoader, config) -> token)
+            .build();
+
+    assertThrows(
+        ConfigSourceNotAvailableException.class,
+        () -> {
+          for (int i = 0; i < 10; i++) {
+            Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+            ConfigProperty actual = loadConfig.get("top_secret");
+
+            assertThat(actual, notNullValue());
+            assertThat(actual.name(), equalTo("top_secret"));
+            assertThat(actual.valueAsString(""), equalTo("password1"));
+
+            TimeUnit.SECONDS.sleep(1);
+
+            if (i == 0) {
+              vaultContainerExtension
+                  .vaultInstance()
+                  .execInContainer("vault token revoke " + token);
+            }
+          }
+        });
+  }
+
+  @Test
+  void testTokenSupplierGeneratesNewRenewableTokenWhichWillBeRevoked() throws Exception {
+    AtomicReference<String> tokenRef = new AtomicReference<>();
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder(loader1)
+            .tokenSupplier(
+                (environmentLoader, config) -> {
+                  String token =
+                      vaultContainerExtension
+                          .vaultInstance()
+                          .createToken("-period=10s -renewable=true")
+                          .getAuthClientToken();
+                  tokenRef.set(token);
+                  return token;
+                })
+            .build();
+
+    for (int i = 0; i < 10; i++) {
+      Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+      ConfigProperty actual = loadConfig.get("top_secret");
+
+      assertThat(actual, notNullValue());
+      assertThat(actual.name(), equalTo("top_secret"));
+      assertThat(actual.valueAsString(""), equalTo("password1"));
+
+      TimeUnit.SECONDS.sleep(1);
+
+      if (i / 2 == 0) {
+        vaultContainerExtension
+            .vaultInstance()
+            .execInContainer("vault token revoke " + tokenRef.get());
+      }
+    }
   }
 
   private static class MockEnvironmentLoader extends EnvironmentLoader {

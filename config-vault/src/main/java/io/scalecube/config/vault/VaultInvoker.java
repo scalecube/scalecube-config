@@ -8,7 +8,7 @@ import com.bettercloud.vault.response.AuthResponse;
 import com.bettercloud.vault.response.LookupResponse;
 import com.bettercloud.vault.response.VaultResponse;
 import com.bettercloud.vault.rest.RestResponse;
-import io.scalecube.config.ConfigSourceNotAvailableException;
+import io.scalecube.config.utils.ThrowableUtil;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Timer;
@@ -22,6 +22,11 @@ import org.slf4j.LoggerFactory;
 public class VaultInvoker {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VaultInvoker.class);
+
+  private static final int STATUS_CODE_FORBIDDEN = 403;
+  public static final int STATUS_CODE_HELTH_OK = 200;
+  public static final int STATUS_CODE_RESPONSE_OK = 200;
+  public static final int STATUS_CODE_RESPONSE_NO_DATA = 204;
 
   private static final long MIN_REFRESH_MARGIN = TimeUnit.MINUTES.toSeconds(10);
 
@@ -55,7 +60,7 @@ public class VaultInvoker {
       return response;
     } catch (VaultException e) {
       // try recreate Vault according to https://www.vaultproject.io/api/overview#http-status-codes
-      if (e.getHttpStatusCode() == 403) {
+      if (e.getHttpStatusCode() == STATUS_CODE_FORBIDDEN) {
         LOGGER.warn("Authentication details are incorrect, occurred during invoking Vault", e);
         vault = recreateVault(vault);
         return call.apply(vault);
@@ -64,7 +69,7 @@ public class VaultInvoker {
     }
   }
 
-  private synchronized Vault recreateVault(Vault prev) {
+  private synchronized Vault recreateVault(Vault prev) throws VaultException {
     try {
       if (!Objects.equals(prev, vault) && vault != null) {
         return vault;
@@ -101,12 +106,12 @@ public class VaultInvoker {
       this.vault = vault;
     } catch (VaultException e) {
       LOGGER.error("Could not initialize and validate the vault", e);
-      throw new ConfigSourceNotAvailableException(e);
+      throw e;
     }
     return vault;
   }
 
-  private void renewToken() {
+  private void renewToken() throws VaultException {
     Vault vault = this.vault;
     if (vault == null) {
       return;
@@ -133,7 +138,7 @@ public class VaultInvoker {
       }
     } catch (VaultException e) {
       // try recreate Vault according to https://www.vaultproject.io/api/overview#http-status-codes
-      if (e.getHttpStatusCode() == 403) {
+      if (e.getHttpStatusCode() == STATUS_CODE_FORBIDDEN) {
         LOGGER.warn("Could not renew the Vault token", e);
         //noinspection UnusedAssignment
         vault = recreateVault(vault);
@@ -149,7 +154,7 @@ public class VaultInvoker {
    */
   private void checkVault(Vault vault) throws VaultException {
     RestResponse restResponse = vault.debug().health().getRestResponse();
-    if (restResponse.getStatus() == 200) {
+    if (restResponse.getStatus() == STATUS_CODE_HELTH_OK) {
       return;
     }
     throw new VaultException(bodyAsString(restResponse), restResponse.getStatus());
@@ -166,13 +171,8 @@ public class VaultInvoker {
     }
     int status = restResponse.getStatus();
     switch (status) {
-      case 200:
-      case 204:
-        return;
-      case 404:
-        LOGGER.warn(
-            "Invalid path (non-existent or have no permissions to view), message: {}",
-            bodyAsString(restResponse));
+      case STATUS_CODE_RESPONSE_OK:
+      case STATUS_CODE_RESPONSE_NO_DATA:
         return;
       default:
         String body = bodyAsString(restResponse);
@@ -202,7 +202,11 @@ public class VaultInvoker {
 
     @Override
     public void run() {
-      renewToken();
+      try {
+        renewToken();
+      } catch (Exception e) {
+        throw ThrowableUtil.propagate(e);
+      }
     }
   }
 

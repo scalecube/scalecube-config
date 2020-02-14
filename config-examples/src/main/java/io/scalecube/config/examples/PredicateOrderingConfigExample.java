@@ -26,6 +26,9 @@ public class PredicateOrderingConfigExample {
     Predicate<Path> customSysPredicate =
         propsPredicate.and(path -> path.toString().contains("customSys"));
 
+    // Emulate scenario where sys.foo was also given from system properties
+    // System.setProperty("sys.foo", "sys foo from java system properties");
+
     ConfigRegistry configRegistry =
         ConfigRegistry.create(
             ConfigRegistrySettings.builder()
@@ -34,7 +37,7 @@ public class PredicateOrderingConfigExample {
                     new SystemPropertiesConfigSource(new ClassPathConfigSource(customSysPredicate)))
                 .addLastSource(
                     "classpath",
-                    new ClassPathConfigSource(rootPredicate, firstPredicate, secondPredicate))
+                    new ClassPathConfigSource(firstPredicate, secondPredicate, rootPredicate))
                 .build());
 
     StringConfigProperty orderedProp1 = configRegistry.stringProperty("orderedProp1");

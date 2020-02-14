@@ -45,17 +45,15 @@ public final class SystemPropertiesConfigSource implements ConfigSource {
   private static Properties overrideSystemProperties(
       Map<String, ConfigProperty> overrideConfig, Properties properties) {
 
-    final Properties finalProperties = new Properties(properties);
+    final Properties finalProperties = new Properties();
 
     overrideConfig.values().stream()
         .filter(p -> p.valueAsString().isPresent())
-        .forEach(
-            p -> {
-              String name = p.name();
-              String value = p.valueAsString(null);
-              finalProperties.put(name, value);
-              System.setProperty(name, value);
-            });
+        .forEach(p -> finalProperties.put(p.name(), p.valueAsString(null)));
+
+    finalProperties.putAll(properties);
+
+    finalProperties.forEach((key, value) -> System.setProperty((String) key, (String) value));
 
     return finalProperties;
   }

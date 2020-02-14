@@ -32,8 +32,9 @@ public class PredicateOrderingConfigExample {
     ConfigRegistry configRegistry =
         ConfigRegistry.create(
             ConfigRegistrySettings.builder()
+                .addLastSource("sysProps", new SystemPropertiesConfigSource())
                 .addLastSource(
-                    "customSys",
+                    "customSysProps",
                     new SystemPropertiesConfigSource(new ClassPathConfigSource(customSysPredicate)))
                 .addLastSource(
                     "classpath",

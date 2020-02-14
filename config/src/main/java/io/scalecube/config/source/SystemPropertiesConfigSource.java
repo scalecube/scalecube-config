@@ -1,31 +1,22 @@
 package io.scalecube.config.source;
 
 import io.scalecube.config.ConfigProperty;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
-import java.util.stream.Stream;
 
-public class SystemPropertiesConfigSource implements ConfigSource {
-  private final List<String> namespaces;
-
+public final class SystemPropertiesConfigSource implements ConfigSource {
   private Map<String, ConfigProperty> loadedConfig;
 
+  private final ConfigSource overrideConfigSource;
+
   public SystemPropertiesConfigSource() {
-    this.namespaces = Collections.emptyList();
+    this(null);
   }
 
-  public SystemPropertiesConfigSource(List<String> namespaces) {
-    this.namespaces = new ArrayList<>(namespaces);
-  }
-
-  public SystemPropertiesConfigSource(String... namespaces) {
-    this.namespaces = Arrays.asList(namespaces);
+  public SystemPropertiesConfigSource(ConfigSource overrideConfigSource) {
+    this.overrideConfigSource = overrideConfigSource;
   }
 
   @Override
@@ -35,18 +26,37 @@ public class SystemPropertiesConfigSource implements ConfigSource {
     }
 
     Properties properties = System.getProperties();
+    if (overrideConfigSource != null) {
+      properties = overrideSystemProperties(overrideConfigSource.loadConfig(), properties);
+    }
+
     Map<String, ConfigProperty> result = new TreeMap<>();
-    Stream<String> namespaces1 = namespaces.stream();
 
     for (Enumeration<?> e = properties.propertyNames(); e.hasMoreElements(); ) {
       String propName = (String) e.nextElement();
-      if (namespaces.isEmpty() || namespaces1.anyMatch(propName::startsWith)) {
-        result.put(
-            propName,
-            LoadedConfigProperty.forNameAndValue(propName, properties.getProperty(propName)));
-      }
+      result.put(
+          propName,
+          LoadedConfigProperty.forNameAndValue(propName, properties.getProperty(propName)));
     }
 
     return loadedConfig = result;
+  }
+
+  private static Properties overrideSystemProperties(
+      Map<String, ConfigProperty> overrideConfig, Properties properties) {
+
+    final Properties finalProperties = new Properties(properties);
+
+    overrideConfig.values().stream()
+        .filter(p -> p.valueAsString().isPresent())
+        .forEach(
+            p -> {
+              String name = p.name();
+              String value = p.valueAsString(null);
+              finalProperties.put(name, value);
+              System.setProperty(name, value);
+            });
+
+    return finalProperties;
   }
 }

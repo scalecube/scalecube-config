@@ -1,1 +1,2 @@
-prop1=from_classpath
+foo=foo_from_first_from_classpath
+bar=bar_from_second_from_classpath

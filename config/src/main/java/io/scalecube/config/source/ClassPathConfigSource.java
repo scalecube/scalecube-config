@@ -28,7 +28,7 @@ import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-public class ClassPathConfigSource extends FilteredPathConfigSource {
+public final class ClassPathConfigSource extends FilteredPathConfigSource {
   private final ClassLoader classLoader;
 
   private Map<String, ConfigProperty> loadedConfig;
@@ -67,8 +67,7 @@ public class ClassPathConfigSource extends FilteredPathConfigSource {
     }
 
     Collection<Path> pathCollection = new ArrayList<>();
-    getClassPathEntries(classLoader)
-        .stream()
+    getClassPathEntries(classLoader).stream()
         .filter(uri -> uri.getScheme().equals("file"))
         .forEach(
             uri -> {

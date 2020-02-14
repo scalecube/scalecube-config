@@ -19,7 +19,7 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class DirectoryConfigSource extends FilteredPathConfigSource {
+public final class DirectoryConfigSource extends FilteredPathConfigSource {
   private final Path basePath;
 
   /**

@@ -9,14 +9,14 @@ import java.util.TreeMap;
 public final class SystemPropertiesConfigSource implements ConfigSource {
   private Map<String, ConfigProperty> loadedConfig;
 
-  private final ConfigSource overrideConfigSource;
+  private final ConfigSource configSource;
 
   public SystemPropertiesConfigSource() {
     this(null);
   }
 
-  public SystemPropertiesConfigSource(ConfigSource overrideConfigSource) {
-    this.overrideConfigSource = overrideConfigSource;
+  public SystemPropertiesConfigSource(ConfigSource configSource) {
+    this.configSource = configSource;
   }
 
   @Override
@@ -26,8 +26,8 @@ public final class SystemPropertiesConfigSource implements ConfigSource {
     }
 
     Properties properties = System.getProperties();
-    if (overrideConfigSource != null) {
-      properties = overrideSystemProperties(overrideConfigSource.loadConfig(), properties);
+    if (configSource != null) {
+      properties = mergeSystemProperties(configSource.loadConfig(), properties);
     }
 
     Map<String, ConfigProperty> result = new TreeMap<>();
@@ -42,7 +42,7 @@ public final class SystemPropertiesConfigSource implements ConfigSource {
     return loadedConfig = result;
   }
 
-  private static Properties overrideSystemProperties(
+  private static Properties mergeSystemProperties(
       Map<String, ConfigProperty> overrideConfig, Properties properties) {
 
     final Properties finalProperties = new Properties();

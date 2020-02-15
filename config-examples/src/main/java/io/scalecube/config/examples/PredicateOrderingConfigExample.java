@@ -7,6 +7,8 @@ import io.scalecube.config.source.ClassPathConfigSource;
 import io.scalecube.config.source.SystemPropertiesConfigSource;
 import java.nio.file.Path;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class PredicateOrderingConfigExample {
@@ -38,7 +40,9 @@ public class PredicateOrderingConfigExample {
                     new SystemPropertiesConfigSource(new ClassPathConfigSource(customSysPredicate)))
                 .addLastSource(
                     "classpath",
-                    new ClassPathConfigSource(firstPredicate, secondPredicate, rootPredicate))
+                    new ClassPathConfigSource(
+                        Stream.of(firstPredicate, secondPredicate, rootPredicate)
+                            .collect(Collectors.toList())))
                 .build());
 
     StringConfigProperty orderedProp1 = configRegistry.stringProperty("orderedProp1");

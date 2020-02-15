@@ -14,8 +14,7 @@ public class Slf4JConfigEventListener implements ConfigEventListener {
     if (!events.isEmpty()) {
       StringBuilder sb = new StringBuilder();
       sb.append("[");
-      events
-          .stream()
+      events.stream()
           .sorted(Comparator.comparing(ConfigEvent::getName))
           .forEach(
               event -> {
@@ -30,7 +29,7 @@ public class Slf4JConfigEventListener implements ConfigEventListener {
                 sb.append(originAsString(event));
               });
       sb.append("\n").append("]");
-      LOGGER.info("Config property changed: {}", sb);
+      LOGGER.info("Config properties: {}", sb);
     }
   }
 

@@ -1,7 +1,6 @@
 package io.scalecube.config.source;
 
 import io.scalecube.config.ConfigProperty;
-import io.scalecube.config.utils.ConfigCollectorUtil;
 import io.scalecube.config.utils.ThrowableUtil;
 import java.io.File;
 import java.io.IOException;
@@ -13,7 +12,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -23,41 +21,59 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public final class ClassPathConfigSource extends FilteredPathConfigSource {
-  private final ClassLoader classLoader;
-
   private Map<String, ConfigProperty> loadedConfig;
 
   /**
-   * Creates provider of configuration properties with classpath as source.
+   * Constructor.
    *
-   * @param classLoader class loader
-   * @param predicates list of predicates to filter
+   * @param predicate predicate to match configuration files
    */
-  public ClassPathConfigSource(ClassLoader classLoader, List<Predicate<Path>> predicates) {
-    super(predicates);
-    this.classLoader =
-        Objects.requireNonNull(classLoader, "ClassPathConfigSource: classloader is required");
+  public ClassPathConfigSource(Predicate<Path> predicate) {
+    this(Collections.singletonList(predicate));
   }
 
+  /**
+   * Constructor.
+   *
+   * @param predicates list of predicates to match configuration files
+   */
   public ClassPathConfigSource(List<Predicate<Path>> predicates) {
-    this(ClassPathConfigSource.class.getClassLoader(), predicates);
+    super(predicates);
   }
 
-  @SafeVarargs
-  public ClassPathConfigSource(ClassLoader classLoader, Predicate<Path>... predicates) {
-    super(Arrays.asList(predicates));
-    this.classLoader = classLoader;
-  }
+  /**
+   * Factory method to create {@code ClassPathConfigSource} instance by configuration file mask plus
+   * its prefixes.
+   *
+   * @param mask mask for template of configuration property file
+   * @param prefixes list of prefixes (comma separated list of strings)
+   * @return new {@code ClassPathConfigSource} instance
+   */
+  public static ClassPathConfigSource createWithPattern(String mask, List<String> prefixes) {
+    Objects.requireNonNull(mask, "ClassPathConfigSource: mask is required");
+    Objects.requireNonNull(prefixes, "ClassPathConfigSource: prefixes is required");
 
-  @SafeVarargs
-  public ClassPathConfigSource(Predicate<Path>... predicates) {
-    this(ClassPathConfigSource.class.getClassLoader(), Arrays.asList(predicates));
+    Pattern pattern = Pattern.compile(mask);
+
+    Predicate<Path> patternPredicate =
+        path -> pattern.matcher(path.getFileName().toString()).matches();
+
+    List<Predicate<Path>> predicates =
+        prefixes.stream()
+            .map(p -> (Predicate<Path>) path -> path.getFileName().startsWith(p))
+            .map(patternPredicate::and)
+            .collect(Collectors.toList());
+
+    return new ClassPathConfigSource(predicates);
   }
 
   @Override
@@ -67,7 +83,7 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
     }
 
     Collection<Path> pathCollection = new ArrayList<>();
-    getClassPathEntries(classLoader).stream()
+    getClassPathEntries(getClass().getClassLoader()).stream()
         .filter(uri -> uri.getScheme().equals("file"))
         .forEach(
             uri -> {
@@ -85,12 +101,11 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
               }
             });
 
-    Map<Path, Map<String, String>> configMap = loadConfigMap(pathCollection);
-
     Map<String, ConfigProperty> result = new TreeMap<>();
-    ConfigCollectorUtil.filterAndCollectInOrder(
+
+    filterAndCollectInOrder(
         predicates.iterator(),
-        configMap,
+        loadConfigMap(pathCollection),
         (path, map) ->
             map.entrySet()
                 .forEach(
@@ -174,6 +189,8 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
 
   @Override
   public String toString() {
-    return "ClassPathConfigSource{" + "classLoader=" + classLoader + '}';
+    return new StringJoiner(", ", ClassPathConfigSource.class.getSimpleName() + "[", "]")
+        .add("classLoader=" + getClass().getClassLoader())
+        .toString();
   }
 }

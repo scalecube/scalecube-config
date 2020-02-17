@@ -43,20 +43,20 @@ public final class FileDirectoryConfigSource extends FilteredPathConfigSource {
   }
 
   /**
-   * Factory method to create {@code FileDirectoryConfigSource} instance by configuration file mask
-   * plus its prefixes.
+   * Factory method to create {@code FileDirectoryConfigSource} instance using filename plus its
+   * prefixes.
    *
    * @param directory directory with configuration files
-   * @param mask mask for template of configuration property file
+   * @param filename filename for template of configuration property file
    * @param prefixes list of prefixes (comma separated list of strings)
    * @return new {@code FileDirectoryConfigSource} instance
    */
   public static FileDirectoryConfigSource createWithPattern(
-      String directory, String mask, List<String> prefixes) {
+      String directory, String filename, List<String> prefixes) {
     Objects.requireNonNull(directory, "FileDirectoryConfigSource: directory is required");
-    Objects.requireNonNull(mask, "FileDirectoryConfigSource: mask is required");
+    Objects.requireNonNull(filename, "FileDirectoryConfigSource: filename is required");
     Objects.requireNonNull(prefixes, "FileDirectoryConfigSource: prefixes is required");
-    return new FileDirectoryConfigSource(directory, preparePatternPredicates(mask, prefixes));
+    return new FileDirectoryConfigSource(directory, preparePatternPredicates(filename, prefixes));
   }
 
   @Override

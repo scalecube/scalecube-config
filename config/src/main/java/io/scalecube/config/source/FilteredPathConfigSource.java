@@ -3,6 +3,7 @@ package io.scalecube.config.source;
 import io.scalecube.config.utils.ThrowableUtil;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -14,9 +15,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public abstract class FilteredPathConfigSource implements ConfigSource {
   protected final List<Predicate<Path>> predicates;
@@ -32,16 +31,18 @@ public abstract class FilteredPathConfigSource implements ConfigSource {
         .collect(Collectors.toMap(path -> path, FilteredPathConfigSource::loadProperties));
   }
 
-  static List<Predicate<Path>> preparePatternPredicates(String mask, List<String> prefixes) {
-    Pattern pattern = Pattern.compile(mask);
-    Predicate<Path> patternPredicate = path -> pattern.matcher(path.toString()).matches();
+  static List<Predicate<Path>> preparePatternPredicates(String filename, List<String> prefixes) {
+    final List<String> finalPrefixes = new ArrayList<>(prefixes);
+    finalPrefixes.add(null); // add last one as null
 
-    Stream<Predicate<Path>> stream =
-        prefixes.stream()
-            .map(p -> (Predicate<Path>) path -> path.getFileName().toString().startsWith(p))
-            .map(p -> p.and(patternPredicate));
-
-    return Stream.concat(stream, Stream.of(patternPredicate)).collect(Collectors.toList());
+    return finalPrefixes.stream()
+        .<Predicate<Path>>map(
+            p ->
+                (Path path) -> {
+                  String name = path.getFileName().toString();
+                  return name.equals(p != null ? p + "." + filename : filename);
+                })
+        .collect(Collectors.toList());
   }
 
   static void filterAndCollectInOrder(

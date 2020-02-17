@@ -54,17 +54,17 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
   }
 
   /**
-   * Factory method to create {@code ClassPathConfigSource} instance by configuration file mask plus
-   * its prefixes.
+   * Factory method to create {@code ClassPathConfigSource} instance using filename plus its
+   * prefixes.
    *
-   * @param mask mask for template of configuration property file
+   * @param filename filename for template of configuration property file
    * @param prefixes list of prefixes (comma separated list of strings)
    * @return new {@code ClassPathConfigSource} instance
    */
-  public static ClassPathConfigSource createWithPattern(String mask, List<String> prefixes) {
-    Objects.requireNonNull(mask, "ClassPathConfigSource: mask is required");
+  public static ClassPathConfigSource createWithPattern(String filename, List<String> prefixes) {
+    Objects.requireNonNull(filename, "ClassPathConfigSource: filename is required");
     Objects.requireNonNull(prefixes, "ClassPathConfigSource: prefixes is required");
-    return new ClassPathConfigSource(preparePatternPredicates(mask, prefixes));
+    return new ClassPathConfigSource(preparePatternPredicates(filename, prefixes));
   }
 
   @Override

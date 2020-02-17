@@ -5,6 +5,7 @@ import io.scalecube.config.utils.ConfigCollectorUtil;
 import io.scalecube.config.utils.ThrowableUtil;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -17,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,8 +27,12 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
 public final class ClassPathConfigSource extends FilteredPathConfigSource {
+  private static final String CLASSPATH = System.getProperty("java.class.path");
+  private static final String PATH_SEPARATOR = System.getProperty("path.separator");
+
   private final ClassLoader classLoader;
 
   private Map<String, ConfigProperty> loadedConfig;
@@ -104,24 +108,55 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
     return loadedConfig = result;
   }
 
-  private Collection<URI> getClassPathEntries(ClassLoader classLoader) {
+  static Collection<URI> getClassPathEntries(ClassLoader classloader) {
     Collection<URI> entries = new LinkedHashSet<>();
-    // Search parent first, since it's the order ClassLoader#loadClass() uses.
-    ClassLoader parent = classLoader.getParent();
+    ClassLoader parent = classloader.getParent();
     if (parent != null) {
       entries.addAll(getClassPathEntries(parent));
     }
-    if (classLoader instanceof URLClassLoader) {
-      URLClassLoader urlClassLoader = (URLClassLoader) classLoader;
-      for (URL entry : urlClassLoader.getURLs()) {
-        try {
-          entries.add(entry.toURI());
-        } catch (URISyntaxException e) {
-          throw ThrowableUtil.propagate(e);
-        }
+    for (URL url : getClassLoaderUrls(classloader)) {
+      if (url.getProtocol().equals("file")) {
+        entries.add(toFile(url).toURI());
       }
     }
     return new LinkedHashSet<>(entries);
+  }
+
+  private static File toFile(URL url) {
+    if (!url.getProtocol().equals("file")) {
+      throw new IllegalArgumentException("Unsupported protocol in url: " + url);
+    }
+    try {
+      return new File(url.toURI());
+    } catch (URISyntaxException e) {
+      return new File(url.getPath());
+    }
+  }
+
+  private static Collection<URL> getClassLoaderUrls(ClassLoader classloader) {
+    if (classloader instanceof URLClassLoader) {
+      return Arrays.stream(((URLClassLoader) classloader).getURLs()).collect(Collectors.toSet());
+    }
+    if (classloader.equals(ClassLoader.getSystemClassLoader())) {
+      return parseJavaClassPath();
+    }
+    return Collections.emptySet();
+  }
+
+  private static Collection<URL> parseJavaClassPath() {
+    Collection<URL> urls = new LinkedHashSet<>();
+    for (String entry : CLASSPATH.split(PATH_SEPARATOR)) {
+      try {
+        try {
+          urls.add(new File(entry).toURI().toURL());
+        } catch (SecurityException e) {
+          urls.add(new URL("file", null, new File(entry).getAbsolutePath()));
+        }
+      } catch (MalformedURLException ex) {
+        throw ThrowableUtil.propagate(ex);
+      }
+    }
+    return new LinkedHashSet<>(urls);
   }
 
   private void scanDirectory(
@@ -129,15 +164,13 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
       throws IOException {
     File canonical = directory.getCanonicalFile();
     if (ancestors.contains(canonical)) {
-      // A cycle in the filesystem, for example due to a symbolic link.
       return;
     }
     File[] files = directory.listFiles();
     if (files == null) {
       return;
     }
-    HashSet<File> objects = new HashSet<>();
-    objects.addAll(ancestors);
+    Set<File> objects = new LinkedHashSet<>(ancestors);
     objects.add(canonical);
     Set<File> newAncestors = Collections.unmodifiableSet(objects);
     for (File f : files) {

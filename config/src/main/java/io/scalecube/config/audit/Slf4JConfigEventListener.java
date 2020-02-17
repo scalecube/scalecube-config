@@ -29,7 +29,7 @@ public class Slf4JConfigEventListener implements ConfigEventListener {
                 sb.append(originAsString(event));
               });
       sb.append("\n").append("]");
-      LOGGER.info("Config properties: {}", sb);
+      LOGGER.info(sb.toString());
     }
   }
 

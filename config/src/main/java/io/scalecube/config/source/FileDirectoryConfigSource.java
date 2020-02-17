@@ -15,7 +15,6 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public final class FileDirectoryConfigSource extends FilteredPathConfigSource {
@@ -56,20 +55,8 @@ public final class FileDirectoryConfigSource extends FilteredPathConfigSource {
       String directory, String mask, List<String> prefixes) {
     Objects.requireNonNull(directory, "FileDirectoryConfigSource: directory is required");
     Objects.requireNonNull(mask, "FileDirectoryConfigSource: mask is required");
-    Objects.requireNonNull(mask, "FileDirectoryConfigSource: prefixes is required");
-
-    Pattern pattern = Pattern.compile(mask);
-
-    Predicate<Path> patternPredicate =
-        path -> pattern.matcher(path.getFileName().toString()).matches();
-
-    List<Predicate<Path>> predicates =
-        prefixes.stream()
-            .map(p -> (Predicate<Path>) path -> path.getFileName().startsWith(p))
-            .map(patternPredicate::and)
-            .collect(Collectors.toList());
-
-    return new FileDirectoryConfigSource(directory, predicates);
+    Objects.requireNonNull(prefixes, "FileDirectoryConfigSource: prefixes is required");
+    return new FileDirectoryConfigSource(directory, preparePatternPredicates(mask, prefixes));
   }
 
   @Override
@@ -88,7 +75,6 @@ public final class FileDirectoryConfigSource extends FilteredPathConfigSource {
     List<Path> pathCollection = Arrays.stream(files).map(File::toPath).collect(Collectors.toList());
 
     Map<String, ConfigProperty> result = new TreeMap<>();
-
     filterAndCollectInOrder(
         predicates.iterator(),
         loadConfigMap(pathCollection),
@@ -101,7 +87,6 @@ public final class FileDirectoryConfigSource extends FilteredPathConfigSource {
                             LoadedConfigProperty.withNameAndValue(entry)
                                 .origin(path.toString())
                                 .build())));
-
     return result;
   }
 

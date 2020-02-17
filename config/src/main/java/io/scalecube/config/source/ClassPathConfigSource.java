@@ -27,7 +27,6 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public final class ClassPathConfigSource extends FilteredPathConfigSource {
@@ -65,19 +64,7 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
   public static ClassPathConfigSource createWithPattern(String mask, List<String> prefixes) {
     Objects.requireNonNull(mask, "ClassPathConfigSource: mask is required");
     Objects.requireNonNull(prefixes, "ClassPathConfigSource: prefixes is required");
-
-    Pattern pattern = Pattern.compile(mask);
-
-    Predicate<Path> patternPredicate =
-        path -> pattern.matcher(path.getFileName().toString()).matches();
-
-    List<Predicate<Path>> predicates =
-        prefixes.stream()
-            .map(p -> (Predicate<Path>) path -> path.getFileName().startsWith(p))
-            .map(patternPredicate::and)
-            .collect(Collectors.toList());
-
-    return new ClassPathConfigSource(predicates);
+    return new ClassPathConfigSource(preparePatternPredicates(mask, prefixes));
   }
 
   @Override
@@ -106,7 +93,6 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
             });
 
     Map<String, ConfigProperty> result = new TreeMap<>();
-
     filterAndCollectInOrder(
         predicates.iterator(),
         loadConfigMap(pathCollection),
@@ -119,11 +105,10 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
                             LoadedConfigProperty.withNameAndValue(entry)
                                 .origin(path.toString())
                                 .build())));
-
     return loadedConfig = result;
   }
 
-  static Collection<URI> getClassPathEntries(ClassLoader classloader) {
+  private static Collection<URI> getClassPathEntries(ClassLoader classloader) {
     Collection<URI> entries = new LinkedHashSet<>();
     ClassLoader parent = classloader.getParent();
     if (parent != null) {
@@ -174,7 +159,7 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
     return new LinkedHashSet<>(urls);
   }
 
-  private void scanDirectory(
+  private static void scanDirectory(
       File directory, String prefix, Set<File> ancestors, Collection<Path> collector)
       throws IOException {
     File canonical = directory.getCanonicalFile();
@@ -198,7 +183,7 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
     }
   }
 
-  private void scanJar(File file, Collection<Path> collector) throws IOException {
+  private static void scanJar(File file, Collection<Path> collector) throws IOException {
     JarFile jarFile;
     try {
       jarFile = new JarFile(file);

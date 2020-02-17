@@ -5,13 +5,11 @@ import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.source.ClassPathConfigSource;
 import io.scalecube.config.source.SystemPropertiesConfigSource;
-import java.nio.file.Path;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
-public class PredicateOrderingConfigExample {
+public class PredicateShortcutsConfigExample {
 
   /**
    * Main method for example of predicate ordering.
@@ -19,17 +17,10 @@ public class PredicateOrderingConfigExample {
    * @param args program arguments
    */
   public static void main(String[] args) {
-    Predicate<Path> propsPredicate = path -> path.toString().endsWith(".props");
-    Predicate<Path> rootPredicate =
-        propsPredicate.and(path -> path.toString().contains("config.props"));
-    Predicate<Path> firstPredicate = propsPredicate.and(path -> path.toString().contains("order1"));
-    Predicate<Path> secondPredicate =
-        propsPredicate.and(path -> path.toString().contains("order2"));
-    Predicate<Path> customSysPredicate =
-        propsPredicate.and(path -> path.toString().contains("customSys"));
-
     // Emulate scenario where sys.foo was also given from system properties
     // System.setProperty("sys.foo", "sys foo from java system properties");
+
+    String mask = ".*config\\.props";
 
     ConfigRegistry configRegistry =
         ConfigRegistry.create(
@@ -37,12 +28,13 @@ public class PredicateOrderingConfigExample {
                 .addLastSource("sysProps", new SystemPropertiesConfigSource())
                 .addLastSource(
                     "customSysProps",
-                    new SystemPropertiesConfigSource(new ClassPathConfigSource(customSysPredicate)))
+                    new SystemPropertiesConfigSource(
+                        ClassPathConfigSource.createWithPattern(
+                            mask, Stream.of("customSys").collect(Collectors.toList()))))
                 .addLastSource(
                     "classpath",
-                    new ClassPathConfigSource(
-                        Stream.of(firstPredicate, secondPredicate, rootPredicate)
-                            .collect(Collectors.toList())))
+                    ClassPathConfigSource.createWithPattern(
+                        mask, Stream.of("order1", "order2").collect(Collectors.toList())))
                 .build());
 
     StringConfigProperty orderedProp1 = configRegistry.stringProperty("orderedProp1");

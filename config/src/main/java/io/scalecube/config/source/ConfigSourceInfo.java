@@ -1,6 +1,6 @@
 package io.scalecube.config.source;
 
-public class ConfigSourceInfo {
+public final class ConfigSourceInfo {
   private String sourceName;
   private int priorityOrder;
   private String configSourceString;

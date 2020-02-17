@@ -4,7 +4,7 @@ import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.source.ClassPathConfigSource;
-import io.scalecube.config.source.DirectoryConfigSource;
+import io.scalecube.config.source.FileDirectoryConfigSource;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 
@@ -26,7 +26,7 @@ public class LocalResourceConfigExample {
             ConfigRegistrySettings.builder()
                 .addLastSource("classpath", new ClassPathConfigSource(propsPredicate))
                 .addLastSource(
-                    "configDirectory", new DirectoryConfigSource(basePath, propsPredicate))
+                    "configDirectory", new FileDirectoryConfigSource(basePath, propsPredicate))
                 .jmxEnabled(false)
                 .build());
 

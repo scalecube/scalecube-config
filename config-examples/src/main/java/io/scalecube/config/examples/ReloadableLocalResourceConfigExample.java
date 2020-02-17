@@ -7,7 +7,7 @@ import io.scalecube.config.ListConfigProperty;
 import io.scalecube.config.ObjectConfigProperty;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.audit.Slf4JConfigEventListener;
-import io.scalecube.config.source.DirectoryConfigSource;
+import io.scalecube.config.source.FileDirectoryConfigSource;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class ReloadableLocalResourceConfigExample {
@@ -39,7 +41,10 @@ public class ReloadableLocalResourceConfigExample {
             ConfigRegistrySettings.builder()
                 .addLastSource(
                     "configDirectory",
-                    new DirectoryConfigSource(basePath, reloadablePropsPredicate, propsPredicate))
+                    new FileDirectoryConfigSource(
+                        basePath,
+                        Stream.of(reloadablePropsPredicate, propsPredicate)
+                            .collect(Collectors.toList())))
                 .addListener(new Slf4JConfigEventListener())
                 .reloadIntervalSec(1)
                 .build());

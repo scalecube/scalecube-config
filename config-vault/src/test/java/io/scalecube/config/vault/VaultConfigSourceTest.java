@@ -149,6 +149,8 @@ class VaultConfigSourceTest {
                     .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
                     .secretsPath(VAULT_SECRETS_PATH1)
                     .build())
+            .jmxEnabled(false)
+            .keepRecentConfigEvents(0)
             .reloadIntervalSec(1)
             .build();
     ConfigRegistry configRegistry = ConfigRegistry.create(settings);

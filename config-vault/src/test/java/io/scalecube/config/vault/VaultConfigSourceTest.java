@@ -149,6 +149,7 @@ class VaultConfigSourceTest {
                     .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
                     .secretsPath(VAULT_SECRETS_PATH1)
                     .build())
+            .jmxEnabled(false)
             .reloadIntervalSec(1)
             .build();
     ConfigRegistry configRegistry = ConfigRegistry.create(settings);
@@ -182,6 +183,7 @@ class VaultConfigSourceTest {
                     .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
                     .secretsPath(VAULT_SECRETS_PATH1)
                     .build())
+            .jmxEnabled(false)
             .reloadIntervalSec(1)
             .build();
     ConfigRegistry configRegistry = ConfigRegistry.create(settings);
@@ -240,6 +242,7 @@ class VaultConfigSourceTest {
                     .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
                     .secretsPath(VAULT_SECRETS_PATH1)
                     .build())
+            .jmxEnabled(false)
             .reloadIntervalSec(1)
             .build();
 

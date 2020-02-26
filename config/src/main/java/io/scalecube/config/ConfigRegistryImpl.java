@@ -380,23 +380,21 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     for (String name : sources.keySet()) {
       ConfigSource source = sources.get(name);
 
-      Throwable loadException = null;
-      Map<String, ConfigProperty> configMap = null;
+      final Map<String, ConfigProperty> configMap;
       try {
         configMap = source.loadConfig();
       } catch (Exception e) {
-        loadException = e; // save error occurrence
+        computeConfigLoadStatus(name, source, e);
+        throw e;
       }
 
-      computeConfigLoadStatus(name, source, loadException);
+      computeConfigLoadStatus(name, source, null);
 
-      if (loadException == null) {
-        // populate loaded properties with new field 'source'
-        configMap.forEach(
-            (key, configProperty) ->
-                loadedPropertyMap.putIfAbsent(
-                    key, LoadedConfigProperty.withCopyFrom(configProperty).source(name).build()));
-      }
+      // populate loaded properties with new field 'source'
+      configMap.forEach(
+          (key, configProperty) ->
+              loadedPropertyMap.putIfAbsent(
+                  key, LoadedConfigProperty.withCopyFrom(configProperty).source(name).build()));
     }
 
     List<ConfigEvent> detectedChanges = new ArrayList<>();

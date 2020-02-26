@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,13 +26,17 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.function.Predicate;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
 public final class ClassPathConfigSource extends FilteredPathConfigSource {
+
   private static final String CLASSPATH = System.getProperty("java.class.path");
   private static final String PATH_SEPARATOR = System.getProperty("path.separator");
+  private static final String CLASSPATH_ATTIBUTE_MANIFEST_SEPARATOR = " ";
 
   private Map<String, ConfigProperty> loadedConfig;
 
@@ -79,16 +84,19 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
         .forEach(
             uri -> {
               File file = new File(uri);
-              if (file.exists()) {
-                try {
-                  if (file.isDirectory()) {
-                    scanDirectory(file, "", Collections.emptySet(), pathCollection);
-                  } else {
-                    scanJar(file, pathCollection);
-                  }
-                } catch (Exception e) {
-                  throw ThrowableUtil.propagate(e);
+              if (!file.exists()) {
+                return;
+              }
+              try {
+                if (file.isDirectory()) {
+                  Set<File> currentPath =
+                      new HashSet<>(Collections.singleton(file.getCanonicalFile()));
+                  scanDirectory(file, "", currentPath, pathCollection);
+                } else {
+                  scanJar(file, pathCollection);
                 }
+              } catch (Exception e) {
+                throw ThrowableUtil.propagate(e);
               }
             });
 
@@ -150,7 +158,7 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
         try {
           urls.add(new File(entry).toURI().toURL());
         } catch (SecurityException e) {
-          urls.add(new URL("file", null, new File(entry).getAbsolutePath()));
+          throw ThrowableUtil.propagate(e);
         }
       } catch (MalformedURLException ex) {
         throw ThrowableUtil.propagate(ex);
@@ -160,48 +168,96 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
   }
 
   private static void scanDirectory(
-      File directory, String prefix, Set<File> ancestors, Collection<Path> collector)
+      File directory, String prefix, Set<File> currentPath, Collection<Path> collector)
       throws IOException {
-    File canonical = directory.getCanonicalFile();
-    if (ancestors.contains(canonical)) {
-      return;
-    }
+
     File[] files = directory.listFiles();
     if (files == null) {
       return;
     }
-    Set<File> objects = new LinkedHashSet<>(ancestors);
-    objects.add(canonical);
-    Set<File> newAncestors = Collections.unmodifiableSet(objects);
+
     for (File f : files) {
       String name = f.getName();
       if (f.isDirectory()) {
-        scanDirectory(f, prefix + name + "/", newAncestors, collector);
+        File deref = f.getCanonicalFile();
+        if (currentPath.add(deref)) {
+          scanDirectory(deref, prefix + name + "/", currentPath, collector);
+          currentPath.remove(deref);
+        }
       } else {
-        collector.add(f.toPath());
+        String resourceName = prefix + name;
+        if (!resourceName.equals(JarFile.MANIFEST_NAME)) {
+          collector.add(f.toPath());
+        }
       }
     }
   }
 
   private static void scanJar(File file, Collection<Path> collector) throws IOException {
-    JarFile jarFile;
-    try {
-      jarFile = new JarFile(file);
-    } catch (IOException ignore) {
-      return;
+    try (JarFile jarFile = new JarFile(file)) {
+      for (File path : getClassPathFromManifest(file, jarFile.getManifest())) {
+        if (collector.add(path.getCanonicalFile().toPath())) {
+          scanFrom(path, collector);
+        }
+      }
+      scanJarFile(jarFile, file.toPath(), collector);
     }
-    try (FileSystem zipfs = FileSystems.newFileSystem(file.toPath(), null)) {
-      Enumeration<JarEntry> entries = jarFile.entries();
+  }
+
+  private static void scanJarFile(JarFile file, Path path, Collection<Path> collector)
+      throws IOException {
+    try (FileSystem zipfs = FileSystems.newFileSystem(path, null)) {
+      Enumeration<JarEntry> entries = file.entries();
       while (entries.hasMoreElements()) {
         JarEntry entry = entries.nextElement();
+        if (entry.isDirectory() || entry.getName().equals(JarFile.MANIFEST_NAME)) {
+          continue;
+        }
         collector.add(zipfs.getPath(entry.getName()));
       }
-    } finally {
+    }
+  }
+
+  private static Set<File> getClassPathFromManifest(File jarFile, Manifest manifest) {
+    Set<File> result = new LinkedHashSet<>();
+
+    if (manifest == null) {
+      return result;
+    }
+
+    String classpathAttribute =
+        manifest.getMainAttributes().getValue(Attributes.Name.CLASS_PATH.toString());
+    if (classpathAttribute == null) {
+      return result;
+    }
+
+    for (String path : classpathAttribute.split(CLASSPATH_ATTIBUTE_MANIFEST_SEPARATOR)) {
+      URL url;
       try {
-        jarFile.close();
-      } catch (IOException ignore) {
-        // ignore
+        url = new URL(jarFile.toURI().toURL(), path);
+      } catch (MalformedURLException e) {
+        throw ThrowableUtil.propagate(e);
       }
+      if (url.getProtocol().equals("file")) {
+        result.add(toFile(url));
+      }
+    }
+    return result;
+  }
+
+  private static void scanFrom(File file, Collection<Path> collector) throws IOException {
+    try {
+      if (!file.exists()) {
+        return;
+      }
+    } catch (SecurityException e) {
+      throw ThrowableUtil.propagate(e);
+    }
+    if (file.isDirectory()) {
+      Set<File> currentPath = new HashSet<>(Collections.singleton(file.getCanonicalFile()));
+      scanDirectory(file, "", currentPath, collector);
+    } else {
+      scanJar(file, collector);
     }
   }
 

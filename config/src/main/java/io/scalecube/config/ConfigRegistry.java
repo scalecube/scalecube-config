@@ -60,6 +60,15 @@ public interface ConfigRegistry {
   <T> ObjectConfigProperty<T> objectProperty(String name, Function<String, T> mapper);
 
   /**
+   * Returns dynamic typed object property. Package name of the class comes as prefix.
+   *
+   * @param cfgClass a class of config object instance
+   * @param <T> a type of config object
+   * @return property instance
+   */
+  <T> ObjectConfigProperty<T> objectProperty(Class<T> cfgClass);
+
+  /**
    * Returns current value of object property or defaults.
    *
    * @param cfgClass a class of config object instance
@@ -79,6 +88,17 @@ public interface ConfigRegistry {
    * @return property value
    */
   <T> T objectValue(Map<String, String> bindingMap, Class<T> cfgClass, T defaultValue);
+
+  /**
+   * Returns current value of object property or defaults. Package name of the class comes as
+   * prefix.
+   *
+   * @param cfgClass a class of config object instance
+   * @param defaultValue default config object
+   * @param <T> a type of returned config object
+   * @return property value
+   */
+  <T> T objectValue(Class<T> cfgClass, T defaultValue);
 
   /**
    * Returns dynamic typed string property. String property is a base type for all properties and

@@ -138,6 +138,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
+  public <T> ObjectConfigProperty<T> objectProperty(Class<T> cfgClass) {
+    return objectProperty(cfgClass.getPackage().getName(), cfgClass);
+  }
+
+  @Override
   public <T> T objectValue(String prefix, Class<T> cfgClass, T defaultValue) {
     return objectProperty(prefix, cfgClass).value(defaultValue);
   }
@@ -145,6 +150,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   @Override
   public <T> T objectValue(Map<String, String> bindingMap, Class<T> cfgClass, T defaultValue) {
     return objectProperty(bindingMap, cfgClass).value(defaultValue);
+  }
+
+  @Override
+  public <T> T objectValue(Class<T> cfgClass, T defaultValue) {
+    return objectValue(cfgClass.getPackage().getName(), cfgClass, defaultValue);
   }
 
   @Override

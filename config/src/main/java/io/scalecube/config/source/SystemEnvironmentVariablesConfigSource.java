@@ -42,7 +42,7 @@ public final class SystemEnvironmentVariablesConfigSource implements ConfigSourc
   }
 
   // Stores mapping between environemnt variable name and corresponding system property name.
-  interface Mapper {
+  public interface Mapper {
 
     Mapper map(String src, String dst);
   }

@@ -6,7 +6,7 @@ import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.audit.Slf4JConfigEventListener;
 import io.scalecube.config.http.server.ConfigRegistryHttpServer;
 import io.scalecube.config.source.ClassPathConfigSource;
-import io.scalecube.config.source.DirectoryConfigSource;
+import io.scalecube.config.source.FileDirectoryConfigSource;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 
@@ -28,7 +28,7 @@ public class ConfigRegistryExample {
             ConfigRegistrySettings.builder()
                 .addLastSource("classpath", new ClassPathConfigSource(propsPredicate))
                 .addLastSource(
-                    "configDirectory", new DirectoryConfigSource(basePath, propsPredicate))
+                    "configDirectory", new FileDirectoryConfigSource(basePath, propsPredicate))
                 .addListener(new Slf4JConfigEventListener())
                 .jmxEnabled(true)
                 .jmxMBeanName("config.exporter:name=ConfigRegistry")

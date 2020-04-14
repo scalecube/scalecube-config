@@ -9,7 +9,7 @@ import io.scalecube.config.keyvalue.KeyValueConfigSource;
 import io.scalecube.config.mongo.MongoConfigConnector;
 import io.scalecube.config.mongo.MongoConfigEventListener;
 import io.scalecube.config.mongo.MongoConfigRepository;
-import io.scalecube.config.source.DirectoryConfigSource;
+import io.scalecube.config.source.FileDirectoryConfigSource;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 
@@ -45,7 +45,7 @@ public class DemoConfig {
         ConfigRegistry.create(
             ConfigRegistrySettings.builder()
                 .addLastSource(
-                    "ConfigDirectory", new DirectoryConfigSource(basePath, propsPredicate))
+                    "ConfigDirectory", new FileDirectoryConfigSource(basePath, propsPredicate))
                 .addLastSource("MongoConfig", mongoConfigSource)
                 .addListener(new Slf4JConfigEventListener())
                 .addListener(new MongoConfigEventListener(connector, auditLogCollectionName))

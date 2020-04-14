@@ -5,6 +5,7 @@ import io.scalecube.config.jmx.JmxConfigRegistry;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.ConfigSourceInfo;
 import io.scalecube.config.source.LoadedConfigProperty;
+import io.scalecube.config.utils.ThrowableUtil;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.time.Duration;
@@ -29,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import org.slf4j.Logger;
@@ -55,7 +55,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
         r -> {
           Thread thread = new Thread(r);
           thread.setDaemon(true);
-          thread.setName("config-reloader");
+          thread.setName("config-registry");
           thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
           return thread;
         };
@@ -70,6 +70,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
   private volatile Map<String, LoadedConfigProperty> propertyMap; // being reset on reload
 
+  @SuppressWarnings("rawtypes")
   private final Map<String, Map<Class, PropertyCallback>> propertyCallbackMap =
       new ConcurrentHashMap<>();
 
@@ -94,7 +95,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
           try {
             loadAndNotify();
           } catch (Exception e) {
-            LOGGER.error("Exception on config reload, cause: {}", e, e);
+            LOGGER.error("[loadAndNotify] Exception occurred, cause: " + e);
           }
         },
         settings.getReloadIntervalSec(),
@@ -111,10 +112,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
       MBeanServer mbeanServer = ManagementFactory.getPlatformMBeanServer();
       ObjectName objectName = new ObjectName(settings.getJmxMBeanName());
       mbeanServer.registerMBean(new JmxConfigRegistry(this), objectName);
-      MBeanInfo mbeanInfo = mbeanServer.getMBeanInfo(objectName);
-      LOGGER.info("Registered JMX MBean: {}", mbeanInfo);
     } catch (Exception e) {
-      LOGGER.warn("Failed to register JMX MBean '{}', cause: {}", settings.getJmxMBeanName(), e);
+      throw ThrowableUtil.propagate(e);
     }
   }
 
@@ -139,6 +138,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   }
 
   @Override
+  public <T> ObjectConfigProperty<T> objectProperty(Class<T> cfgClass) {
+    return objectProperty(cfgClass.getPackage().getName(), cfgClass);
+  }
+
+  @Override
   public <T> T objectValue(String prefix, Class<T> cfgClass, T defaultValue) {
     return objectProperty(prefix, cfgClass).value(defaultValue);
   }
@@ -146,6 +150,11 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   @Override
   public <T> T objectValue(Map<String, String> bindingMap, Class<T> cfgClass, T defaultValue) {
     return objectProperty(bindingMap, cfgClass).value(defaultValue);
+  }
+
+  @Override
+  public <T> T objectValue(Class<T> cfgClass, T defaultValue) {
+    return objectValue(cfgClass.getPackage().getName(), cfgClass, defaultValue);
   }
 
   @Override
@@ -377,26 +386,26 @@ final class ConfigRegistryImpl implements ConfigRegistry {
 
     // load config from sources
     Map<String, ConfigSource> sources = settings.getSources();
-    for (String name : sources.keySet()) {
-      ConfigSource source = sources.get(name);
+    for (String sourceName : sources.keySet()) {
+      ConfigSource source = sources.get(sourceName);
 
-      Throwable loadException = null;
-      Map<String, ConfigProperty> configMap = null;
+      final Map<String, ConfigProperty> configMap;
+      Throwable error = null;
       try {
         configMap = source.loadConfig();
       } catch (Exception e) {
-        loadException = e; // save error occurrence
+        error = e;
+        throw ThrowableUtil.propagate(e);
+      } finally {
+        computeConfigLoadStatus(sourceName, error);
       }
 
-      computeConfigLoadStatus(name, source, loadException);
-
-      if (loadException == null) {
-        // populate loaded properties with new field 'source'
-        configMap.forEach(
-            (key, configProperty) ->
-                loadedPropertyMap.putIfAbsent(
-                    key, LoadedConfigProperty.withCopyFrom(configProperty).source(name).build()));
-      }
+      // populate loaded properties with new field 'source'
+      configMap.forEach(
+          (key, configProperty) ->
+              loadedPropertyMap.putIfAbsent(
+                  key,
+                  LoadedConfigProperty.withCopyFrom(configProperty).source(sourceName).build()));
     }
 
     List<ConfigEvent> detectedChanges = new ArrayList<>();
@@ -488,15 +497,15 @@ final class ConfigRegistryImpl implements ConfigRegistry {
             });
   }
 
-  private void computeConfigLoadStatus(String name, ConfigSource source, Throwable throwable) {
+  private void computeConfigLoadStatus(String sourceName, Throwable throwable) {
     int status = throwable != null ? 1 : 0;
-    Integer status0 = configSourceStatusMap.put(name, status);
+    Integer status0 = configSourceStatusMap.put(sourceName, status);
     if (status0 == null || (status0 ^ status) == 1) {
       if (status == 1) {
         LOGGER.error(
-            "Exception at loadConfig on {}, source: {}, cause: {}", source, name, throwable);
+            "[loadConfig][{}] Exception occurred, cause: {}", sourceName, throwable.toString());
       } else {
-        LOGGER.debug("Loaded config properties from {}, source: {}", source, name);
+        LOGGER.debug("[loadConfig][{}] Loaded config properties", sourceName);
       }
     }
   }

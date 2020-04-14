@@ -14,51 +14,64 @@ public class Slf4JConfigEventListener implements ConfigEventListener {
     if (!events.isEmpty()) {
       StringBuilder sb = new StringBuilder();
       sb.append("[");
-      events
-          .stream()
+      events.stream()
           .sorted(Comparator.comparing(ConfigEvent::getName))
           .forEach(
               event -> {
                 sb.append("\n");
-                sb.append(event.getName()).append("=");
+                sb.append(event.getName()).append("=[");
                 sb.append(propValueAsString(event));
-                sb.append(",\t");
+                sb.append("], ");
                 sb.append("source=");
                 sb.append(sourceAsString(event));
-                sb.append(",\t");
+                sb.append(", ");
                 sb.append("origin=");
                 sb.append(originAsString(event));
               });
       sb.append("\n").append("]");
-      LOGGER.info("Config property changed: {}", sb);
+      LOGGER.info(sb.toString());
     }
   }
 
-  private String originAsString(ConfigEvent event) {
-    if (Objects.equals(event.getOldOrigin(), event.getNewOrigin())) {
-      return event.getNewOrigin();
-    } else {
-      return event.getOldOrigin() + "->" + event.getNewOrigin();
+  private static String originAsString(ConfigEvent event) {
+    final String oldValue = event.getOldOrigin();
+    final String newValue = event.getNewOrigin();
+
+    if (Objects.equals(oldValue, newValue)) {
+      return newValue;
     }
+    return (oldValue == null || oldValue.isEmpty()) ? newValue : oldValue + "->" + newValue;
   }
 
-  private String sourceAsString(ConfigEvent event) {
-    if (Objects.equals(event.getOldSource(), event.getNewSource())) {
-      return event.getNewSource();
-    } else {
-      return event.getOldSource() + "->" + event.getNewSource();
+  private static String sourceAsString(ConfigEvent event) {
+    final String oldValue = event.getOldSource();
+    final String newValue = event.getNewSource();
+
+    if (Objects.equals(oldValue, newValue)) {
+      return newValue;
     }
+    return (oldValue == null || oldValue.isEmpty()) ? newValue : oldValue + "->" + newValue;
   }
 
-  private String propValueAsString(ConfigEvent event) {
-    if (event.getOldValue() != null && event.getNewValue() != null) {
-      return "***->***";
-    } else if (event.getOldValue() != null) {
-      return "***->null";
-    } else if (event.getNewValue() != null) {
-      return "null->***";
-    } else {
-      return null;
+  private static String propValueAsString(ConfigEvent event) {
+    final String oldValue = event.getOldValue();
+    final String newValue = event.getNewValue();
+
+    if (Objects.equals(oldValue, newValue)) {
+      return newValue;
     }
+    return (oldValue == null || oldValue.isEmpty())
+        ? mask(newValue)
+        : mask(oldValue) + "->" + mask(newValue);
+  }
+
+  private static String mask(String value) {
+    if (value == null || value.isEmpty()) {
+      return "null";
+    }
+    if (value.length() < 5) {
+      return "***";
+    }
+    return value.replace(value.substring(2, value.length() - 2), "***");
   }
 }

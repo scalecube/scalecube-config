@@ -24,7 +24,7 @@ public class VaultInvoker {
   private static final Logger LOGGER = LoggerFactory.getLogger(VaultInvoker.class);
 
   private static final int STATUS_CODE_FORBIDDEN = 403;
-  public static final int STATUS_CODE_HELTH_OK = 200;
+  public static final int STATUS_CODE_HEALTH_OK = 200;
   public static final int STATUS_CODE_RESPONSE_OK = 200;
   public static final int STATUS_CODE_RESPONSE_NO_DATA = 204;
 
@@ -153,8 +153,8 @@ public class VaultInvoker {
    * @param vault vault
    */
   private void checkVault(Vault vault) throws VaultException {
-    RestResponse restResponse = vault.debug().health().getRestResponse();
-    if (restResponse.getStatus() == STATUS_CODE_HELTH_OK) {
+    RestResponse restResponse = vault.debug().health(true, null, null, null).getRestResponse();
+    if (restResponse.getStatus() == STATUS_CODE_HEALTH_OK) {
       return;
     }
     throw new VaultException(bodyAsString(restResponse), restResponse.getStatus());

@@ -55,7 +55,7 @@ public class VaultConfigSource implements ConfigSource {
             .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
         result.putAll(pathProps);
       } catch (Exception ex) {
-        LOGGER.warn("unable to load config properties", ex);
+        LOGGER.warn("unable to load config properties from {}",path, ex);
         throw new ConfigSourceNotAvailableException(ex);
       }
     }

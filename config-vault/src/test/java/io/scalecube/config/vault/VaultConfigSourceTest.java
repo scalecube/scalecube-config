@@ -49,9 +49,9 @@ class VaultConfigSourceTest {
   static void beforeAll() {
     VaultInstance vaultInstance = vaultContainerExtension.vaultInstance();
     vaultInstance.putSecrets(
-        VAULT_SECRETS_PATH1, "top_secret=password1", "db_password=dbpassword1");
+        VAULT_SECRETS_PATH1, "top_secret=password1", "db_password=dbpassword1", "only_first=pss1");
     vaultInstance.putSecrets(
-        VAULT_SECRETS_PATH2, "top_secret=password2", "db_password=dbpassword2");
+        VAULT_SECRETS_PATH2, "top_secret=password2", "db_password=dbpassword2", "only_second=pss2");
     vaultInstance.putSecrets(VAULT_SECRETS_PATH3, "secret=password", "password=dbpassword");
   }
 
@@ -86,6 +86,31 @@ class VaultConfigSourceTest {
     assertThat(actual, notNullValue());
     assertThat(actual.name(), equalTo("top_secret"));
     assertThat(actual.valueAsString(""), equalTo("password2"));
+  }
+
+  @Test
+  void testMultiplePathsEnv() {
+    String commonPath = VAULT_SECRETS_PATH1 + ":" + VAULT_SECRETS_PATH2;
+    EnvironmentLoader multiLoader =
+        new MockEnvironmentLoader(baseLoader).put(VAULT_SECRETS_PATH, commonPath);
+    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(multiLoader).build();
+    Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
+
+    ConfigProperty commonSecret = loadConfig.get("top_secret");
+    assertThat(commonSecret, notNullValue());
+    assertThat(commonSecret.name(), equalTo("top_secret"));
+    assertThat("Second path should override the first one", commonSecret.valueAsString(""),
+        equalTo("password2"));
+
+    ConfigProperty fromFirstPath = loadConfig.get("only_first");
+    assertThat(commonSecret.name(), equalTo("only_first"));
+    assertThat("Secret defined only in first path expected", fromFirstPath.valueAsString(""),
+        equalTo("pss1"));
+
+    ConfigProperty fromSecondPath = loadConfig.get("only_second");
+    assertThat(commonSecret.name(), equalTo("only_second"));
+    assertThat("Secret defined only in second path expected", fromFirstPath.valueAsString(""),
+        equalTo("pss2"));
   }
 
   @Test

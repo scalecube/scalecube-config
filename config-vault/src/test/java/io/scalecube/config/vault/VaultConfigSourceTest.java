@@ -103,13 +103,13 @@ class VaultConfigSourceTest {
         equalTo("password2"));
 
     ConfigProperty fromFirstPath = loadConfig.get("only_first");
-    assertThat(commonSecret.name(), equalTo("only_first"));
+    assertThat(fromFirstPath.name(), equalTo("only_first"));
     assertThat("Secret defined only in first path expected", fromFirstPath.valueAsString(""),
         equalTo("pss1"));
 
     ConfigProperty fromSecondPath = loadConfig.get("only_second");
-    assertThat(commonSecret.name(), equalTo("only_second"));
-    assertThat("Secret defined only in second path expected", fromFirstPath.valueAsString(""),
+    assertThat(fromSecondPath.name(), equalTo("only_second"));
+    assertThat("Secret defined only in second path expected", fromSecondPath.valueAsString(""),
         equalTo("pss2"));
   }
 

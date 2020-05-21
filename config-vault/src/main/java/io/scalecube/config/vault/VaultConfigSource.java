@@ -7,6 +7,10 @@ import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -27,31 +31,35 @@ public class VaultConfigSource implements ConfigSource {
   private static final String VAULT_SECRETS_PATH = "VAULT_SECRETS_PATH";
 
   private final VaultInvoker vault;
-  private final String secretsPath;
+  private final List<String> secretsPath;
 
   /**
    * Create a new {@link VaultConfigSource}.
-   *
-   * @param vault vault invoker.
-   * @param secretsPath secret path.
+   *  @param vault vault invoker.
+   * @param secretsPaths secret path-s.
    */
-  private VaultConfigSource(VaultInvoker vault, String secretsPath) {
+  private VaultConfigSource(VaultInvoker vault, List<String> secretsPaths) {
     this.vault = vault;
-    this.secretsPath = secretsPath;
+    this.secretsPath = secretsPaths;
   }
 
   @Override
   public Map<String, ConfigProperty> loadConfig() {
-    try {
-      LogicalResponse response = vault.invoke(vault -> vault.logical().read(secretsPath));
-      return response.getData().entrySet().stream()
-          .map(LoadedConfigProperty::withNameAndValue)
-          .map(LoadedConfigProperty.Builder::build)
-          .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
-    } catch (Exception ex) {
-      LOGGER.warn("unable to load config properties", ex);
-      throw new ConfigSourceNotAvailableException(ex);
+    Map<String, ConfigProperty> result = new HashMap<>();
+    for (String path : secretsPath) {
+      try {
+        LogicalResponse response = vault.invoke(vault -> vault.logical().read(path));
+        final Map<String, LoadedConfigProperty> pathProps = response.getData().entrySet().stream()
+            .map(LoadedConfigProperty::withNameAndValue)
+            .map(LoadedConfigProperty.Builder::build)
+            .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
+        result.putAll(pathProps);
+      } catch (Exception ex) {
+        LOGGER.warn("unable to load config properties from {}",path, ex);
+        throw new ConfigSourceNotAvailableException(ex);
+      }
     }
+    return result;
   }
 
   /**
@@ -87,12 +95,12 @@ public class VaultConfigSource implements ConfigSource {
     private Function<VaultInvoker.Builder, VaultInvoker.Builder> vault = Function.identity();
     private VaultInvoker invoker;
     private EnvironmentLoader environmentLoader = VaultInvoker.Builder.ENVIRONMENT_LOADER;
-    private String secretsPath;
+    private List<String> secretsPaths = new ArrayList<>();
 
     private Builder() {}
 
     public Builder secretsPath(String secretsPath) {
-      this.secretsPath = secretsPath;
+      this.secretsPaths.add(secretsPath);
       return this;
     }
 
@@ -126,13 +134,13 @@ public class VaultConfigSource implements ConfigSource {
           invoker != null
               ? invoker
               : vault.apply(new VaultInvoker.Builder(environmentLoader)).build();
-      secretsPath =
-          Objects.requireNonNull(
-              secretsPath != null
-                  ? secretsPath
-                  : environmentLoader.loadVariable(VAULT_SECRETS_PATH),
-              "Missing secretsPath");
-      return new VaultConfigSource(vaultInvoker, secretsPath);
+      if (secretsPaths.isEmpty()) {
+        String envSecretPath = Objects
+            .requireNonNull(environmentLoader.loadVariable(VAULT_SECRETS_PATH),
+                "Missing secretsPath");
+        secretsPaths = Arrays.asList(envSecretPath.split(":"));
+      }
+      return new VaultConfigSource(vaultInvoker, secretsPaths);
     }
   }
 }

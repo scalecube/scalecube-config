@@ -9,10 +9,12 @@ import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -28,80 +30,100 @@ public class VaultConfigSource implements ConfigSource {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
 
-  private static final String VAULT_SECRETS_PATH = "VAULT_SECRETS_PATH";
+  private static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
+
+  private static final String PATHS_SEPARATOR = ":";
 
   private final VaultInvoker vault;
-  private final List<String> secretsPath;
+  private final List<String> secretsPaths;
 
-  /**
-   * Create a new {@link VaultConfigSource}.
-   *  @param vault vault invoker.
-   * @param secretsPaths secret path-s.
-   */
   private VaultConfigSource(VaultInvoker vault, List<String> secretsPaths) {
     this.vault = vault;
-    this.secretsPath = secretsPaths;
+    this.secretsPaths = new ArrayList<>(secretsPaths);
   }
 
   @Override
   public Map<String, ConfigProperty> loadConfig() {
     Map<String, ConfigProperty> result = new HashMap<>();
-    for (String path : secretsPath) {
+    for (String path : secretsPaths) {
       try {
         LogicalResponse response = vault.invoke(vault -> vault.logical().read(path));
-        final Map<String, LoadedConfigProperty> pathProps = response.getData().entrySet().stream()
-            .map(LoadedConfigProperty::withNameAndValue)
-            .map(LoadedConfigProperty.Builder::build)
-            .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
+        final Map<String, LoadedConfigProperty> pathProps =
+            response.getData().entrySet().stream()
+                .map(LoadedConfigProperty::withNameAndValue)
+                .map(LoadedConfigProperty.Builder::build)
+                .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
         result.putAll(pathProps);
       } catch (Exception ex) {
-        LOGGER.warn("unable to load config properties from {}",path, ex);
+        LOGGER.warn("Unable to load config properties from {}", path, ex);
         throw new ConfigSourceNotAvailableException(ex);
       }
     }
     return result;
   }
 
-  /**
-   * This builder method is used internally for test purposes. please use it only for tests. Please
-   * note the following required environment variables are required.
-   *
-   * <ul>
-   *   <li><code>VAULT_SECRETS_PATH</code> is the path to use (defaults to <code>secret</code>)
-   *   <li><code>VAULT_TOKEN</code> is the {@link VaultConfig#token(String) token} to use
-   *   <li><code>VAULT_ADDR</code> is the {@link VaultConfig#address(String) address} of the vault
-   *       (API)
-   * </ul>
-   */
   public static Builder builder() {
     return new Builder();
   }
 
-  /**
-   * This builder method is used internally for test purposes. please use it only for tests
-   *
-   * @param environmentLoader an {@link EnvironmentLoader}
-   */
-  static Builder builder(EnvironmentLoader environmentLoader) {
-    final Builder builder = new Builder();
-    if (environmentLoader != null) {
-      builder.environmentLoader = environmentLoader;
-    }
-    return builder;
-  }
-
   public static final class Builder {
 
-    private Function<VaultInvoker.Builder, VaultInvoker.Builder> vault = Function.identity();
+    private Function<VaultInvoker.Builder, VaultInvoker.Builder> builderFunction = b -> b;
+
     private VaultInvoker invoker;
-    private EnvironmentLoader environmentLoader = VaultInvoker.Builder.ENVIRONMENT_LOADER;
-    private List<String> secretsPaths = new ArrayList<>();
+
+    private List<String> secretsPaths =
+        Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_SECRETS_PATH"))
+            .or(() -> Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_SECRETS_PATHS")))
+            .map(s -> s.split(PATHS_SEPARATOR))
+            .map(Arrays::asList)
+            .orElseGet(ArrayList::new);
 
     private Builder() {}
 
+    /**
+     * Appends {@code secretsPath} to {@code secretsPaths}.
+     *
+     * @param secretsPath secretsPath (may contain value with paths separated by {@code :})
+     * @return this builder
+     * @deprecated will be removed in future releases without notice, use {@link
+     *     #addSecretsPath(String...)} or {@link #secretsPaths(Collection)}.
+     */
+    @Deprecated
     public Builder secretsPath(String secretsPath) {
-      this.secretsPaths.add(secretsPath);
+      this.secretsPaths.addAll(toSecretsPaths(Collections.singletonList(secretsPath)));
       return this;
+    }
+
+    /**
+     * Appends one or several secretsPath\es to {@code secretsPaths}.
+     *
+     * @param secretsPath one or several secretsPath\es (each value may contain paths separated by
+     *     {@code :})
+     * @return this builder
+     */
+    public Builder addSecretsPath(String... secretsPath) {
+      this.secretsPaths.addAll(toSecretsPaths(Arrays.asList(secretsPath)));
+      return this;
+    }
+
+    /**
+     * Setter for {@code secretsPaths}.
+     *
+     * @param secretsPaths collection of secretsPath\es (each value may contain paths separated by
+     *     {@code :})
+     * @return this builder
+     */
+    public Builder secretsPaths(Collection<String> secretsPaths) {
+      this.secretsPaths = toSecretsPaths(secretsPaths);
+      return this;
+    }
+
+    private static List<String> toSecretsPaths(Collection<String> secretsPaths) {
+      return secretsPaths.stream()
+          .flatMap(s -> Arrays.stream(s.split(PATHS_SEPARATOR)))
+          .distinct()
+          .collect(Collectors.toList());
     }
 
     public Builder invoker(VaultInvoker invoker) {
@@ -110,17 +132,17 @@ public class VaultConfigSource implements ConfigSource {
     }
 
     public Builder vault(UnaryOperator<VaultInvoker.Builder> config) {
-      this.vault = this.vault.andThen(config);
+      this.builderFunction = this.builderFunction.andThen(config);
       return this;
     }
 
     public Builder config(UnaryOperator<VaultConfig> vaultConfig) {
-      this.vault = this.vault.andThen(c -> c.options(vaultConfig));
+      this.builderFunction = this.builderFunction.andThen(c -> c.options(vaultConfig));
       return this;
     }
 
     public Builder tokenSupplier(VaultTokenSupplier supplier) {
-      this.vault = this.vault.andThen(c -> c.tokenSupplier(supplier));
+      this.builderFunction = this.builderFunction.andThen(c -> c.tokenSupplier(supplier));
       return this;
     }
 
@@ -130,17 +152,9 @@ public class VaultConfigSource implements ConfigSource {
      * @return instance of {@link VaultConfigSource}
      */
     public VaultConfigSource build() {
-      VaultInvoker vaultInvoker =
-          invoker != null
-              ? invoker
-              : vault.apply(new VaultInvoker.Builder(environmentLoader)).build();
-      if (secretsPaths.isEmpty()) {
-        String envSecretPath = Objects
-            .requireNonNull(environmentLoader.loadVariable(VAULT_SECRETS_PATH),
-                "Missing secretsPath");
-        secretsPaths = Arrays.asList(envSecretPath.split(":"));
-      }
-      return new VaultConfigSource(vaultInvoker, secretsPaths);
+      return new VaultConfigSource(
+          invoker != null ? invoker : builderFunction.apply(new VaultInvoker.Builder()).build(),
+          secretsPaths);
     }
   }
 }

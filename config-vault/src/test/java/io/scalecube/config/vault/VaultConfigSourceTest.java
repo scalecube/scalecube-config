@@ -13,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import com.bettercloud.vault.EnvironmentLoader;
 import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultException;
 import io.scalecube.config.ConfigProperty;
@@ -21,7 +20,6 @@ import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.StringConfigProperty;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -33,9 +31,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class VaultConfigSourceTest {
-
-  /** the environment variable name for vault secret path */
-  private static final String VAULT_SECRETS_PATH = "VAULT_SECRETS_PATH";
 
   // these 3 are actual values we would like to test with
   private static final String VAULT_SECRETS_PATH1 = "secret/application/tenant1";
@@ -55,20 +50,15 @@ class VaultConfigSourceTest {
     vaultInstance.putSecrets(VAULT_SECRETS_PATH3, "secret=password", "password=dbpassword");
   }
 
-  private EnvironmentLoader baseLoader =
-      new MockEnvironmentLoader()
-          .put("VAULT_TOKEN", vaultContainerExtension.vaultInstance().rootToken())
-          .put("VAULT_ADDR", vaultContainerExtension.vaultInstance().address());
-  private EnvironmentLoader loader1 =
-      new MockEnvironmentLoader(baseLoader).put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH1);
-  private EnvironmentLoader loader2 =
-      new MockEnvironmentLoader(baseLoader).put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH2);
-  private EnvironmentLoader loader3 =
-      new MockEnvironmentLoader(baseLoader).put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH3);
-
   @Test
   void testFirstTenant() {
-    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader1).build();
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH1)
+            .build();
+
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     ConfigProperty actual = loadConfig.get("top_secret");
 
@@ -79,7 +69,13 @@ class VaultConfigSourceTest {
 
   @Test
   void testSecondTenant() {
-    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader2).build();
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH2)
+            .build();
+
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     ConfigProperty actual = loadConfig.get("top_secret");
 
@@ -90,32 +86,45 @@ class VaultConfigSourceTest {
 
   @Test
   void testMultiplePathsEnv() {
-    String commonPath = VAULT_SECRETS_PATH1 + ":" + VAULT_SECRETS_PATH2;
-    EnvironmentLoader multiLoader =
-        new MockEnvironmentLoader(baseLoader).put(VAULT_SECRETS_PATH, commonPath);
-    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(multiLoader).build();
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH1 + ":" + VAULT_SECRETS_PATH2)
+            .build();
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
 
     ConfigProperty commonSecret = loadConfig.get("top_secret");
     assertThat(commonSecret, notNullValue());
     assertThat(commonSecret.name(), equalTo("top_secret"));
-    assertThat("Second path should override the first one", commonSecret.valueAsString(""),
+    assertThat(
+        "Second path should override the first one",
+        commonSecret.valueAsString(""),
         equalTo("password2"));
 
     ConfigProperty fromFirstPath = loadConfig.get("only_first");
     assertThat(fromFirstPath.name(), equalTo("only_first"));
-    assertThat("Secret defined only in first path expected", fromFirstPath.valueAsString(""),
+    assertThat(
+        "Secret defined only in first path expected",
+        fromFirstPath.valueAsString(""),
         equalTo("pss1"));
 
     ConfigProperty fromSecondPath = loadConfig.get("only_second");
     assertThat(fromSecondPath.name(), equalTo("only_second"));
-    assertThat("Secret defined only in second path expected", fromSecondPath.valueAsString(""),
+    assertThat(
+        "Secret defined only in second path expected",
+        fromSecondPath.valueAsString(""),
         equalTo("pss2"));
   }
 
   @Test
   void testMissingProperty() {
-    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader3).build();
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH3)
+            .build();
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
 
     assertThat(loadConfig.size(), not(0));
@@ -126,9 +135,12 @@ class VaultConfigSourceTest {
 
   @Test
   void testMissingTenant() {
-    EnvironmentLoader loader4 =
-        new MockEnvironmentLoader(baseLoader).put(VAULT_SECRETS_PATH, "secrets/unknown/path");
-    VaultConfigSource vaultConfigSource = VaultConfigSource.builder(loader4).build();
+    VaultConfigSource vaultConfigSource =
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath("secrets/unknown/path")
+            .build();
 
     assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
   }
@@ -136,11 +148,10 @@ class VaultConfigSourceTest {
   @Test
   void testInvalidAddress() {
     VaultConfigSource vaultConfigSource =
-        VaultConfigSource.builder(
-                new MockEnvironmentLoader()
-                    .put("VAULT_ADDR", "http://invalid.host.local:8200")
-                    .put("VAULT_TOKEN", vaultContainerExtension.vaultInstance().rootToken())
-                    .put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH1))
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address("http://invalid.host.local:8200"))
+            .addSecretsPath(VAULT_SECRETS_PATH1)
             .build();
 
     assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
@@ -149,10 +160,10 @@ class VaultConfigSourceTest {
   @Test
   void testInvalidToken() {
     VaultConfigSource vaultConfigSource =
-        VaultConfigSource.builder(
-                new MockEnvironmentLoader(baseLoader)
-                    .put("VAULT_TOKEN", "zzzzzz")
-                    .put(VAULT_SECRETS_PATH, "secrets/unknown/path"))
+        VaultConfigSource.builder()
+            .config(c -> c.token("zzzzzz"))
+            .config(c -> c.address("http://invalid.host.local:8200"))
+            .addSecretsPath("secrets/unknown/path")
             .build();
 
     assertThrows(ConfigSourceNotAvailableException.class, vaultConfigSource::loadConfig);
@@ -172,7 +183,7 @@ class VaultConfigSourceTest {
                 "vault",
                 VaultConfigSource.builder()
                     .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
-                    .secretsPath(VAULT_SECRETS_PATH1)
+                    .addSecretsPath(VAULT_SECRETS_PATH1)
                     .build())
             .jmxEnabled(false)
             .reloadIntervalSec(1)
@@ -206,7 +217,7 @@ class VaultConfigSourceTest {
                 "vault",
                 VaultConfigSource.builder()
                     .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
-                    .secretsPath(VAULT_SECRETS_PATH1)
+                    .addSecretsPath(VAULT_SECRETS_PATH1)
                     .build())
             .jmxEnabled(false)
             .reloadIntervalSec(1)
@@ -236,12 +247,12 @@ class VaultConfigSourceTest {
       vault.seal().seal();
       assumeTrue(vault.seal().sealStatus().getSealed(), "vault seal status");
 
-      Map<String, String> clientEnv = new HashMap<>();
-      clientEnv.put("VAULT_TOKEN", "ROOT");
-      clientEnv.put("VAULT_ADDR", vaultInstance.address());
-      clientEnv.put(VAULT_SECRETS_PATH, VAULT_SECRETS_PATH1);
-
-      VaultConfigSource.builder(new MockEnvironmentLoader(clientEnv)).build().loadConfig();
+      VaultConfigSource.builder()
+          .config(c -> c.token("ROOT"))
+          .config(c -> c.address(vaultInstance.address()))
+          .addSecretsPath(VAULT_SECRETS_PATH1)
+          .build()
+          .loadConfig();
       fail("Negative test failed");
     } catch (ConfigSourceNotAvailableException expectedException) {
       assertThat(expectedException.getCause(), instanceOf(VaultException.class));
@@ -311,8 +322,11 @@ class VaultConfigSourceTest {
             .getAuthClientToken();
 
     VaultConfigSource vaultConfigSource =
-        VaultConfigSource.builder(loader1)
-            .tokenSupplier((environmentLoader, config) -> token)
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH1)
+            .tokenSupplier((config) -> token)
             .build();
 
     for (int i = 0; i < 10; i++) {
@@ -336,8 +350,11 @@ class VaultConfigSourceTest {
             .getAuthClientToken();
 
     VaultConfigSource vaultConfigSource =
-        VaultConfigSource.builder(loader1)
-            .tokenSupplier((environmentLoader, config) -> token)
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH1)
+            .tokenSupplier((config) -> token)
             .build();
 
     LongAdder times = new LongAdder();
@@ -371,8 +388,11 @@ class VaultConfigSourceTest {
             .getAuthClientToken();
 
     VaultConfigSource vaultConfigSource =
-        VaultConfigSource.builder(loader1)
-            .tokenSupplier((environmentLoader, config) -> token)
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH1)
+            .tokenSupplier((config) -> token)
             .build();
 
     LongAdder times = new LongAdder();
@@ -406,8 +426,11 @@ class VaultConfigSourceTest {
             .getAuthClientToken();
 
     VaultConfigSource vaultConfigSource =
-        VaultConfigSource.builder(loader1)
-            .tokenSupplier((environmentLoader, config) -> token)
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH1)
+            .tokenSupplier((config) -> token)
             .build();
 
     assertThrows(
@@ -429,9 +452,12 @@ class VaultConfigSourceTest {
   @Test
   void testTokenSupplierGeneratesNewRenewableTokenWithExplicitMaxTtl() throws Exception {
     VaultConfigSource vaultConfigSource =
-        VaultConfigSource.builder(loader1)
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH1)
             .tokenSupplier(
-                (environmentLoader, config) ->
+                (config) ->
                     vaultContainerExtension
                         .vaultInstance()
                         .createToken("-period=3s -renewable=true -explicit-max-ttl=6s")
@@ -459,8 +485,11 @@ class VaultConfigSourceTest {
             .getAuthClientToken();
 
     VaultConfigSource vaultConfigSource =
-        VaultConfigSource.builder(loader1)
-            .tokenSupplier((environmentLoader, config) -> token)
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH1)
+            .tokenSupplier((config) -> token)
             .build();
 
     assertThrows(
@@ -489,9 +518,12 @@ class VaultConfigSourceTest {
   void testTokenSupplierGeneratesNewRenewableTokenWhichWillBeRevoked() throws Exception {
     AtomicReference<String> tokenRef = new AtomicReference<>();
     VaultConfigSource vaultConfigSource =
-        VaultConfigSource.builder(loader1)
+        VaultConfigSource.builder()
+            .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
+            .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
+            .addSecretsPath(VAULT_SECRETS_PATH1)
             .tokenSupplier(
-                (environmentLoader, config) -> {
+                (config) -> {
                   String token =
                       vaultContainerExtension
                           .vaultInstance()
@@ -517,37 +549,6 @@ class VaultConfigSourceTest {
             .vaultInstance()
             .execInContainer("vault token revoke " + tokenRef.get());
       }
-    }
-  }
-
-  private static class MockEnvironmentLoader extends EnvironmentLoader {
-    private final Map<String, String> env;
-
-    MockEnvironmentLoader() {
-      this(Collections.emptyMap());
-    }
-
-    MockEnvironmentLoader(EnvironmentLoader loader) {
-      this(((MockEnvironmentLoader) loader).env);
-    }
-
-    MockEnvironmentLoader(Map<String, String> base) {
-      this.env = new HashMap<>(base);
-    }
-
-    MockEnvironmentLoader put(String key, String value) {
-      env.put(key, value);
-      return this;
-    }
-
-    @Override
-    public String loadVariable(String name) {
-      return env.get(name);
-    }
-
-    @Override
-    public String toString() {
-      return "MockEnvironmentLoader{" + "env=" + env + '}';
     }
   }
 }

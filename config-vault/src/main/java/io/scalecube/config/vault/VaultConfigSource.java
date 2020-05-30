@@ -32,6 +32,8 @@ public class VaultConfigSource implements ConfigSource {
 
   private static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
 
+  private static final String PATHS_SEPARATOR = ":";
+
   private final VaultInvoker vault;
   private final List<String> secretsPaths;
 
@@ -73,13 +75,17 @@ public class VaultConfigSource implements ConfigSource {
     private List<String> secretsPaths =
         Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_SECRETS_PATH"))
             .or(() -> Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_SECRETS_PATHS")))
-            .map(s -> s.split(":"))
+            .map(s -> s.split(PATHS_SEPARATOR))
             .map(Arrays::asList)
             .orElseGet(ArrayList::new);
 
     private Builder() {}
 
     /**
+     * Appends {@code secretsPath} to {@code secretsPaths}.
+     *
+     * @param secretsPath secretsPath (may contain value with paths separated by {@code :})
+     * @return this builder
      * @deprecated will be removed in future releases without notice, use {@link
      *     #addSecretsPath(String...)} or {@link #secretsPaths(Collection)}.
      */
@@ -89,11 +95,25 @@ public class VaultConfigSource implements ConfigSource {
       return this;
     }
 
+    /**
+     * Appends one or several secretsPath\es to {@code secretsPaths}.
+     *
+     * @param secretsPath one or several secretsPath\es (each value may contain paths separated by
+     *     {@code :})
+     * @return this builder
+     */
     public Builder addSecretsPath(String... secretsPath) {
       this.secretsPaths.addAll(toSecretsPaths(Arrays.asList(secretsPath)));
       return this;
     }
 
+    /**
+     * Setter for {@code secretsPaths}.
+     *
+     * @param secretsPaths collection of secretsPath\es (each value may contain paths separated by
+     *     {@code :})
+     * @return this builder
+     */
     public Builder secretsPaths(Collection<String> secretsPaths) {
       this.secretsPaths = toSecretsPaths(secretsPaths);
       return this;
@@ -101,7 +121,7 @@ public class VaultConfigSource implements ConfigSource {
 
     private static List<String> toSecretsPaths(Collection<String> secretsPaths) {
       return secretsPaths.stream()
-          .flatMap(s -> Arrays.stream(s.split(":")))
+          .flatMap(s -> Arrays.stream(s.split(PATHS_SEPARATOR)))
           .distinct()
           .collect(Collectors.toList());
     }

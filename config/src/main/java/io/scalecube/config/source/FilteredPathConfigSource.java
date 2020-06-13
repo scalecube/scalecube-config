@@ -3,7 +3,6 @@ package io.scalecube.config.source;
 import io.scalecube.config.utils.ThrowableUtil;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -16,8 +15,12 @@ import java.util.Properties;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class FilteredPathConfigSource implements ConfigSource {
+
+  private static final String FILENAME_PATTERN = "(?<prefix>^%s.*)\\.(?<suffix>%s$)";
+
   protected final List<Predicate<Path>> predicates;
 
   protected FilteredPathConfigSource(List<Predicate<Path>> predicates) {
@@ -31,17 +34,16 @@ public abstract class FilteredPathConfigSource implements ConfigSource {
         .collect(Collectors.toMap(path -> path, FilteredPathConfigSource::loadProperties));
   }
 
-  static List<Predicate<Path>> preparePatternPredicates(String filename, List<String> prefixes) {
-    final List<String> finalPrefixes = new ArrayList<>(prefixes);
-    finalPrefixes.add(null); // add last one as null
+  static List<Predicate<Path>> preparePatternPredicates(
+      String filename, List<String> prefixPatterns) {
 
-    return finalPrefixes.stream()
-        .<Predicate<Path>>map(
-            p ->
-                (Path path) -> {
-                  String name = path.getFileName().toString();
-                  return name.equals(p != null ? p + "." + filename : filename);
-                })
+    return Stream.concat(
+            prefixPatterns.stream()
+                .<Predicate<Path>>map(
+                    prefixPattern ->
+                        path -> preparePatternPredicate(path, prefixPattern, filename)),
+            // exact filename (without prefix pattern) equality goes latest
+            Stream.of(path -> preparePatternPredicate(path, filename)))
         .collect(Collectors.toList());
   }
 
@@ -84,5 +86,15 @@ public abstract class FilteredPathConfigSource implements ConfigSource {
       map.put(key, properties.getProperty(key));
     }
     return map;
+  }
+
+  private static boolean preparePatternPredicate(Path path, String filename) {
+    return path.getFileName().toString().equals(filename);
+  }
+
+  private static boolean preparePatternPredicate(Path path, String prefixPattern, String filename) {
+    return path.getFileName()
+        .toString()
+        .matches(String.format(FILENAME_PATTERN, prefixPattern, filename));
   }
 }

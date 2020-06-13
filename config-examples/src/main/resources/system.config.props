@@ -1,2 +1,2 @@
-sys.foo=very cool custom system property
-baz=custom baz
+sys.foo=this is sys.foo
+baz=this is baz

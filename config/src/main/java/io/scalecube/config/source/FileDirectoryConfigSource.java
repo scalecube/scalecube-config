@@ -44,19 +44,34 @@ public final class FileDirectoryConfigSource extends FilteredPathConfigSource {
 
   /**
    * Factory method to create {@code FileDirectoryConfigSource} instance using filename plus its
-   * prefixes.
+   * prefixPatterns.
    *
    * @param directory directory with configuration files
    * @param filename filename for template of configuration property file
-   * @param prefixes list of prefixes (comma separated list of strings)
+   * @param prefixPattern pattern of prefix
    * @return new {@code FileDirectoryConfigSource} instance
    */
   public static FileDirectoryConfigSource createWithPattern(
-      String directory, String filename, List<String> prefixes) {
+      String directory, String filename, String prefixPattern) {
+    return createWithPattern(directory, filename, Collections.singletonList(prefixPattern));
+  }
+
+  /**
+   * Factory method to create {@code FileDirectoryConfigSource} instance using filename plus its
+   * prefixPatterns.
+   *
+   * @param directory directory with configuration files
+   * @param filename filename for template of configuration property file
+   * @param prefixPatterns list of prefixPatterns (comma separated list of strings)
+   * @return new {@code FileDirectoryConfigSource} instance
+   */
+  public static FileDirectoryConfigSource createWithPattern(
+      String directory, String filename, List<String> prefixPatterns) {
     Objects.requireNonNull(directory, "FileDirectoryConfigSource: directory is required");
     Objects.requireNonNull(filename, "FileDirectoryConfigSource: filename is required");
-    Objects.requireNonNull(prefixes, "FileDirectoryConfigSource: prefixes is required");
-    return new FileDirectoryConfigSource(directory, preparePatternPredicates(filename, prefixes));
+    Objects.requireNonNull(prefixPatterns, "FileDirectoryConfigSource: prefixPatterns is required");
+    return new FileDirectoryConfigSource(
+        directory, preparePatternPredicates(filename, prefixPatterns));
   }
 
   @Override

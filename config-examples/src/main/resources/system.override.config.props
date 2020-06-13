@@ -1,0 +1,2 @@
+sys.foo=this is sys.foo from override
+baz=this is baz from override

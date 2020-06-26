@@ -5,7 +5,7 @@ import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.source.ClassPathConfigSource;
 import io.scalecube.config.source.SystemPropertiesConfigSource;
-import java.util.List;
+import java.util.Arrays;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class PredicateShortcutsConfigExample {
@@ -29,11 +29,11 @@ public class PredicateShortcutsConfigExample {
                     "system.from.file",
                     new SystemPropertiesConfigSource(
                         ClassPathConfigSource.createWithPattern(
-                            filename, List.of("system.override", "system"))))
+                            filename, Arrays.asList("system.override", "system"))))
                 .addLastSource(
                     "classpath",
                     ClassPathConfigSource.createWithPattern(
-                        filename, List.of("order.override", "order")))
+                        filename, Arrays.asList("order.override", "order")))
                 .build());
 
     StringConfigProperty orderedProp1 = configRegistry.stringProperty("orderedProp1");

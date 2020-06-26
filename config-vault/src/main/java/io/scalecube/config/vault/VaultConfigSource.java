@@ -73,8 +73,9 @@ public class VaultConfigSource implements ConfigSource {
     private VaultInvoker invoker;
 
     private List<String> secretsPaths =
-        Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_SECRETS_PATH"))
-            .or(() -> Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_SECRETS_PATHS")))
+        Optional.ofNullable(
+                Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_SECRETS_PATH"))
+                    .orElse(ENVIRONMENT_LOADER.loadVariable("VAULT_SECRETS_PATHS")))
             .map(s -> s.split(PATHS_SEPARATOR))
             .map(Arrays::asList)
             .orElseGet(ArrayList::new);

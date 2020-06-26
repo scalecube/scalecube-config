@@ -30,17 +30,17 @@ public class VaultInvoker {
 
   private static final long MIN_REFRESH_MARGIN = TimeUnit.MINUTES.toSeconds(10);
 
-  private final Builder config;
+  private final Builder builder;
 
   private Vault vault;
   private Timer timer;
 
   public static Builder builder() {
-    return new Builder(Builder.ENVIRONMENT_LOADER);
+    return new Builder();
   }
 
-  private VaultInvoker(Builder config) {
-    this.config = config;
+  private VaultInvoker(Builder builder) {
+    this.builder = builder;
   }
 
   /**
@@ -81,12 +81,11 @@ public class VaultInvoker {
       vault = null;
 
       VaultConfig vaultConfig =
-          config
+          builder
               .options
-              .apply(new VaultConfig())
-              .environmentLoader(config.environmentLoader)
+              .apply(new VaultConfig().environmentLoader(new EnvironmentLoader()))
               .build();
-      String token = config.tokenSupplier.getToken(config.environmentLoader, vaultConfig);
+      String token = builder.tokenSupplier.getToken(vaultConfig);
       Vault vault = new Vault(vaultConfig.token(token));
       checkVault(vault);
       LookupResponse lookupSelf = vault.auth().lookupSelf();
@@ -211,23 +210,9 @@ public class VaultInvoker {
   }
 
   public static class Builder {
-    public static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
-    public static final VaultTokenSupplier TOKEN_SUPPLIER = new EnvironmentVaultTokenSupplier();
 
     private Function<VaultConfig, VaultConfig> options = Function.identity();
-    private VaultTokenSupplier tokenSupplier = TOKEN_SUPPLIER;
-    private EnvironmentLoader environmentLoader = ENVIRONMENT_LOADER;
-
-    /**
-     * This builder method is used internally for test purposes. please use it only for tests
-     *
-     * @param environmentLoader an {@link EnvironmentLoader}
-     */
-    Builder(EnvironmentLoader environmentLoader) {
-      if (environmentLoader != null) {
-        this.environmentLoader = environmentLoader;
-      }
-    }
+    private VaultTokenSupplier tokenSupplier = new EnvironmentVaultTokenSupplier();
 
     public Builder options(UnaryOperator<VaultConfig> config) {
       this.options = this.options.andThen(config);
@@ -245,7 +230,7 @@ public class VaultInvoker {
      * @return instance of {@link VaultInvoker}
      */
     public VaultInvoker build() {
-      Builder builder = new Builder(environmentLoader);
+      Builder builder = new Builder();
       builder.options = options;
       builder.tokenSupplier = tokenSupplier;
       return new VaultInvoker(builder);

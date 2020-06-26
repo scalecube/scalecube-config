@@ -12,22 +12,45 @@ import java.util.stream.Collectors;
 
 public class KubernetesVaultTokenSupplier implements VaultTokenSupplier {
 
-  private static final String VAULT_ROLE = "VAULT_ROLE";
-  private static final String VAULT_JWT_PROVIDER = "VAULT_JWT_PROVIDER";
-  private static final String DEFAULT_JWT_PROVIDER = "kubernetes";
-  private static final String SERVICE_ACCOUNT_TOKEN_PATH =
-      "/var/run/secrets/kubernetes.io/serviceaccount/token";
+  private static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
+
+  private String vaultRole = ENVIRONMENT_LOADER.loadVariable("VAULT_ROLE");
+
+  private String vaultJwtProvider =
+      Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_JWT_PROVIDER"))
+          .orElse("kubernetes");
+
+  private String serviceAccountTokenPath =
+      Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("SERVICE_ACCOUNT_TOKEN_PATH"))
+          .orElse("/var/run/secrets/kubernetes.io/serviceaccount/token");
+
+  public KubernetesVaultTokenSupplier vaultRole(String vaultRole) {
+    this.vaultRole = vaultRole;
+    return this;
+  }
+
+  public KubernetesVaultTokenSupplier vaultJwtProvider(String vaultJwtProvider) {
+    this.vaultJwtProvider = vaultJwtProvider;
+    return this;
+  }
+
+  public KubernetesVaultTokenSupplier serviceAccountTokenPath(String serviceAccountTokenPath) {
+    this.serviceAccountTokenPath = serviceAccountTokenPath;
+    return this;
+  }
 
   @Override
-  public String getToken(EnvironmentLoader environmentLoader, VaultConfig config) {
-    String role = Objects.requireNonNull(environmentLoader.loadVariable(VAULT_ROLE), "vault role");
+  public String getToken(VaultConfig config) {
+    Objects.requireNonNull(vaultRole, "vault role");
+    Objects.requireNonNull(vaultJwtProvider, "jwt provider");
+    Objects.requireNonNull(serviceAccountTokenPath, "k8s service account token path");
     try {
-      String jwt = Files.lines(Paths.get(SERVICE_ACCOUNT_TOKEN_PATH)).collect(Collectors.joining());
-      String provider =
-          Optional.ofNullable(environmentLoader.loadVariable(VAULT_JWT_PROVIDER))
-              .orElse(DEFAULT_JWT_PROVIDER);
+      String jwt = Files.lines(Paths.get(serviceAccountTokenPath)).collect(Collectors.joining());
       return Objects.requireNonNull(
-          new Vault(config).auth().loginByJwt(provider, role, jwt).getAuthClientToken(),
+          new Vault(config)
+              .auth()
+              .loginByJwt(vaultJwtProvider, vaultRole, jwt)
+              .getAuthClientToken(),
           "vault token");
     } catch (Exception e) {
       throw ThrowableUtil.propagate(e);

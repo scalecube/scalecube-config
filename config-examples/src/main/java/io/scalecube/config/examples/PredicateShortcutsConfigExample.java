@@ -5,8 +5,7 @@ import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.source.ClassPathConfigSource;
 import io.scalecube.config.source.SystemPropertiesConfigSource;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Arrays;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class PredicateShortcutsConfigExample {
@@ -30,11 +29,11 @@ public class PredicateShortcutsConfigExample {
                     "system.from.file",
                     new SystemPropertiesConfigSource(
                         ClassPathConfigSource.createWithPattern(
-                            filename, Stream.of("system").collect(Collectors.toList()))))
+                            filename, Arrays.asList("system.override", "system"))))
                 .addLastSource(
                     "classpath",
                     ClassPathConfigSource.createWithPattern(
-                        filename, Stream.of("order1", "order2").collect(Collectors.toList())))
+                        filename, Arrays.asList("order.override", "order")))
                 .build());
 
     StringConfigProperty orderedProp1 = configRegistry.stringProperty("orderedProp1");
@@ -45,8 +44,7 @@ public class PredicateShortcutsConfigExample {
 
     System.out.println(
         "### Matched by first predicate: orderedProp1=" + orderedProp1.value().get());
-    System.out.println(
-        "### Regardeless of predicates: foo=" + foo + ", bar=" + bar + ", baz=" + baz);
+    System.out.println("### By predicates: foo=" + foo + ", bar=" + bar + ", baz=" + baz);
     System.out.println(
         "### Custom system property: sysFoo="
             + sysFoo

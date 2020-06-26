@@ -60,16 +60,29 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
 
   /**
    * Factory method to create {@code ClassPathConfigSource} instance using filename plus its
-   * prefixes.
+   * prefixPatterns.
    *
    * @param filename filename for template of configuration property file
-   * @param prefixes list of prefixes (comma separated list of strings)
+   * @param prefixPattern pattern of prefix
    * @return new {@code ClassPathConfigSource} instance
    */
-  public static ClassPathConfigSource createWithPattern(String filename, List<String> prefixes) {
+  public static ClassPathConfigSource createWithPattern(String filename, String prefixPattern) {
+    return createWithPattern(filename, Collections.singletonList(prefixPattern));
+  }
+
+  /**
+   * Factory method to create {@code ClassPathConfigSource} instance using filename plus its
+   * prefixPatterns.
+   *
+   * @param filename filename for template of configuration property file
+   * @param prefixPatterns list of prefixPatterns (comma separated list of strings)
+   * @return new {@code ClassPathConfigSource} instance
+   */
+  public static ClassPathConfigSource createWithPattern(
+      String filename, List<String> prefixPatterns) {
     Objects.requireNonNull(filename, "ClassPathConfigSource: filename is required");
-    Objects.requireNonNull(prefixes, "ClassPathConfigSource: prefixes is required");
-    return new ClassPathConfigSource(preparePatternPredicates(filename, prefixes));
+    Objects.requireNonNull(prefixPatterns, "ClassPathConfigSource: prefixPatterns is required");
+    return new ClassPathConfigSource(preparePatternPredicates(filename, prefixPatterns));
   }
 
   @Override

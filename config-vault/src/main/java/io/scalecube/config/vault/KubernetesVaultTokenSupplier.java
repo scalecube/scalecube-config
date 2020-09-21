@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class KubernetesVaultTokenSupplier implements VaultTokenSupplier {
 
@@ -44,8 +45,8 @@ public class KubernetesVaultTokenSupplier implements VaultTokenSupplier {
     Objects.requireNonNull(vaultRole, "vault role");
     Objects.requireNonNull(vaultJwtProvider, "jwt provider");
     Objects.requireNonNull(serviceAccountTokenPath, "k8s service account token path");
-    try {
-      String jwt = Files.lines(Paths.get(serviceAccountTokenPath)).collect(Collectors.joining());
+    try (Stream<String> stream = Files.lines(Paths.get(serviceAccountTokenPath))) {
+      String jwt = stream.collect(Collectors.joining());
       return Objects.requireNonNull(
           new Vault(config)
               .auth()

@@ -90,17 +90,19 @@ final class ConfigRegistryImpl implements ConfigRegistry {
   void init() {
     loadAndNotify();
 
-    reloadExecutor.scheduleAtFixedRate(
-        () -> {
-          try {
-            loadAndNotify();
-          } catch (Exception e) {
-            LOGGER.error("[loadAndNotify] Exception occurred, cause: " + e);
-          }
-        },
-        settings.getReloadIntervalSec(),
-        settings.getReloadIntervalSec(),
-        TimeUnit.SECONDS);
+    if (settings.isReloadEnabled()) {
+      reloadExecutor.scheduleAtFixedRate(
+          () -> {
+            try {
+              loadAndNotify();
+            } catch (Exception e) {
+              LOGGER.error("[loadAndNotify] Exception occurred, cause: " + e);
+            }
+          },
+          settings.getReloadIntervalSec(),
+          settings.getReloadIntervalSec(),
+          TimeUnit.SECONDS);
+    }
 
     if (settings.isJmxEnabled()) {
       registerJmxMBean();

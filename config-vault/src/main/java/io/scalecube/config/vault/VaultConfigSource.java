@@ -12,9 +12,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -35,9 +36,9 @@ public class VaultConfigSource implements ConfigSource {
   private static final String PATHS_SEPARATOR = ":";
 
   private final VaultInvoker vault;
-  private final List<String> secretsPaths;
+  private final Collection<String> secretsPaths;
 
-  private VaultConfigSource(VaultInvoker vault, List<String> secretsPaths) {
+  private VaultConfigSource(VaultInvoker vault, Collection<String> secretsPaths) {
     this.vault = vault;
     this.secretsPaths = new ArrayList<>(secretsPaths);
   }
@@ -72,13 +73,14 @@ public class VaultConfigSource implements ConfigSource {
 
     private VaultInvoker invoker;
 
-    private List<String> secretsPaths =
+    private Set<String> secretsPaths =
         Optional.ofNullable(
                 Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_SECRETS_PATH"))
                     .orElse(ENVIRONMENT_LOADER.loadVariable("VAULT_SECRETS_PATHS")))
             .map(s -> s.split(PATHS_SEPARATOR))
             .map(Arrays::asList)
-            .orElseGet(ArrayList::new);
+            .map(HashSet::new)
+            .orElseGet(HashSet::new);
 
     private Builder() {}
 
@@ -120,11 +122,10 @@ public class VaultConfigSource implements ConfigSource {
       return this;
     }
 
-    private static List<String> toSecretsPaths(Collection<String> secretsPaths) {
+    private static Set<String> toSecretsPaths(Collection<String> secretsPaths) {
       return secretsPaths.stream()
           .flatMap(s -> Arrays.stream(s.split(PATHS_SEPARATOR)))
-          .distinct()
-          .collect(Collectors.toList());
+          .collect(Collectors.toSet());
     }
 
     public Builder invoker(VaultInvoker invoker) {

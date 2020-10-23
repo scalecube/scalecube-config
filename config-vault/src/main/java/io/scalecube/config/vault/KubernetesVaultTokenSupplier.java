@@ -18,7 +18,9 @@ public class KubernetesVaultTokenSupplier implements VaultTokenSupplier {
   private String vaultRole = ENVIRONMENT_LOADER.loadVariable("VAULT_ROLE");
 
   private String vaultJwtProvider =
-      Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_JWT_PROVIDER"))
+      Optional.ofNullable(
+              Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_JWT_PROVIDER"))
+                  .orElse(ENVIRONMENT_LOADER.loadVariable("VAULT_MOUNT_POINT")))
           .orElse("kubernetes");
 
   private String serviceAccountTokenPath =

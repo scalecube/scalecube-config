@@ -11,6 +11,7 @@ import com.bettercloud.vault.rest.RestResponse;
 import io.scalecube.config.utils.ThrowableUtil;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -211,7 +212,15 @@ public class VaultInvoker {
 
   public static class Builder {
 
-    private Function<VaultConfig, VaultConfig> options = Function.identity();
+    private static final int OPEN_TIMEOUT_SEC =
+        Optional.ofNullable(System.getenv("VAULT_OPEN_TIMEOUT")).map(Integer::parseInt).orElse(10);
+
+    private static final int READ_TIMEOUT_SEC =
+        Optional.ofNullable(System.getenv("VAULT_READ_TIMEOUT")).map(Integer::parseInt).orElse(10);
+
+    private Function<VaultConfig, VaultConfig> options =
+        config -> config.openTimeout(OPEN_TIMEOUT_SEC).readTimeout(READ_TIMEOUT_SEC);
+
     private VaultTokenSupplier tokenSupplier = new EnvironmentVaultTokenSupplier();
 
     public Builder options(UnaryOperator<VaultConfig> config) {

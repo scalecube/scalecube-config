@@ -23,7 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class is a {@link ConfigSource} implemented for Vault.
+ * This class is an implementation of {@link ConfigSource} for Vault.
  *
  * @see <a href="https://www.vaultproject.io/">Vault Project</a>
  */
@@ -69,7 +69,8 @@ public class VaultConfigSource implements ConfigSource {
 
   public static final class Builder {
 
-    private Function<VaultInvoker.Builder, VaultInvoker.Builder> builderFunction = b -> b;
+    private Function<VaultInvoker.Builder, VaultInvoker.Builder> builderFunction =
+        Function.identity();
 
     private VaultInvoker invoker;
 
@@ -133,18 +134,19 @@ public class VaultConfigSource implements ConfigSource {
       return this;
     }
 
-    public Builder vault(UnaryOperator<VaultInvoker.Builder> config) {
-      this.builderFunction = this.builderFunction.andThen(config);
+    public Builder vault(UnaryOperator<VaultInvoker.Builder> opts) {
+      this.builderFunction = this.builderFunction.andThen(opts);
       return this;
     }
 
     public Builder config(UnaryOperator<VaultConfig> vaultConfig) {
-      this.builderFunction = this.builderFunction.andThen(c -> c.options(vaultConfig));
+      this.builderFunction = this.builderFunction.andThen(builder -> builder.options(vaultConfig));
       return this;
     }
 
     public Builder tokenSupplier(VaultTokenSupplier supplier) {
-      this.builderFunction = this.builderFunction.andThen(c -> c.tokenSupplier(supplier));
+      this.builderFunction =
+          this.builderFunction.andThen(builder -> builder.tokenSupplier(supplier));
       return this;
     }
 

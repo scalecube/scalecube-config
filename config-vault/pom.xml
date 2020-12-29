@@ -12,8 +12,8 @@
 
   <properties>
     <log4j.version>2.13.3</log4j.version>
-    <vault-java-driver.version>5.0.0</vault-java-driver.version>
-    <org.testcontainers.vault.version>1.12.3</org.testcontainers.vault.version>
+    <vault-java-driver.version>5.1.0</vault-java-driver.version>
+    <testcontainers.version>1.12.3</testcontainers.version>
   </properties>
 
   <dependencies>
@@ -30,7 +30,7 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>vault</artifactId>
-      <version>${org.testcontainers.vault.version}</version>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

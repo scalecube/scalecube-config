@@ -115,7 +115,7 @@ public class VaultConfigSource implements ConfigSource {
      * Setter for {@code secretsPaths}.
      *
      * @param secretsPaths collection of secretsPath\es (each value may contain paths separated by
-     *     {@code :})
+     *     colon)
      * @return this builder
      */
     public Builder secretsPaths(Collection<String> secretsPaths) {

@@ -140,13 +140,12 @@ public class VaultConfigSource implements ConfigSource {
     }
 
     public Builder config(UnaryOperator<VaultConfig> vaultConfig) {
-      this.builderFunction = this.builderFunction.andThen(builder -> builder.options(vaultConfig));
+      this.builderFunction = this.builderFunction.andThen(b -> b.options(vaultConfig));
       return this;
     }
 
     public Builder tokenSupplier(VaultTokenSupplier supplier) {
-      this.builderFunction =
-          this.builderFunction.andThen(builder -> builder.tokenSupplier(supplier));
+      this.builderFunction = this.builderFunction.andThen(b -> b.tokenSupplier(supplier));
       return this;
     }
 

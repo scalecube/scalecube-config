@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>scalecube-config-parent</artifactId>
-  <version>0.4.13-SNAPSHOT</version>
+  <version>0.4.13</version>
   <packaging>pom</packaging>
   <name>ScaleCube Config</name>
 
@@ -35,7 +35,7 @@
     <connection>scm:git:https://github.com/scalecube/scalecube-config.git</connection>
     <developerConnection>scm:git:https://github.com/scalecube/scalecube-config.git
     </developerConnection>
-    <tag>HEAD</tag>
+    <tag>release-0.4.13</tag>
   </scm>
 
   <properties>

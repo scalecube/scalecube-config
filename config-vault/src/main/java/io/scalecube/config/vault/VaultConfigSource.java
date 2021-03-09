@@ -2,11 +2,13 @@ package io.scalecube.config.vault;
 
 import com.bettercloud.vault.EnvironmentLoader;
 import com.bettercloud.vault.VaultConfig;
+import com.bettercloud.vault.VaultException;
 import com.bettercloud.vault.response.LogicalResponse;
 import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
+import io.scalecube.config.utils.ThrowableUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -55,8 +57,14 @@ public class VaultConfigSource implements ConfigSource {
                 .map(LoadedConfigProperty.Builder::build)
                 .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
         result.putAll(pathProps);
+      } catch (VaultException e) {
+        if (e.getHttpStatusCode() == 404) {
+          LOGGER.warn("Unable to load config properties from: {}", path);
+        } else {
+          throw ThrowableUtil.propagate(e);
+        }
       } catch (Exception ex) {
-        LOGGER.warn("Unable to load config properties from {}", path, ex);
+        LOGGER.error("Unable to load config properties from: {}, cause:", path, ex);
         throw new ConfigSourceNotAvailableException(ex);
       }
     }

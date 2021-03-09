@@ -13,7 +13,9 @@
   <properties>
     <log4j.version>2.13.3</log4j.version>
     <vault-java-driver.version>5.1.0</vault-java-driver.version>
-    <testcontainers.version>1.12.3</testcontainers.version>
+    <testcontainers.version>1.15.2</testcontainers.version>
+    <!-- TODO: remove explicit version of `jna` once testcontainers fixes dependencies conflict -->
+    <jna.version>5.5.0</jna.version>
   </properties>
 
   <dependencies>
@@ -31,6 +33,12 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>vault</artifactId>
       <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>${jna.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

@@ -32,7 +32,7 @@ public class VaultInstance implements AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VaultInstance.class);
 
-  private static final String VAULT_IMAGE_NAME = "vault:1.2.3";
+  private static final String VAULT_IMAGE_NAME = "vault:1.6.1";
   private static final int VAULT_PORT = 8200;
   private static final AtomicInteger PORT_COUNTER = new AtomicInteger(VAULT_PORT);
   private static final String UNSEAL_KEY_LOG = "Unseal Key: ";

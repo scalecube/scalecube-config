@@ -8,7 +8,7 @@
     <version>0.4.16-SNAPSHOT</version>
   </parent>
 
-  <artifactId>config-vault</artifactId>
+  <artifactId>scalecube-config-vault</artifactId>
 
   <properties>
     <vault-java-driver.version>5.1.0</vault-java-driver.version>
@@ -18,7 +18,7 @@
   <dependencies>
     <dependency>
       <groupId>io.scalecube</groupId>
-      <artifactId>config</artifactId>
+      <artifactId>scalecube-config</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

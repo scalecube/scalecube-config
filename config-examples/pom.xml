@@ -8,7 +8,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>config-examples</artifactId>
+  <artifactId>scalecube-config-examples</artifactId>
 
   <properties>
     <log4j.version>2.13.3</log4j.version>
@@ -17,17 +17,17 @@
   <dependencies>
     <dependency>
       <groupId>io.scalecube</groupId>
-      <artifactId>config</artifactId>
+      <artifactId>scalecube-config</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>io.scalecube</groupId>
-      <artifactId>config-mongo</artifactId>
+      <artifactId>scalecube-config-mongo</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>io.scalecube</groupId>
-      <artifactId>config-http-server</artifactId>
+      <artifactId>scalecube-config-http-server</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

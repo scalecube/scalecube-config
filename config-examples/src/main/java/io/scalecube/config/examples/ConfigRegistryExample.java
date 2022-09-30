@@ -4,7 +4,6 @@ import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.audit.Slf4JConfigEventListener;
-import io.scalecube.config.http.server.ConfigRegistryHttpServer;
 import io.scalecube.config.source.ClassPathConfigSource;
 import io.scalecube.config.source.FileDirectoryConfigSource;
 import java.nio.file.Path;
@@ -37,8 +36,5 @@ public class ConfigRegistryExample {
     StringConfigProperty orderedProp1 = configRegistry.stringProperty("orderedProp1");
 
     System.out.println("### Matched by first predicate orderedProp1=" + orderedProp1.value().get());
-
-    // Start REST HTTP Server
-    ConfigRegistryHttpServer.create(configRegistry, 5050);
   }
 }

@@ -219,7 +219,7 @@ public final class ClassPathConfigSource extends FilteredPathConfigSource {
 
   private static void scanJarFile(JarFile file, Path path, Collection<Path> collector)
       throws IOException {
-    try (FileSystem zipfs = FileSystems.newFileSystem(path, null)) {
+    try (FileSystem zipfs = FileSystems.newFileSystem(path, (ClassLoader) null)) {
       Enumeration<JarEntry> entries = file.entries();
       while (entries.hasMoreElements()) {
         JarEntry entry = entries.nextElement();

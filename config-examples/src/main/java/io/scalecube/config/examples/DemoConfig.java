@@ -4,11 +4,6 @@ import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
 import io.scalecube.config.audit.Slf4JConfigEventListener;
-import io.scalecube.config.http.server.ConfigRegistryHttpServer;
-import io.scalecube.config.keyvalue.KeyValueConfigSource;
-import io.scalecube.config.mongo.MongoConfigConnector;
-import io.scalecube.config.mongo.MongoConfigEventListener;
-import io.scalecube.config.mongo.MongoConfigRepository;
 import io.scalecube.config.source.FileDirectoryConfigSource;
 import java.nio.file.Path;
 import java.util.function.Predicate;
@@ -28,14 +23,6 @@ public class DemoConfig {
     String configSourceCollectionName = "MongoConfigRepository";
     String auditLogCollectionName = "TestConfigurationAuditLog";
 
-    MongoConfigConnector connector = MongoConfigConnector.builder().forUri(uri).build();
-
-    KeyValueConfigSource mongoConfigSource =
-        KeyValueConfigSource.withRepository(
-                new MongoConfigRepository(connector), configSourceCollectionName)
-            .groups("group2", "group1", "root")
-            .build();
-
     // Local resource cfg source init
     Predicate<Path> propsPredicate = path -> path.toString().endsWith(".props");
     String basePath = "config-examples/config";
@@ -46,9 +33,7 @@ public class DemoConfig {
             ConfigRegistrySettings.builder()
                 .addLastSource(
                     "ConfigDirectory", new FileDirectoryConfigSource(basePath, propsPredicate))
-                .addLastSource("MongoConfig", mongoConfigSource)
                 .addListener(new Slf4JConfigEventListener())
-                .addListener(new MongoConfigEventListener(connector, auditLogCollectionName))
                 .keepRecentConfigEvents(10)
                 .reloadIntervalSec(3)
                 .jmxEnabled(true)
@@ -57,9 +42,6 @@ public class DemoConfig {
 
     // Inject cfgReg into target component
     SomeComponent component = new SomeComponent(configRegistry);
-
-    // Start REST HTTP Server
-    ConfigRegistryHttpServer.create(configRegistry, 5050);
   }
 
   static class SomeComponent {

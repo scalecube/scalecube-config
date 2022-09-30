@@ -45,11 +45,11 @@
     <log4j.version>2.17.1</log4j.version>
     <vault-java-driver.version>5.1.0</vault-java-driver.version>
     <testcontainers.version>1.17.4</testcontainers.version>
+    <guava.version>29.0-jre</guava.version>
 
     <checkstyle.skip>false</checkstyle.skip>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <guava.version>29.0-jre</guava.version>
   </properties>
 
   <modules>

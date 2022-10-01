@@ -30,9 +30,9 @@
   </repositories>
 
   <scm>
-    <url>https://github.com/scalecube/${project.artifactId}</url>
-    <connection>scm:git:https://github.com/scalecube/${project.artifactId}.git</connection>
-    <developerConnection>scm:git:https://github.com/scalecube/${project.artifactId}.git
+    <url>https://github.com/scalecube/scalecube-config</url>
+    <connection>scm:git:https://github.com/scalecube/scalecube-config.git</connection>
+    <developerConnection>scm:git:https://github.com/scalecube/scalecube-config.git
     </developerConnection>
     <tag>HEAD</tag>
   </scm>

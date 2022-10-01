@@ -7,7 +7,7 @@
   <parent>
     <groupId>io.scalecube</groupId>
     <artifactId>scalecube-parent</artifactId>
-    <version>0.2.20.RC3</version>
+    <version>0.2.20</version>
   </parent>
 
   <artifactId>scalecube-config-parent</artifactId>

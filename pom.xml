@@ -4,8 +4,8 @@
 
   <parent>
     <groupId>io.scalecube</groupId>
-    <artifactId>scalecube-parent-pom</artifactId>
-    <version>0.2.19</version>
+    <artifactId>scalecube-parent</artifactId>
+    <version>0.2.20.RC1</version>
   </parent>
 
   <artifactId>scalecube-config-parent</artifactId>
@@ -30,9 +30,9 @@
   </repositories>
 
   <scm>
-    <url>https://github.com/scalecube/scalecube-config</url>
-    <connection>scm:git:https://github.com/scalecube/scalecube-config.git</connection>
-    <developerConnection>scm:git:https://github.com/scalecube/scalecube-config.git
+    <url>https://github.com/scalecube/${project.artifactId}</url>
+    <connection>scm:git:https://github.com/scalecube/${project.artifactId}.git</connection>
+    <developerConnection>scm:git:https://github.com/scalecube/${project.artifactId}.git
     </developerConnection>
     <tag>HEAD</tag>
   </scm>
@@ -46,10 +46,6 @@
     <vault-java-driver.version>5.1.0</vault-java-driver.version>
     <testcontainers.version>1.17.4</testcontainers.version>
     <guava.version>29.0-jre</guava.version>
-
-    <checkstyle.skip>false</checkstyle.skip>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
 
   <modules>
@@ -132,45 +128,5 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <profiles>
-    <profile>
-      <id>deploy2Github</id>
-      <distributionManagement>
-        <repository>
-          <id>github</id>
-          <name>GitHub Packages</name>
-          <url>https://maven.pkg.github.com/scalecube/scalecube-config</url>
-        </repository>
-      </distributionManagement>
-    </profile>
-    <profile>
-      <id>deploy2Maven</id>
-      <distributionManagement>
-        <repository>
-          <id>ossrh</id>
-          <name>Central Repository OSSRH</name>
-          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-      </distributionManagement>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-          </plugin>
-          <plugin>
-            <artifactId>maven-source-plugin</artifactId>
-          </plugin>
-          <plugin>
-            <artifactId>maven-javadoc-plugin</artifactId>
-          </plugin>
-          <plugin>
-            <artifactId>maven-gpg-plugin</artifactId>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
 </project>

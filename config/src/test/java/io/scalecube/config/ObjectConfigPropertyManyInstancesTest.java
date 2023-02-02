@@ -29,6 +29,89 @@ class ObjectConfigPropertyManyInstancesTest {
 
   // Normal scenarios
 
+  @SuppressWarnings("OptionalGetWithoutIsPresent")
+  @Test
+  void testMultipleInstancesWithSamePrefix() {
+    when(configSource.loadConfig())
+        .thenReturn(
+            toConfigProps(
+                mapBuilder()
+                    .put("com.acme.accessKey", "access")
+                    .put("com.acme.secretKey", "secret")
+                    .put("com.acme.emailFrom", "email@email.com")
+                    .put("com.acme.connectUrl", "protocol://admi@admin?connecthere")
+                    .build()));
+    ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
+
+    MailSettings mailPropertyFoo =
+        configRegistry.objectProperty("com.acme", MailSettings.class).value().get();
+    ConnectorSettings connectorPropertyFoo =
+        configRegistry.objectProperty("com.acme", ConnectorSettings.class).value().get();
+
+    assertEquals("access", mailPropertyFoo.accessKey);
+    assertEquals("secret", mailPropertyFoo.secretKey);
+    assertEquals("email@email.com", mailPropertyFoo.emailFrom);
+
+    assertEquals("access", connectorPropertyFoo.accessKey);
+    assertEquals("secret", connectorPropertyFoo.secretKey);
+    assertEquals("protocol://admi@admin?connecthere", connectorPropertyFoo.connectUrl);
+
+    MailSettings mailPropertyBar =
+        configRegistry.objectProperty("com.acme", MailSettings.class).value().get();
+    ConnectorSettings connectorPropertyBar =
+        configRegistry.objectProperty("com.acme", ConnectorSettings.class).value().get();
+
+    assertEquals("access", mailPropertyBar.accessKey);
+    assertEquals("secret", mailPropertyBar.secretKey);
+    assertEquals("email@email.com", mailPropertyBar.emailFrom);
+
+    assertEquals("access", connectorPropertyBar.accessKey);
+    assertEquals("secret", connectorPropertyBar.secretKey);
+    assertEquals("protocol://admi@admin?connecthere", connectorPropertyBar.connectUrl);
+  }
+
+  @SuppressWarnings("OptionalGetWithoutIsPresent")
+  @Test
+  void testMultipleInstancesWithDifferentPrefix() {
+    when(configSource.loadConfig())
+        .thenReturn(
+            toConfigProps(
+                mapBuilder()
+                    // default prefix
+                    .put("com.acme.accessKey", "access")
+                    .put("com.acme.secretKey", "secret")
+                    .put("com.acme.emailFrom", "email@email.com")
+                    // backup prefix
+                    .put("com.acme.backup.accessKey", "access_backup")
+                    .put("com.acme.backup.secretKey", "secret_backup")
+                    .put("com.acme.backup.emailFrom", "email@email.com_backup")
+                    // primary prefix
+                    .put("com.acme.primary.accessKey", "access_primary")
+                    .put("com.acme.primary.secretKey", "secret_primary")
+                    .put("com.acme.primary.emailFrom", "email@email.com_primary")
+                    .build()));
+    ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
+
+    MailSettings mailPropertyDefault =
+        configRegistry.objectProperty("com.acme", MailSettings.class).value().get();
+    MailSettings mailPropertyBackup =
+        configRegistry.objectProperty("com.acme.backup", MailSettings.class).value().get();
+    MailSettings mailPropertyPrimary =
+        configRegistry.objectProperty("com.acme.primary", MailSettings.class).value().get();
+
+    assertEquals("access", mailPropertyDefault.accessKey);
+    assertEquals("secret", mailPropertyDefault.secretKey);
+    assertEquals("email@email.com", mailPropertyDefault.emailFrom);
+
+    assertEquals("access_backup", mailPropertyBackup.accessKey);
+    assertEquals("secret_backup", mailPropertyBackup.secretKey);
+    assertEquals("email@email.com_backup", mailPropertyBackup.emailFrom);
+
+    assertEquals("access_primary", mailPropertyPrimary.accessKey);
+    assertEquals("secret_primary", mailPropertyPrimary.secretKey);
+    assertEquals("email@email.com_primary", mailPropertyPrimary.emailFrom);
+  }
+
   @Test
   void testValueNullInitially() {
     when(configSource.loadConfig()).thenReturn(toConfigProps(mapBuilder().build()));

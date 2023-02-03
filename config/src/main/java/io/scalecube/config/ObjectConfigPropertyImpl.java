@@ -87,7 +87,9 @@ class ObjectConfigPropertyImpl<T> extends AbstractConfigProperty<T>
     }
 
     // noinspection unchecked
-    return propertyCallbackMap.values().stream()
+    return propertyCallbackMap.entrySet().stream()
+        .filter(e -> propertyNames.contains(e.getKey()))
+        .map(Map.Entry::getValue)
         .filter(callbackMap -> callbackMap.containsKey(propertyClass))
         .map(callbackMap -> callbackMap.get(propertyClass))
         .collect(Collectors.toSet())

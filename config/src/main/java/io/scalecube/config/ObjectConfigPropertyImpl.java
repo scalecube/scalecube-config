@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 class ObjectConfigPropertyImpl<T> extends AbstractConfigProperty<T>
     implements ObjectConfigProperty<T> {
 
+  @SuppressWarnings("rawtypes")
   ObjectConfigPropertyImpl(
       Map<String, String> bindingMap,
       Class<T> cfgClass,
@@ -30,8 +31,7 @@ class ObjectConfigPropertyImpl<T> extends AbstractConfigProperty<T>
     setPropertyCallback(computePropertyCallback(cfgClass, propertyFields, propertyCallbackMap));
 
     computeValue(
-        propertyFields
-            .stream()
+        propertyFields.stream()
             .map(ObjectPropertyField::getPropertyName)
             .filter(propertyMap::containsKey)
             .map(propertyMap::get)
@@ -71,8 +71,7 @@ class ObjectConfigPropertyImpl<T> extends AbstractConfigProperty<T>
             list -> ObjectPropertyParser.parseObject(list, propertyFields, cfgClass));
 
     List<String> propertyNames =
-        propertyFields
-            .stream()
+        propertyFields.stream()
             .map(ObjectPropertyField::getPropertyName)
             .collect(Collectors.toList());
 
@@ -88,9 +87,9 @@ class ObjectConfigPropertyImpl<T> extends AbstractConfigProperty<T>
     }
 
     // noinspection unchecked
-    return propertyCallbackMap
-        .values()
-        .stream()
+    return propertyCallbackMap.entrySet().stream()
+        .filter(e -> propertyNames.contains(e.getKey()))
+        .map(Map.Entry::getValue)
         .filter(callbackMap -> callbackMap.containsKey(propertyClass))
         .map(callbackMap -> callbackMap.get(propertyClass))
         .collect(Collectors.toSet())

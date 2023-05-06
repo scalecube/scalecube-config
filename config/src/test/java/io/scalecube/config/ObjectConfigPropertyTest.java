@@ -401,6 +401,27 @@ class ObjectConfigPropertyTest {
     assertEquals(1, config.finalInt);
   }
 
+  @Test
+  void testSkipInjectedConfigPojo() {
+    when(configSource.loadConfig())
+        .thenReturn(
+            toConfigProps(
+                mapBuilder()
+                    .put("io.scalecube.config.user", "user")
+                    .put("io.scalecube.config.password", "password")
+                    .build()));
+
+    ConfigRegistryImpl configRegistry = newConfigRegistry(configSource);
+
+    final SkipInjectedConfigPojo configPojo =
+        configRegistry.objectProperty(SkipInjectedConfigPojo.class).value().get();
+
+    assertEquals("user", configPojo.user);
+    assertEquals("password", configPojo.password);
+    assertNotNull(configPojo.testConfig);
+    assertNotNull(configPojo.intObjectSettings);
+  }
+
   // Failure scenarios
 
   @Test
@@ -551,5 +572,12 @@ class ObjectConfigPropertyTest {
 
   public static class IntObjectSettings {
     int anInt;
+  }
+
+  public static class SkipInjectedConfigPojo {
+    String user;
+    String password;
+    IntObjectSettings intObjectSettings = new IntObjectSettings();
+    TestConfig testConfig = new TestConfig();
   }
 }

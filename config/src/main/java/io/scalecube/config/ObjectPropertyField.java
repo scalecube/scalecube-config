@@ -86,8 +86,7 @@ class ObjectPropertyField {
     } else if (type == Long.TYPE || type == Long.class) {
       return Long::parseLong;
     } else {
-      throw new IllegalArgumentException(
-          "ObjectPropertyField: unsupported type on field: " + field);
+      return Function.identity();
     }
   }
 

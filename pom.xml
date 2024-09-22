@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -38,15 +40,15 @@
   </scm>
 
   <properties>
+    <vault-java-driver.version>5.1.0</vault-java-driver.version>
     <slf4j.version>2.0.7</slf4j.version>
-    <log4j.version>2.20.0</log4j.version>
 
+    <log4j.version>2.20.0</log4j.version>
     <mockito-junit.version>2.27.0</mockito-junit.version>
     <junit-jupiter.version>5.1.1</junit-jupiter.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <vault-java-driver.version>5.1.0</vault-java-driver.version>
-    <testcontainers.version>1.17.4</testcontainers.version>
-    <guava.version>32.0.0-jre</guava.version>
+    <testcontainers.version>1.20.1</testcontainers.version>
+    <guava.version>33.3.0-jre</guava.version>
 
     <distributionManagement.url>https://maven.pkg.github.com/scalecube/scalecube-config
     </distributionManagement.url>

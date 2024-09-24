@@ -71,7 +71,7 @@ public class VaultInvokers {
                 + "ignoring EnvironmentVaultTokenSupplier "
                 + "(specify either VAULT_ROLE or VAULT_TOKEN, not both)");
       }
-      builder.tokenSupplier(new KubernetesVaultTokenSupplier());
+      builder.tokenSupplier(KubernetesVaultTokenSupplier.builder().build());
     } else {
       builder.tokenSupplier(new EnvironmentVaultTokenSupplier());
     }

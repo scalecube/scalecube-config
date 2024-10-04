@@ -5,6 +5,8 @@ import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.ThrowableUtil;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,8 +24,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  */
 public class KeyValueConfigSource implements ConfigSource {
 
-  private static final Logger LOGGER = Logger.getLogger(KeyValueConfigSource.class.getName());
+  private static final Logger LOGGER = System.getLogger(KeyValueConfigSource.class.getName());
 
   private static final ThreadFactory threadFactory;
 
@@ -44,7 +44,7 @@ public class KeyValueConfigSource implements ConfigSource {
           thread.setDaemon(true);
           thread.setName("keyvalue-config-executor");
           thread.setUncaughtExceptionHandler(
-              (t, e) -> LOGGER.log(Level.SEVERE, "Exception occurred: " + e, e));
+              (t, e) -> LOGGER.log(Level.ERROR, "Exception occurred: {0}", e));
           return thread;
         };
   }
@@ -131,9 +131,9 @@ public class KeyValueConfigSource implements ConfigSource {
           } catch (Exception e) {
             LOGGER.log(
                 Level.WARNING,
-                String.format(
-                    "Exception at %s.findAll(%s)",
-                    repository.getClass().getSimpleName(), configName),
+                "Exception at {0}.findAll({1}) {2}",
+                repository.getClass().getSimpleName(),
+                configName,
                 e);
             result = Collections.emptyList();
           }

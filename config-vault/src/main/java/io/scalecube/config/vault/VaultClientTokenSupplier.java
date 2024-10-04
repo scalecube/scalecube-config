@@ -5,12 +5,11 @@ import com.bettercloud.vault.VaultException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
 
 public class VaultClientTokenSupplier {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(VaultClientTokenSupplier.class);
+  private static final Logger LOGGER = Logger.getLogger(VaultClientTokenSupplier.class.getName());
 
   private final String vaultAddress;
   private final String vaultToken;
@@ -74,7 +73,7 @@ public class VaultClientTokenSupplier {
 
       if (!isNullOrNoneOrEmpty(vaultRole)) {
         if (!isNullOrNoneOrEmpty(vaultToken)) {
-          LOGGER.warn(
+          LOGGER.warning(
               "Taking KubernetesVaultTokenSupplier by precedence rule, "
                   + "ignoring EnvironmentVaultTokenSupplier "
                   + "(specify either vaultToken or vaultRole, not both)");

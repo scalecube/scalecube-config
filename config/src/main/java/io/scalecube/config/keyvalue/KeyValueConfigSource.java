@@ -22,17 +22,18 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Generic key-value config source. Communicates with concrete config data source (mongodb, redis,
  * zookeeper) using injectable {@link #repository}.
  */
 public class KeyValueConfigSource implements ConfigSource {
-  private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueConfigSource.class);
+
+  private static final Logger LOGGER = Logger.getLogger(KeyValueConfigSource.class.getName());
 
   private static final ThreadFactory threadFactory;
 
@@ -42,7 +43,8 @@ public class KeyValueConfigSource implements ConfigSource {
           Thread thread = new Thread(r);
           thread.setDaemon(true);
           thread.setName("keyvalue-config-executor");
-          thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
+          thread.setUncaughtExceptionHandler(
+              (t, e) -> LOGGER.log(Level.SEVERE, "Exception occurred: " + e, e));
           return thread;
         };
   }
@@ -64,8 +66,7 @@ public class KeyValueConfigSource implements ConfigSource {
     List<String> result = new ArrayList<>();
     result.addAll(groupList);
     result.add(null); // by default 'root' group is always added
-    return result
-        .stream()
+    return result.stream()
         .map(input -> new KeyValueConfigName(input, collectionName))
         .collect(Collectors.toList());
   }
@@ -104,8 +105,7 @@ public class KeyValueConfigSource implements ConfigSource {
       throw ThrowableUtil.propagate(e);
     }
 
-    return resultList
-        .stream()
+    return resultList.stream()
         .flatMap(Collection::stream)
         .filter(i -> !i.getDisabled())
         .collect(
@@ -129,10 +129,11 @@ public class KeyValueConfigSource implements ConfigSource {
           try {
             result = repository.findAll(configName);
           } catch (Exception e) {
-            LOGGER.warn(
-                "Exception at {}.findAll({}), cause: {}",
-                repository.getClass().getSimpleName(),
-                configName,
+            LOGGER.log(
+                Level.WARNING,
+                String.format(
+                    "Exception at %s.findAll(%s)",
+                    repository.getClass().getSimpleName(), configName),
                 e);
             result = Collections.emptyList();
           }

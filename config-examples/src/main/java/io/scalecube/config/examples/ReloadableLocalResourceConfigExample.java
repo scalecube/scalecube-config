@@ -6,7 +6,7 @@ import io.scalecube.config.DurationConfigProperty;
 import io.scalecube.config.ListConfigProperty;
 import io.scalecube.config.ObjectConfigProperty;
 import io.scalecube.config.StringConfigProperty;
-import io.scalecube.config.audit.Slf4JConfigEventListener;
+import io.scalecube.config.audit.LoggingConfigEventListener;
 import io.scalecube.config.source.FileDirectoryConfigSource;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -45,7 +45,7 @@ public class ReloadableLocalResourceConfigExample {
                         basePath,
                         Stream.of(reloadablePropsPredicate, propsPredicate)
                             .collect(Collectors.toList())))
-                .addListener(new Slf4JConfigEventListener())
+                .addListener(new LoggingConfigEventListener())
                 .reloadIntervalSec(1)
                 .build());
 

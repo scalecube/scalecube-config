@@ -28,16 +28,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class ConfigRegistryImpl implements ConfigRegistry {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ConfigRegistryImpl.class);
+  private static final Logger LOGGER = Logger.getLogger(ConfigRegistryImpl.class.getName());
 
   static final Function<String, String> STRING_PARSER = str -> str;
   static final Function<String, Double> DOUBLE_PARSER = Double::parseDouble;
@@ -56,7 +56,8 @@ final class ConfigRegistryImpl implements ConfigRegistry {
           Thread thread = new Thread(r);
           thread.setDaemon(true);
           thread.setName("config-registry");
-          thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred: " + e, e));
+          thread.setUncaughtExceptionHandler(
+              (t, e) -> LOGGER.log(Level.SEVERE, "Exception occurred: " + e, e));
           return thread;
         };
     reloadExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
@@ -96,7 +97,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
             try {
               loadAndNotify();
             } catch (Exception e) {
-              LOGGER.error("[loadAndNotify] Exception occurred, cause: " + e);
+              LOGGER.log(Level.SEVERE, "[loadAndNotify] Exception occurred, cause: " + e);
             }
           },
           settings.getReloadIntervalSec(),
@@ -489,25 +490,25 @@ final class ConfigRegistryImpl implements ConfigRegistry {
               try {
                 eventListener.onEvents(configEvents);
               } catch (Exception e) {
-                LOGGER.error(
-                    "Exception on configEventListener: {}, events: {}, cause: {}",
-                    key,
-                    configEvents,
-                    e,
+                LOGGER.log(
+                    Level.SEVERE,
+                    String.format(
+                        "Exception on configEventListener: %s, events: %s", key, configEvents),
                     e);
               }
             });
   }
 
-  private void computeConfigLoadStatus(String sourceName, Throwable throwable) {
-    int status = throwable != null ? 1 : 0;
+  private void computeConfigLoadStatus(String sourceName, Throwable ex) {
+    int status = ex != null ? 1 : 0;
     Integer status0 = configSourceStatusMap.put(sourceName, status);
     if (status0 == null || (status0 ^ status) == 1) {
       if (status == 1) {
-        LOGGER.error(
-            "[loadConfig][{}] Exception occurred, cause: {}", sourceName, throwable.toString());
+        LOGGER.log(
+            Level.SEVERE, String.format("[loadConfig][%s] Exception occurred: %s", sourceName, ex));
       } else {
-        LOGGER.debug("[loadConfig][{}] Loaded config properties", sourceName);
+        LOGGER.log(
+            Level.SEVERE, String.format("[loadConfig][%s] Loaded config properties", sourceName));
       }
     }
   }

@@ -3,11 +3,11 @@ package io.scalecube.config.audit;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
 
-public class Slf4JConfigEventListener implements ConfigEventListener {
-  private static final Logger LOGGER = LoggerFactory.getLogger(Slf4JConfigEventListener.class);
+public class LoggingConfigEventListener implements ConfigEventListener {
+
+  private static final Logger LOGGER = Logger.getLogger(LoggingConfigEventListener.class.getName());
 
   @Override
   public void onEvents(Collection<ConfigEvent> events) {

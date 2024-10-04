@@ -17,12 +17,12 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class VaultInvoker {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(VaultInvoker.class);
+  private static final Logger LOGGER = Logger.getLogger(VaultInvoker.class.getName());
 
   private static final int STATUS_CODE_FORBIDDEN = 403;
   public static final int STATUS_CODE_HEALTH_OK = 200;
@@ -62,7 +62,9 @@ public class VaultInvoker {
     } catch (VaultException e) {
       // try recreate Vault according to https://www.vaultproject.io/api/overview#http-status-codes
       if (e.getHttpStatusCode() == STATUS_CODE_FORBIDDEN) {
-        LOGGER.warn("Authentication details are incorrect, occurred during invoking Vault", e);
+        LOGGER.log(
+            Level.WARNING,
+            String.format("Authentication failed: %s, now trying to recreate vault", e));
         vault = recreateVault(vault);
         return call.apply(vault);
       }
@@ -90,22 +92,20 @@ public class VaultInvoker {
       Vault vault = new Vault(vaultConfig.token(token));
       checkVault(vault);
       LookupResponse lookupSelf = vault.auth().lookupSelf();
-      LOGGER.info("Initialized new Vault");
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("More Vault details: {}", bodyAsString(lookupSelf.getRestResponse()));
-      }
       if (lookupSelf.isRenewable()) {
         long ttl = lookupSelf.getTTL();
         long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
         timer = new Timer("VaultScheduler", true);
         timer.schedule(new RenewTokenTask(), delay);
-        LOGGER.info("Renew token timer was set to {}s, (TTL = {}s)", delay, ttl);
+        LOGGER.log(
+            Level.INFO,
+            String.format("Renew token timer was set to %ssec, (TTL = %ssec)", delay, ttl));
       } else {
-        LOGGER.warn("Vault token is not renewable");
+        LOGGER.warning("Vault token is not renewable");
       }
       this.vault = vault;
     } catch (VaultException e) {
-      LOGGER.error("Could not initialize and validate the vault", e);
+      LOGGER.log(Level.SEVERE, "Could not initialize and validate the vault", e);
       throw e;
     }
     return vault;
@@ -119,27 +119,26 @@ public class VaultInvoker {
     try {
       AuthResponse response = vault.auth().renewSelf();
       long ttl = response.getAuthLeaseDuration();
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            "Token was successfully renewed (new TTL = {} seconds), response: {}",
-            ttl,
-            bodyAsString(response.getRestResponse()));
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(
+            Level.FINE, String.format("Token was successfully renewed (new TTL = %ssec)", ttl));
       }
       if (response.isAuthRenewable()) {
         if (ttl > 1) {
           long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
           timer.schedule(new RenewTokenTask(), delay);
         } else {
-          LOGGER.warn("Token TTL ({}) is not enough for scheduling", ttl);
+          LOGGER.log(
+              Level.WARNING, String.format("Token TTL (%ssec) is not enough for scheduling", ttl));
           vault = recreateVault(vault);
         }
       } else {
-        LOGGER.warn("Vault token is not renewable now");
+        LOGGER.warning("Vault token is not renewable now");
       }
     } catch (VaultException e) {
       // try recreate Vault according to https://www.vaultproject.io/api/overview#http-status-codes
       if (e.getHttpStatusCode() == STATUS_CODE_FORBIDDEN) {
-        LOGGER.warn("Could not renew the Vault token", e);
+        LOGGER.log(Level.WARNING, "Could not renew the Vault token", e);
         //noinspection UnusedAssignment
         vault = recreateVault(vault);
       }
@@ -175,9 +174,8 @@ public class VaultInvoker {
       case STATUS_CODE_RESPONSE_NO_DATA:
         return;
       default:
-        String body = bodyAsString(restResponse);
-        LOGGER.warn("Vault responded with code: {}, message: {}", status, body);
-        throw new VaultException(body, status);
+        LOGGER.log(Level.WARNING, "Vault responded with code: " + status);
+        throw new VaultException(bodyAsString(restResponse), status);
     }
   }
 

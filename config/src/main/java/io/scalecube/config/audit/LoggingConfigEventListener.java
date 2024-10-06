@@ -1,13 +1,14 @@
 package io.scalecube.config.audit;
 
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.logging.Logger;
 
 public class LoggingConfigEventListener implements ConfigEventListener {
 
-  private static final Logger LOGGER = Logger.getLogger(LoggingConfigEventListener.class.getName());
+  private static final Logger LOGGER = System.getLogger(LoggingConfigEventListener.class.getName());
 
   @Override
   public void onEvents(Collection<ConfigEvent> events) {
@@ -29,7 +30,7 @@ public class LoggingConfigEventListener implements ConfigEventListener {
                 sb.append(originAsString(event));
               });
       sb.append("\n").append("]");
-      LOGGER.info(sb.toString());
+      LOGGER.log(Level.INFO, sb.toString());
     }
   }
 

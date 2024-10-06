@@ -17,8 +17,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Container.ExecResult;
 import org.testcontainers.containers.ContainerLaunchException;
@@ -29,8 +27,6 @@ import org.testcontainers.utility.LogUtils;
 import org.testcontainers.vault.VaultContainer;
 
 public class VaultInstance implements AutoCloseable {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(VaultInstance.class);
 
   private static final String VAULT_IMAGE_NAME = "vault:1.6.1";
   private static final int VAULT_PORT = 8200;
@@ -115,10 +111,8 @@ public class VaultInstance implements AutoCloseable {
   }
 
   public String execInContainer(String command) {
-    LOGGER.debug("execInContainer command: {}", command);
     ExecResult execResult = invoke(() -> container.execInContainer("/bin/sh", "-c", command));
     assertEquals(0, execResult.getExitCode(), execResult.toString());
-    LOGGER.debug("execInContainer result: {}", execResult.getStdout());
     return execResult.getStdout();
   }
 

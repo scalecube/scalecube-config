@@ -44,7 +44,7 @@ public class KeyValueConfigSource implements ConfigSource {
           thread.setDaemon(true);
           thread.setName("keyvalue-config-executor");
           thread.setUncaughtExceptionHandler(
-              (t, e) -> LOGGER.log(Level.ERROR, "Exception occurred: {0}", e));
+              (t, e) -> LOGGER.log(Level.ERROR, "Exception occurred", e));
           return thread;
         };
   }
@@ -131,7 +131,7 @@ public class KeyValueConfigSource implements ConfigSource {
           } catch (Exception e) {
             LOGGER.log(
                 Level.WARNING,
-                "Exception at {0}.findAll({1}) {2}",
+                "Exception at {0}.findAll({1})",
                 repository.getClass().getSimpleName(),
                 configName,
                 e);

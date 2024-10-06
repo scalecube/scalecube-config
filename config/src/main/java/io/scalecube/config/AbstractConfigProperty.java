@@ -1,6 +1,8 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -10,8 +12,6 @@ import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -25,13 +25,10 @@ import java.util.stream.Collectors;
  */
 abstract class AbstractConfigProperty<T> {
 
-  private static final Logger LOGGER = Logger.getLogger(AbstractConfigProperty.class.getName());
+  private static final Logger LOGGER = System.getLogger(AbstractConfigProperty.class.getName());
 
   private static final String ERROR_VALIDATION_FAILED =
-      "Validation failed on config property: '%s', failed value: %s";
-  private static final String INVOKE_CALLBACK_FAILED =
-      "Exception occurred on "
-          + "property-change callback: %s, property name: '%s', oldValue: %s, newValue: %s";
+      "Validation failed on config property: %s, failed value: %s";
 
   final String name;
   final Class<?> propertyClass;
@@ -136,7 +133,15 @@ abstract class AbstractConfigProperty<T> {
     try {
       callback.accept(t1, t2);
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, String.format(INVOKE_CALLBACK_FAILED, callback, name, t1, t2), e);
+      LOGGER.log(
+          Level.ERROR,
+          "Exception occurred on property-change callback: "
+              + "{0}, property name: {1}, oldValue: {2}, newValue: {3}",
+          callback,
+          name,
+          t1,
+          t2,
+          e);
     }
   }
 

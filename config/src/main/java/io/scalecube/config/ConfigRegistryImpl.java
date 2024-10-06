@@ -6,6 +6,8 @@ import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.ConfigSourceInfo;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.ThrowableUtil;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.time.Duration;
@@ -28,8 +30,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.management.MBeanServer;
@@ -37,7 +37,7 @@ import javax.management.ObjectName;
 
 final class ConfigRegistryImpl implements ConfigRegistry {
 
-  private static final Logger LOGGER = Logger.getLogger(ConfigRegistryImpl.class.getName());
+  private static final Logger LOGGER = System.getLogger(ConfigRegistryImpl.class.getName());
 
   static final Function<String, String> STRING_PARSER = str -> str;
   static final Function<String, Double> DOUBLE_PARSER = Double::parseDouble;
@@ -57,7 +57,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
           thread.setDaemon(true);
           thread.setName("config-registry");
           thread.setUncaughtExceptionHandler(
-              (t, e) -> LOGGER.log(Level.SEVERE, "Exception occurred: " + e, e));
+              (t, e) -> LOGGER.log(Level.ERROR, "Exception occurred", e));
           return thread;
         };
     reloadExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
@@ -97,7 +97,7 @@ final class ConfigRegistryImpl implements ConfigRegistry {
             try {
               loadAndNotify();
             } catch (Exception e) {
-              LOGGER.log(Level.SEVERE, "[loadAndNotify] Exception occurred, cause: " + e);
+              LOGGER.log(Level.ERROR, "[loadAndNotify] Exception occurred, cause: {0}", e);
             }
           },
           settings.getReloadIntervalSec(),
@@ -491,9 +491,10 @@ final class ConfigRegistryImpl implements ConfigRegistry {
                 eventListener.onEvents(configEvents);
               } catch (Exception e) {
                 LOGGER.log(
-                    Level.SEVERE,
-                    String.format(
-                        "Exception on configEventListener: %s, events: %s", key, configEvents),
+                    Level.ERROR,
+                    "Exception on configEventListener: {0}, events: {1}",
+                    key,
+                    configEvents,
                     e);
               }
             });
@@ -504,11 +505,9 @@ final class ConfigRegistryImpl implements ConfigRegistry {
     Integer status0 = configSourceStatusMap.put(sourceName, status);
     if (status0 == null || (status0 ^ status) == 1) {
       if (status == 1) {
-        LOGGER.log(
-            Level.SEVERE, String.format("[loadConfig][%s] Exception occurred: %s", sourceName, ex));
+        LOGGER.log(Level.ERROR, "[loadConfig][{0}] Exception occurred", sourceName, ex);
       } else {
-        LOGGER.log(
-            Level.SEVERE, String.format("[loadConfig][%s] Loaded config properties", sourceName));
+        LOGGER.log(Level.DEBUG, "[loadConfig][{0}] Loaded config properties", sourceName);
       }
     }
   }

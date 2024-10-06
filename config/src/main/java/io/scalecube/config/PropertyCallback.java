@@ -2,12 +2,12 @@ package io.scalecube.config;
 
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.source.LoadedConfigProperty;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  */
 class PropertyCallback<T> {
 
-  private static final Logger LOGGER = Logger.getLogger(PropertyCallback.class.getName());
+  private static final Logger LOGGER = System.getLogger(PropertyCallback.class.getName());
 
   private static final String ERROR_EXCEPTION_ON_VALUE_PARSER =
       "Exception occurred at valueParser on input: %s, cause: %s";
@@ -78,7 +78,7 @@ class PropertyCallback<T> {
     try {
       value = applyValueParser(inputList);
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, e.getMessage(), e.getCause());
+      LOGGER.log(Level.ERROR, e);
       return; // return right away if parser failed
     }
 
@@ -89,7 +89,7 @@ class PropertyCallback<T> {
             configProperty.acceptValue(newValue, inputList, true /* invokeCallbacks */);
           } catch (Exception e) {
             LOGGER.log(
-                Level.SEVERE,
+                Level.ERROR,
                 String.format(ERROR_EXCEPTION_AT_ACCEPT_VALUE, inputList, newValue, e));
           }
         });

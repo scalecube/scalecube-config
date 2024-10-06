@@ -80,7 +80,8 @@ public class VaultClientTokenSupplier {
                   + "ignoring EnvironmentVaultTokenSupplier "
                   + "(specify either vaultToken or vaultRole, not both)");
         }
-        vaultTokenSupplier = KubernetesVaultTokenSupplier.builder().vaultRole(vaultRole).build();
+        vaultTokenSupplier =
+            new KubernetesVaultTokenSupplier.Builder().vaultRole(vaultRole).build();
         vaultConfig = new VaultConfig().address(vaultAddress).build();
       } else {
         vaultTokenSupplier = new EnvironmentVaultTokenSupplier();

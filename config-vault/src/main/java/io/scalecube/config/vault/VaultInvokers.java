@@ -61,7 +61,7 @@ public class VaultInvokers {
     }
 
     final VaultInvoker.Builder builder =
-        VaultInvoker.builder()
+        new VaultInvoker.Builder()
             .options(config -> config.address(vaultAddr).engineVersion(vaultEngineVersion));
 
     if (!isNullOrNone(vaultRole)) {
@@ -72,7 +72,7 @@ public class VaultInvokers {
                 + "ignoring EnvironmentVaultTokenSupplier "
                 + "(specify either VAULT_ROLE or VAULT_TOKEN, not both)");
       }
-      builder.tokenSupplier(KubernetesVaultTokenSupplier.builder().build());
+      builder.tokenSupplier(new KubernetesVaultTokenSupplier.Builder().build());
     } else {
       builder.tokenSupplier(new EnvironmentVaultTokenSupplier());
     }

@@ -7,7 +7,7 @@
   <parent>
     <groupId>io.scalecube</groupId>
     <artifactId>scalecube-parent</artifactId>
-    <version>0.2.21.test.rc3</version>
+    <version>0.2.21.test.rc4</version>
   </parent>
 
   <artifactId>scalecube-config-parent</artifactId>
@@ -52,6 +52,7 @@
 
     <distributionManagement.url>https://maven.pkg.github.com/scalecube/scalecube-config
     </distributionManagement.url>
+    <checkstyle.suppressions.location>checkstyle-suppressions.xml</checkstyle.suppressions.location>
   </properties>
 
   <modules>

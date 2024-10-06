@@ -70,10 +70,6 @@ public class VaultConfigSource implements ConfigSource {
     return result;
   }
 
-  public static Builder builder() {
-    return new Builder();
-  }
-
   public static final class Builder {
 
     private Function<VaultInvoker.Builder, VaultInvoker.Builder> builderFunction =
@@ -90,7 +86,7 @@ public class VaultConfigSource implements ConfigSource {
             .map(HashSet::new)
             .orElseGet(HashSet::new);
 
-    private Builder() {}
+    public Builder() {}
 
     /**
      * Appends {@code secretsPath} to {@code secretsPaths}.

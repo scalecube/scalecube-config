@@ -36,10 +36,6 @@ public class VaultInvoker {
   private Vault vault;
   private Timer timer;
 
-  public static Builder builder() {
-    return new Builder();
-  }
-
   private VaultInvoker(Builder builder) {
     this.builder = builder;
   }
@@ -220,6 +216,8 @@ public class VaultInvoker {
         config -> config.openTimeout(OPEN_TIMEOUT_SEC).readTimeout(READ_TIMEOUT_SEC);
 
     private VaultTokenSupplier tokenSupplier = new EnvironmentVaultTokenSupplier();
+
+    public Builder() {}
 
     public Builder options(UnaryOperator<VaultConfig> config) {
       this.options = this.options.andThen(config);

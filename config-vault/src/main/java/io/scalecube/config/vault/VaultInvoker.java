@@ -94,9 +94,7 @@ public class VaultInvoker {
         long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
         timer = new Timer("VaultScheduler", true);
         timer.schedule(new RenewTokenTask(), delay);
-        LOGGER.log(
-            Level.INFO,
-            String.format("Renew token timer was set to %ssec, (TTL = %ssec)", delay, ttl));
+        LOGGER.log(Level.INFO, "Renew token timer was set to {0}sec, (TTL = {1}sec)", delay, ttl);
       } else {
         LOGGER.log(Level.WARNING, "Vault token is not renewable");
       }
@@ -124,8 +122,7 @@ public class VaultInvoker {
           long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
           timer.schedule(new RenewTokenTask(), delay);
         } else {
-          LOGGER.log(
-              Level.WARNING, String.format("Token TTL (%ssec) is not enough for scheduling", ttl));
+          LOGGER.log(Level.WARNING, "Token TTL ({0}sec) is not enough for scheduling", ttl);
           vault = recreateVault(vault);
         }
       } else {

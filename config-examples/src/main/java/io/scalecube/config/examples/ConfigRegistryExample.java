@@ -3,7 +3,7 @@ package io.scalecube.config.examples;
 import io.scalecube.config.ConfigRegistry;
 import io.scalecube.config.ConfigRegistrySettings;
 import io.scalecube.config.StringConfigProperty;
-import io.scalecube.config.audit.Slf4JConfigEventListener;
+import io.scalecube.config.audit.LoggingConfigEventListener;
 import io.scalecube.config.source.ClassPathConfigSource;
 import io.scalecube.config.source.FileDirectoryConfigSource;
 import java.nio.file.Path;
@@ -28,7 +28,7 @@ public class ConfigRegistryExample {
                 .addLastSource("classpath", new ClassPathConfigSource(propsPredicate))
                 .addLastSource(
                     "configDirectory", new FileDirectoryConfigSource(basePath, propsPredicate))
-                .addListener(new Slf4JConfigEventListener())
+                .addListener(new LoggingConfigEventListener())
                 .jmxEnabled(true)
                 .jmxMBeanName("config.exporter:name=ConfigRegistry")
                 .build());

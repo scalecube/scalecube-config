@@ -9,6 +9,8 @@ import com.bettercloud.vault.response.LookupResponse;
 import com.bettercloud.vault.response.VaultResponse;
 import com.bettercloud.vault.rest.RestResponse;
 import io.scalecube.config.utils.ThrowableUtil;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
@@ -17,12 +19,10 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class VaultInvoker {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(VaultInvoker.class);
+  private static final Logger LOGGER = System.getLogger(VaultInvoker.class.getName());
 
   private static final int STATUS_CODE_FORBIDDEN = 403;
   public static final int STATUS_CODE_HEALTH_OK = 200;
@@ -35,10 +35,6 @@ public class VaultInvoker {
 
   private Vault vault;
   private Timer timer;
-
-  public static Builder builder() {
-    return new Builder();
-  }
 
   private VaultInvoker(Builder builder) {
     this.builder = builder;
@@ -62,7 +58,10 @@ public class VaultInvoker {
     } catch (VaultException e) {
       // try recreate Vault according to https://www.vaultproject.io/api/overview#http-status-codes
       if (e.getHttpStatusCode() == STATUS_CODE_FORBIDDEN) {
-        LOGGER.warn("Authentication details are incorrect, occurred during invoking Vault", e);
+        LOGGER.log(
+            Level.WARNING,
+            "Authentication failed (error message: {0}), now trying to recreate vault",
+            e.getMessage());
         vault = recreateVault(vault);
         return call.apply(vault);
       }
@@ -90,22 +89,18 @@ public class VaultInvoker {
       Vault vault = new Vault(vaultConfig.token(token));
       checkVault(vault);
       LookupResponse lookupSelf = vault.auth().lookupSelf();
-      LOGGER.info("Initialized new Vault");
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("More Vault details: {}", bodyAsString(lookupSelf.getRestResponse()));
-      }
       if (lookupSelf.isRenewable()) {
         long ttl = lookupSelf.getTTL();
         long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
         timer = new Timer("VaultScheduler", true);
         timer.schedule(new RenewTokenTask(), delay);
-        LOGGER.info("Renew token timer was set to {}s, (TTL = {}s)", delay, ttl);
+        LOGGER.log(Level.INFO, "Renew token timer was set to {0}sec, (TTL = {1}sec)", delay, ttl);
       } else {
-        LOGGER.warn("Vault token is not renewable");
+        LOGGER.log(Level.WARNING, "Vault token is not renewable");
       }
       this.vault = vault;
     } catch (VaultException e) {
-      LOGGER.error("Could not initialize and validate the vault", e);
+      LOGGER.log(Level.ERROR, "Could not initialize and validate the vault", e);
       throw e;
     }
     return vault;
@@ -119,27 +114,24 @@ public class VaultInvoker {
     try {
       AuthResponse response = vault.auth().renewSelf();
       long ttl = response.getAuthLeaseDuration();
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            "Token was successfully renewed (new TTL = {} seconds), response: {}",
-            ttl,
-            bodyAsString(response.getRestResponse()));
+      if (LOGGER.isLoggable(Level.DEBUG)) {
+        LOGGER.log(Level.DEBUG, "Token was successfully renewed (new TTL = {0}sec)", ttl);
       }
       if (response.isAuthRenewable()) {
         if (ttl > 1) {
           long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
           timer.schedule(new RenewTokenTask(), delay);
         } else {
-          LOGGER.warn("Token TTL ({}) is not enough for scheduling", ttl);
+          LOGGER.log(Level.WARNING, "Token TTL ({0}sec) is not enough for scheduling", ttl);
           vault = recreateVault(vault);
         }
       } else {
-        LOGGER.warn("Vault token is not renewable now");
+        LOGGER.log(Level.WARNING, "Vault token is not renewable now");
       }
     } catch (VaultException e) {
       // try recreate Vault according to https://www.vaultproject.io/api/overview#http-status-codes
       if (e.getHttpStatusCode() == STATUS_CODE_FORBIDDEN) {
-        LOGGER.warn("Could not renew the Vault token", e);
+        LOGGER.log(Level.WARNING, "Could not renew the Vault token", e);
         //noinspection UnusedAssignment
         vault = recreateVault(vault);
       }
@@ -175,9 +167,8 @@ public class VaultInvoker {
       case STATUS_CODE_RESPONSE_NO_DATA:
         return;
       default:
-        String body = bodyAsString(restResponse);
-        LOGGER.warn("Vault responded with code: {}, message: {}", status, body);
-        throw new VaultException(body, status);
+        LOGGER.log(Level.WARNING, "Vault responded with code: " + status);
+        throw new VaultException(bodyAsString(restResponse), status);
     }
   }
 
@@ -222,6 +213,8 @@ public class VaultInvoker {
         config -> config.openTimeout(OPEN_TIMEOUT_SEC).readTimeout(READ_TIMEOUT_SEC);
 
     private VaultTokenSupplier tokenSupplier = new EnvironmentVaultTokenSupplier();
+
+    public Builder() {}
 
     public Builder options(UnaryOperator<VaultConfig> config) {
       this.options = this.options.andThen(config);

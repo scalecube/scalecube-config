@@ -1,6 +1,8 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -11,8 +13,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Abstract parent class for config property classes. Holds mutable state fields: {@link #value} the
@@ -24,10 +24,11 @@ import org.slf4j.LoggerFactory;
  * @param <T> type of the property value
  */
 abstract class AbstractConfigProperty<T> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractConfigProperty.class);
+
+  private static final Logger LOGGER = System.getLogger(AbstractConfigProperty.class.getName());
 
   private static final String ERROR_VALIDATION_FAILED =
-      "Validation failed on config property: '%s', failed value: %s";
+      "Validation failed on config property: %s, failed value: %s";
 
   final String name;
   final Class<?> propertyClass;
@@ -132,14 +133,14 @@ abstract class AbstractConfigProperty<T> {
     try {
       callback.accept(t1, t2);
     } catch (Exception e) {
-      LOGGER.error(
-          "Exception occurred on property-change callback: {}, "
-              + "property name: '{}', oldValue: {}, newValue: {}, cause: {}",
+      LOGGER.log(
+          Level.ERROR,
+          "Exception occurred on property-change callback: "
+              + "{0}, property name: {1}, oldValue: {2}, newValue: {3}",
           callback,
           name,
           t1,
           t2,
-          e,
           e);
     }
   }
@@ -154,14 +155,12 @@ abstract class AbstractConfigProperty<T> {
     }
 
     Map<String, Optional<String>> inputMap =
-        inputList
-            .stream()
+        inputList.stream()
             .collect(
                 Collectors.toMap(LoadedConfigProperty::name, LoadedConfigProperty::valueAsString));
 
     Map<String, Optional<String>> inputMap1 =
-        inputList1
-            .stream()
+        inputList1.stream()
             .collect(
                 Collectors.toMap(LoadedConfigProperty::name, LoadedConfigProperty::valueAsString));
 

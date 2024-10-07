@@ -15,38 +15,19 @@ public class KubernetesVaultTokenSupplier implements VaultTokenSupplier {
 
   private static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
 
-  private String vaultRole = ENVIRONMENT_LOADER.loadVariable("VAULT_ROLE");
+  private final String vaultRole;
+  private final String vaultJwtProvider;
+  private final String serviceAccountTokenPath;
 
-  private String vaultJwtProvider =
-      Optional.ofNullable(
-              Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_JWT_PROVIDER"))
-                  .orElse(ENVIRONMENT_LOADER.loadVariable("VAULT_MOUNT_POINT")))
-          .orElse("kubernetes");
-
-  private String serviceAccountTokenPath =
-      Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("SERVICE_ACCOUNT_TOKEN_PATH"))
-          .orElse("/var/run/secrets/kubernetes.io/serviceaccount/token");
-
-  public KubernetesVaultTokenSupplier vaultRole(String vaultRole) {
-    this.vaultRole = vaultRole;
-    return this;
-  }
-
-  public KubernetesVaultTokenSupplier vaultJwtProvider(String vaultJwtProvider) {
-    this.vaultJwtProvider = vaultJwtProvider;
-    return this;
-  }
-
-  public KubernetesVaultTokenSupplier serviceAccountTokenPath(String serviceAccountTokenPath) {
-    this.serviceAccountTokenPath = serviceAccountTokenPath;
-    return this;
+  private KubernetesVaultTokenSupplier(Builder builder) {
+    this.vaultRole = Objects.requireNonNull(builder.vaultRole, "vault role");
+    this.vaultJwtProvider = Objects.requireNonNull(builder.vaultJwtProvider, "jwt provider");
+    this.serviceAccountTokenPath =
+        Objects.requireNonNull(builder.serviceAccountTokenPath, "k8s service account token path");
   }
 
   @Override
   public String getToken(VaultConfig config) {
-    Objects.requireNonNull(vaultRole, "vault role");
-    Objects.requireNonNull(vaultJwtProvider, "jwt provider");
-    Objects.requireNonNull(serviceAccountTokenPath, "k8s service account token path");
     try (Stream<String> stream = Files.lines(Paths.get(serviceAccountTokenPath))) {
       String jwt = stream.collect(Collectors.joining());
       return Objects.requireNonNull(
@@ -57,6 +38,42 @@ public class KubernetesVaultTokenSupplier implements VaultTokenSupplier {
           "vault token");
     } catch (Exception e) {
       throw ThrowableUtil.propagate(e);
+    }
+  }
+
+  public static class Builder {
+
+    private String vaultRole = ENVIRONMENT_LOADER.loadVariable("VAULT_ROLE");
+
+    private String vaultJwtProvider =
+        Optional.ofNullable(
+                Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("VAULT_JWT_PROVIDER"))
+                    .orElse(ENVIRONMENT_LOADER.loadVariable("VAULT_MOUNT_POINT")))
+            .orElse("kubernetes");
+
+    private String serviceAccountTokenPath =
+        Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("SERVICE_ACCOUNT_TOKEN_PATH"))
+            .orElse("/var/run/secrets/kubernetes.io/serviceaccount/token");
+
+    public Builder() {}
+
+    public Builder vaultRole(String vaultRole) {
+      this.vaultRole = vaultRole;
+      return this;
+    }
+
+    public Builder vaultJwtProvider(String vaultJwtProvider) {
+      this.vaultJwtProvider = vaultJwtProvider;
+      return this;
+    }
+
+    public Builder serviceAccountTokenPath(String serviceAccountTokenPath) {
+      this.serviceAccountTokenPath = serviceAccountTokenPath;
+      return this;
+    }
+
+    public KubernetesVaultTokenSupplier build() {
+      return new KubernetesVaultTokenSupplier(this);
     }
   }
 }

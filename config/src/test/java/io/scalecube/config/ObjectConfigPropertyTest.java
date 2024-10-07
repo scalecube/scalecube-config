@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.scalecube.config.source.ConfigSource;
+import java.lang.System.Logger;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -30,8 +31,6 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class ObjectConfigPropertyTest {
@@ -532,7 +531,7 @@ class ObjectConfigPropertyTest {
   }
 
   public static class ConfigClassWithStaticOrFinalField {
-    static final Logger LOGGER = LoggerFactory.getLogger("logger");
+    static final Logger LOGGER = System.getLogger("logger");
     static final ConfigClassWithStaticOrFinalField defaultInstance =
         new ConfigClassWithStaticOrFinalField();
 

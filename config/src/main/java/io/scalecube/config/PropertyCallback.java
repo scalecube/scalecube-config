@@ -2,13 +2,13 @@ package io.scalecube.config;
 
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.source.LoadedConfigProperty;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Property controller class for config property instances of type {@link T}. Config property
@@ -17,7 +17,8 @@ import org.slf4j.LoggerFactory;
  * @param <T> type of the property value
  */
 class PropertyCallback<T> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(PropertyCallback.class);
+
+  private static final Logger LOGGER = System.getLogger(PropertyCallback.class.getName());
 
   private static final String ERROR_EXCEPTION_ON_VALUE_PARSER =
       "Exception occurred at valueParser on input: %s, cause: %s";
@@ -57,12 +58,10 @@ class PropertyCallback<T> {
    * ConfigEvent}-s. This method is being called from config registry reload process.
    *
    * @param events config events computed during config registry reload.
-   * @see ConfigRegistryImpl#loadAndNotify()
    */
   void computeValue(List<ConfigEvent> events) {
     List<LoadedConfigProperty> inputList =
-        events
-            .stream()
+        events.stream()
             .filter(
                 event ->
                     event.getType()
@@ -79,17 +78,19 @@ class PropertyCallback<T> {
     try {
       value = applyValueParser(inputList);
     } catch (Exception e) {
-      LOGGER.error(e.getMessage(), e.getCause());
+      LOGGER.log(Level.ERROR, e);
       return; // return right away if parser failed
     }
 
-    T value1 = value; // new value
+    T newValue = value; // new value
     configProperties.forEach(
         configProperty -> {
           try {
-            configProperty.acceptValue(value1, inputList, true /* invokeCallbacks */);
+            configProperty.acceptValue(newValue, inputList, true /* invokeCallbacks */);
           } catch (Exception e) {
-            LOGGER.error(String.format(ERROR_EXCEPTION_AT_ACCEPT_VALUE, inputList, value1, e));
+            LOGGER.log(
+                Level.ERROR,
+                String.format(ERROR_EXCEPTION_AT_ACCEPT_VALUE, inputList, newValue, e));
           }
         });
   }

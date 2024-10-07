@@ -8,6 +8,8 @@ import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,8 +22,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class is an implementation of {@link ConfigSource} for Vault.
@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  */
 public class VaultConfigSource implements ConfigSource {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
+  private static final Logger LOGGER = System.getLogger(VaultConfigSource.class.getName());
 
   private static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
 
@@ -58,20 +58,16 @@ public class VaultConfigSource implements ConfigSource {
         result.putAll(pathProps);
       } catch (VaultException ex) {
         if (ex.getHttpStatusCode() == 404) {
-          LOGGER.warn("Unable to load config properties from: {}", path);
+          LOGGER.log(Level.ERROR, "Unable to load config properties from: " + path);
         } else {
           throw new ConfigSourceNotAvailableException(ex);
         }
       } catch (Exception ex) {
-        LOGGER.error("Unable to load config properties from: {}, cause:", path, ex);
+        LOGGER.log(Level.ERROR, "Unable to load config properties from: " + path, ex);
         throw new ConfigSourceNotAvailableException(ex);
       }
     }
     return result;
-  }
-
-  public static Builder builder() {
-    return new Builder();
   }
 
   public static final class Builder {
@@ -90,7 +86,7 @@ public class VaultConfigSource implements ConfigSource {
             .map(HashSet::new)
             .orElseGet(HashSet::new);
 
-    private Builder() {}
+    public Builder() {}
 
     /**
      * Appends {@code secretsPath} to {@code secretsPaths}.

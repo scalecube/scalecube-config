@@ -94,7 +94,11 @@ public class VaultInvoker {
         long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
         timer = new Timer("VaultScheduler", true);
         timer.schedule(new RenewTokenTask(), delay);
-        LOGGER.log(Level.INFO, "Renew token timer was set to {0}sec, (TTL = {1}sec)", delay, ttl);
+        LOGGER.log(
+            Level.INFO,
+            "Renew token timer was set to {0,number,#}s, (TTL = {1,number,#}s)",
+            delay,
+            ttl);
       } else {
         LOGGER.log(Level.WARNING, "Vault token is not renewable");
       }
@@ -114,15 +118,13 @@ public class VaultInvoker {
     try {
       AuthResponse response = vault.auth().renewSelf();
       long ttl = response.getAuthLeaseDuration();
-      if (LOGGER.isLoggable(Level.DEBUG)) {
-        LOGGER.log(Level.DEBUG, "Token was successfully renewed (new TTL = {0}sec)", ttl);
-      }
+      LOGGER.log(Level.DEBUG, "Token was successfully renewed (new TTL = {0,number,#}s)", ttl);
       if (response.isAuthRenewable()) {
         if (ttl > 1) {
           long delay = TimeUnit.SECONDS.toMillis(suggestedRefreshInterval(ttl));
           timer.schedule(new RenewTokenTask(), delay);
         } else {
-          LOGGER.log(Level.WARNING, "Token TTL ({0}sec) is not enough for scheduling", ttl);
+          LOGGER.log(Level.WARNING, "Token TTL ({0,number,#}s) is not enough for scheduling", ttl);
           vault = recreateVault(vault);
         }
       } else {

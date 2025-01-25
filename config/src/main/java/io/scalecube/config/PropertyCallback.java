@@ -2,13 +2,13 @@ package io.scalecube.config;
 
 import io.scalecube.config.audit.ConfigEvent;
 import io.scalecube.config.source.LoadedConfigProperty;
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Property controller class for config property instances of type {@link T}. Config property
@@ -18,12 +18,7 @@ import java.util.stream.Collectors;
  */
 class PropertyCallback<T> {
 
-  private static final Logger LOGGER = System.getLogger(PropertyCallback.class.getName());
-
-  private static final String ERROR_EXCEPTION_ON_VALUE_PARSER =
-      "Exception occurred at valueParser on input: %s, cause: %s";
-  private static final String ERROR_EXCEPTION_AT_ACCEPT_VALUE =
-      "Exception occurred at acceptValue on input: %s, on value: %s, cause: %s";
+  private static final Logger LOGGER = LoggerFactory.getLogger(PropertyCallback.class);
 
   /**
    * Value parser function. Converts list of string name-value pairs (input list can be null or
@@ -55,7 +50,7 @@ class PropertyCallback<T> {
 
   /**
    * Computes new value for config property instances (of type {@link T}) from the list of {@link
-   * ConfigEvent}-s. This method is being called from config registry reload process.
+   * ConfigEvent} objects. This method is being called from config registry reload process.
    *
    * @param events config events computed during config registry reload.
    */
@@ -78,7 +73,7 @@ class PropertyCallback<T> {
     try {
       value = applyValueParser(inputList);
     } catch (Exception e) {
-      LOGGER.log(Level.ERROR, e);
+      LOGGER.error("Exception occurred", e);
       return; // return right away if parser failed
     }
 
@@ -88,16 +83,18 @@ class PropertyCallback<T> {
           try {
             configProperty.acceptValue(newValue, inputList, true /* invokeCallbacks */);
           } catch (Exception e) {
-            LOGGER.log(
-                Level.ERROR,
-                String.format(ERROR_EXCEPTION_AT_ACCEPT_VALUE, inputList, newValue, e));
+            LOGGER.error(
+                "Exception occurred at acceptValue on input: {}, on value: {}",
+                inputList,
+                newValue,
+                e);
           }
         });
   }
 
   /**
    * Computes new value for config property instance (passed as second parameter) from the list of
-   * {@link LoadedConfigProperty}-s.
+   * {@link LoadedConfigProperty} objects.
    *
    * @param inputList an input for {@link #valueParser}.
    * @param configProperty an instance where attempt to set a new value has to be made.
@@ -111,7 +108,7 @@ class PropertyCallback<T> {
       configProperty.acceptValue(value, inputList, false /* invokeCallbacks */);
     } catch (Exception e) {
       throw new IllegalArgumentException(
-          String.format(ERROR_EXCEPTION_AT_ACCEPT_VALUE, inputList, value, e));
+          "Exception occurred at acceptValue on input: " + inputList, e);
     }
   }
 
@@ -120,7 +117,7 @@ class PropertyCallback<T> {
       return valueParser.apply(inputList);
     } catch (Exception e) {
       throw new IllegalArgumentException(
-          String.format(ERROR_EXCEPTION_ON_VALUE_PARSER, inputList, e));
+          "Exception occurred at valueParser on input: " + inputList, e);
     }
   }
 }

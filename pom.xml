@@ -41,6 +41,7 @@
 
   <properties>
     <vault-java-driver.version>5.1.0</vault-java-driver.version>
+    <slf4j.version>1.7.36</slf4j.version>
 
     <mockito-junit.version>2.27.0</mockito-junit.version>
     <junit-jupiter.version>5.1.1</junit-jupiter.version>
@@ -48,7 +49,6 @@
     <testcontainers.version>1.20.1</testcontainers.version>
     <guava.version>33.3.0-jre</guava.version>
     <log4j.version>2.20.0</log4j.version>
-    <slf4j.version>1.7.30</slf4j.version>
 
     <distributionManagement.url>https://maven.pkg.github.com/scalecube/scalecube-config
     </distributionManagement.url>
@@ -70,12 +70,12 @@
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-core</artifactId>
+        <artifactId>log4j-slf4j-impl</artifactId>
         <version>${log4j.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-jpl</artifactId>
+        <artifactId>log4j-core</artifactId>
         <version>${log4j.version}</version>
       </dependency>
       <dependency>
@@ -150,12 +150,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
+      <artifactId>log4j-slf4j-impl</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-jpl</artifactId>
+      <artifactId>log4j-core</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

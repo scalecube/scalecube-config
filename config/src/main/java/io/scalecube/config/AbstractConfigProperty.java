@@ -1,8 +1,6 @@
 package io.scalecube.config;
 
 import io.scalecube.config.source.LoadedConfigProperty;
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +11,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract parent class for config property classes. Holds mutable state fields: {@link #value} the
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  */
 abstract class AbstractConfigProperty<T> {
 
-  private static final Logger LOGGER = System.getLogger(AbstractConfigProperty.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractConfigProperty.class);
 
   private static final String ERROR_VALIDATION_FAILED =
       "Validation failed on config property: %s, failed value: %s";
@@ -133,10 +133,9 @@ abstract class AbstractConfigProperty<T> {
     try {
       callback.accept(t1, t2);
     } catch (Exception e) {
-      LOGGER.log(
-          Level.ERROR,
+      LOGGER.error(
           "Exception occurred on property-change callback: "
-              + "{0}, property name: {1}, oldValue: {2}, newValue: {3}",
+              + "{}, property name: {}, oldValue: {}, newValue: {}",
           callback,
           name,
           t1,

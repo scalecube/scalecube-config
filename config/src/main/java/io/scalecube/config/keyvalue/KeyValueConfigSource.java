@@ -5,8 +5,6 @@ import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
 import io.scalecube.config.utils.ThrowableUtil;
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +24,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Generic key-value config source. Communicates with concrete config data source (mongodb, redis,
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  */
 public class KeyValueConfigSource implements ConfigSource {
 
-  private static final Logger LOGGER = System.getLogger(KeyValueConfigSource.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueConfigSource.class);
 
   private static final ThreadFactory threadFactory;
 
@@ -43,8 +43,7 @@ public class KeyValueConfigSource implements ConfigSource {
           Thread thread = new Thread(r);
           thread.setDaemon(true);
           thread.setName("keyvalue-config-executor");
-          thread.setUncaughtExceptionHandler(
-              (t, e) -> LOGGER.log(Level.ERROR, "Exception occurred", e));
+          thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Exception occurred", e));
           return thread;
         };
   }
@@ -129,12 +128,7 @@ public class KeyValueConfigSource implements ConfigSource {
           try {
             result = repository.findAll(configName);
           } catch (Exception e) {
-            LOGGER.log(
-                Level.WARNING,
-                "Exception at {0}.findAll({1})",
-                repository.getClass().getSimpleName(),
-                configName,
-                e);
+            LOGGER.warn("[loadConfig] Exception occurred, configName: {}", configName, e);
             result = Collections.emptyList();
           }
           return result;

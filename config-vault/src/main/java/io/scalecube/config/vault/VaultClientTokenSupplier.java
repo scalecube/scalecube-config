@@ -2,15 +2,15 @@ package io.scalecube.config.vault;
 
 import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VaultClientTokenSupplier {
 
-  private static final Logger LOGGER = System.getLogger(VaultClientTokenSupplier.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(VaultClientTokenSupplier.class);
 
   private final String vaultAddress;
   private final String vaultToken;
@@ -74,8 +74,7 @@ public class VaultClientTokenSupplier {
 
       if (!isNullOrNoneOrEmpty(vaultRole)) {
         if (!isNullOrNoneOrEmpty(vaultToken)) {
-          LOGGER.log(
-              Level.WARNING,
+          LOGGER.warn(
               "Taking KubernetesVaultTokenSupplier by precedence rule, "
                   + "ignoring EnvironmentVaultTokenSupplier "
                   + "(specify either vaultToken or vaultRole, not both)");

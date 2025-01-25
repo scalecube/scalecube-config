@@ -8,8 +8,6 @@ import io.scalecube.config.ConfigProperty;
 import io.scalecube.config.ConfigSourceNotAvailableException;
 import io.scalecube.config.source.ConfigSource;
 import io.scalecube.config.source.LoadedConfigProperty;
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,6 +20,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is an implementation of {@link ConfigSource} for Vault.
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  */
 public class VaultConfigSource implements ConfigSource {
 
-  private static final Logger LOGGER = System.getLogger(VaultConfigSource.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
 
   private static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
 
@@ -58,12 +58,12 @@ public class VaultConfigSource implements ConfigSource {
         result.putAll(pathProps);
       } catch (VaultException ex) {
         if (ex.getHttpStatusCode() == 404) {
-          LOGGER.log(Level.ERROR, "Unable to load config properties from: " + path);
+          LOGGER.error("Unable to load config properties from: {}", path);
         } else {
           throw new ConfigSourceNotAvailableException(ex);
         }
       } catch (Exception ex) {
-        LOGGER.log(Level.ERROR, "Unable to load config properties from: " + path, ex);
+        LOGGER.error("Unable to load config properties from: {}", path, ex);
         throw new ConfigSourceNotAvailableException(ex);
       }
     }

@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 /**
  * Parser for {@link ObjectConfigProperty}. Returns object instance of the given class by the list
- * of {@link LoadedConfigProperty}-s and list of {@link ObjectPropertyField}-s. The class must
+ * of {@link LoadedConfigProperty} objects and list of {@link ObjectPropertyField} . The class must
  * contain default constructor.
  */
 class ObjectPropertyParser {
@@ -31,8 +31,7 @@ class ObjectPropertyParser {
     }
 
     Map<String, Optional<String>> inputMap =
-        inputList
-            .stream()
+        inputList.stream()
             .collect(
                 Collectors.toMap(LoadedConfigProperty::name, LoadedConfigProperty::valueAsString));
 

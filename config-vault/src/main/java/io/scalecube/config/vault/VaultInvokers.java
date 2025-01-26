@@ -1,13 +1,13 @@
 package io.scalecube.config.vault;
 
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.util.Map;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VaultInvokers {
 
-  public static final Logger LOGGER = System.getLogger(VaultInvokers.class.getName());
+  public static final Logger LOGGER = LoggerFactory.getLogger(VaultInvokers.class);
 
   public static final String VAULT_MOUNT_POINT_ENV = "VAULT_MOUNT_POINT";
   public static final String VAULT_ADDR_ENV = "VAULT_ADDR";
@@ -66,8 +66,7 @@ public class VaultInvokers {
 
     if (!isNullOrNone(vaultRole)) {
       if (!isNullOrNone(vaultToken)) {
-        LOGGER.log(
-            Level.WARNING,
+        LOGGER.warn(
             "Taking KubernetesVaultTokenSupplier by precedence rule, "
                 + "ignoring EnvironmentVaultTokenSupplier "
                 + "(specify either VAULT_ROLE or VAULT_TOKEN, not both)");

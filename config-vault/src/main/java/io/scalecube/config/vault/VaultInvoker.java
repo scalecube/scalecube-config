@@ -24,7 +24,8 @@ public class VaultInvoker {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VaultInvoker.class);
 
-  private static final int STATUS_CODE_FORBIDDEN = 403;
+  public static final int STATUS_CODE_FORBIDDEN = 403;
+  public static final int STATUS_CODE_NOT_FOUND = 404;
   public static final int STATUS_CODE_HEALTH_OK = 200;
   public static final int STATUS_CODE_RESPONSE_OK = 200;
   public static final int STATUS_CODE_RESPONSE_NO_DATA = 204;
@@ -173,16 +174,17 @@ public class VaultInvoker {
    * We should refresh tokens from Vault before they expire, so we add a MIN_REFRESH_MARGIN margin.
    * If the token is valid for less than MIN_REFRESH_MARGIN * 2, we use duration / 2 instead.
    */
-  private long suggestedRefreshInterval(long duration) {
+  private static long suggestedRefreshInterval(long duration) {
     return duration < MIN_REFRESH_MARGIN * 2 ? duration / 2 : duration - MIN_REFRESH_MARGIN;
   }
 
-  private String bodyAsString(RestResponse response) {
+  private static String bodyAsString(RestResponse response) {
     return new String(response.getBody(), StandardCharsets.UTF_8);
   }
 
   @FunctionalInterface
   public interface VaultCall<T extends VaultResponse> {
+
     T apply(Vault vault) throws VaultException;
   }
 
@@ -213,13 +215,25 @@ public class VaultInvoker {
 
     public Builder() {}
 
-    public Builder options(UnaryOperator<VaultConfig> config) {
-      this.options = this.options.andThen(config);
+    /**
+     * Setter for {@link VaultConfig} operator.
+     *
+     * @param operator operator for {@link VaultConfig}
+     * @return this
+     */
+    public Builder options(UnaryOperator<VaultConfig> operator) {
+      options = options.andThen(operator);
       return this;
     }
 
+    /**
+     * Setter for {@link VaultTokenSupplier}.
+     *
+     * @param supplier vault token supplier
+     * @return this
+     */
     public Builder tokenSupplier(VaultTokenSupplier supplier) {
-      this.tokenSupplier = supplier;
+      tokenSupplier = supplier;
       return this;
     }
 

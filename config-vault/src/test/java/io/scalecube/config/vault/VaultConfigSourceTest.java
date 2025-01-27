@@ -273,7 +273,7 @@ class VaultConfigSourceTest {
                 "vault",
                 new VaultConfigSource.Builder()
                     .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
-                    .secretsPath(VAULT_SECRETS_PATH1)
+                    .addSecretsPath(VAULT_SECRETS_PATH1)
                     .build())
             .jmxEnabled(false)
             .reloadIntervalSec(1)

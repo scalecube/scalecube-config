@@ -6,6 +6,6 @@ import java.util.Objects;
 public class EnvironmentVaultTokenSupplier implements VaultTokenSupplier {
 
   public String getToken(VaultConfig config) {
-    return Objects.requireNonNull(config.getToken(), "vault token");
+    return Objects.requireNonNull(config.getToken(), "VaultConfig.token is missing");
   }
 }

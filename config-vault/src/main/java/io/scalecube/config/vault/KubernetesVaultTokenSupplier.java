@@ -30,12 +30,10 @@ public class KubernetesVaultTokenSupplier implements VaultTokenSupplier {
   public String getToken(VaultConfig config) {
     try (Stream<String> stream = Files.lines(Paths.get(serviceAccountTokenPath))) {
       String jwt = stream.collect(Collectors.joining());
-      return Objects.requireNonNull(
-          new Vault(config)
-              .auth()
-              .loginByJwt(vaultJwtProvider, vaultRole, jwt)
-              .getAuthClientToken(),
-          "vault token");
+      return new Vault(config)
+          .auth()
+          .loginByJwt(vaultJwtProvider, vaultRole, jwt)
+          .getAuthClientToken();
     } catch (Exception e) {
       throw ThrowableUtil.propagate(e);
     }

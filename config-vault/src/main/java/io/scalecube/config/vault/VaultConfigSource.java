@@ -1,5 +1,7 @@
 package io.scalecube.config.vault;
 
+import static io.scalecube.config.vault.VaultInvoker.STATUS_CODE_NOT_FOUND;
+
 import com.bettercloud.vault.EnvironmentLoader;
 import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
@@ -11,7 +13,6 @@ import io.scalecube.config.source.LoadedConfigProperty;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -33,7 +34,6 @@ public class VaultConfigSource implements ConfigSource {
   private static final Logger LOGGER = LoggerFactory.getLogger(VaultConfigSource.class);
 
   private static final EnvironmentLoader ENVIRONMENT_LOADER = new EnvironmentLoader();
-
   private static final String PATHS_SEPARATOR = ":";
 
   private final VaultInvoker vault;
@@ -46,7 +46,7 @@ public class VaultConfigSource implements ConfigSource {
 
   @Override
   public Map<String, ConfigProperty> loadConfig() {
-    Map<String, ConfigProperty> result = new HashMap<>();
+    Map<String, ConfigProperty> propertyMap = new HashMap<>();
     for (String path : secretsPaths) {
       try {
         LogicalResponse response = vault.invoke(vault -> vault.logical().read(path));
@@ -55,9 +55,9 @@ public class VaultConfigSource implements ConfigSource {
                 .map(LoadedConfigProperty::withNameAndValue)
                 .map(LoadedConfigProperty.Builder::build)
                 .collect(Collectors.toMap(LoadedConfigProperty::name, Function.identity()));
-        result.putAll(pathProps);
+        propertyMap.putAll(pathProps);
       } catch (VaultException ex) {
-        if (ex.getHttpStatusCode() == 404) {
+        if (ex.getHttpStatusCode() == STATUS_CODE_NOT_FOUND) {
           LOGGER.error("Unable to load config properties from: {}", path);
         } else {
           throw new ConfigSourceNotAvailableException(ex);
@@ -67,13 +67,12 @@ public class VaultConfigSource implements ConfigSource {
         throw new ConfigSourceNotAvailableException(ex);
       }
     }
-    return result;
+    return propertyMap;
   }
 
   public static final class Builder {
 
-    private Function<VaultInvoker.Builder, VaultInvoker.Builder> builderFunction =
-        Function.identity();
+    private Function<VaultInvoker.Builder, VaultInvoker.Builder> builderFunction = b -> b;
 
     private VaultInvoker invoker;
 
@@ -89,37 +88,21 @@ public class VaultConfigSource implements ConfigSource {
     public Builder() {}
 
     /**
-     * Appends {@code secretsPath} to {@code secretsPaths}.
+     * Appends secrets paths (each path value may contain values separated by colons).
      *
-     * @param secretsPath secretsPath (may contain value with paths separated by {@code :})
-     * @return this builder
-     * @deprecated will be removed in future releases without notice, use {@link
-     *     #addSecretsPath(String...)} or {@link #secretsPaths(Collection)}.
-     */
-    @Deprecated
-    public Builder secretsPath(String secretsPath) {
-      this.secretsPaths.addAll(toSecretsPaths(Collections.singletonList(secretsPath)));
-      return this;
-    }
-
-    /**
-     * Appends one or several secretsPath\es to {@code secretsPaths}.
-     *
-     * @param secretsPath one or several secretsPath\es (each value may contain paths separated by
-     *     {@code :})
-     * @return this builder
+     * @param secretsPath secretsPath
+     * @return this
      */
     public Builder addSecretsPath(String... secretsPath) {
-      this.secretsPaths.addAll(toSecretsPaths(Arrays.asList(secretsPath)));
+      secretsPaths.addAll(toSecretsPaths(Arrays.asList(secretsPath)));
       return this;
     }
 
     /**
-     * Setter for {@code secretsPaths}.
+     * Setter for secrets paths (each path value may contain values separated by colons).
      *
-     * @param secretsPaths collection of secretsPath\es (each value may contain paths separated by
-     *     colon)
-     * @return this builder
+     * @param secretsPaths secretsPaths
+     * @return this
      */
     public Builder secretsPaths(Collection<String> secretsPaths) {
       this.secretsPaths = toSecretsPaths(secretsPaths);
@@ -132,31 +115,50 @@ public class VaultConfigSource implements ConfigSource {
           .collect(Collectors.toSet());
     }
 
-    public Builder invoker(VaultInvoker invoker) {
-      this.invoker = invoker;
+    /**
+     * Setter for {@link VaultInvoker}.
+     *
+     * @param vaultInvoker vaultInvoker
+     * @return this
+     */
+    public Builder invoker(VaultInvoker vaultInvoker) {
+      this.invoker = vaultInvoker;
       return this;
     }
 
-    public Builder vault(UnaryOperator<VaultInvoker.Builder> opts) {
-      this.builderFunction = this.builderFunction.andThen(opts);
+    /**
+     * Setter for {@link VaultInvoker.Builder} operator.
+     *
+     * @param operator operator for {@link VaultInvoker.Builder}
+     * @return this
+     */
+    public Builder vault(UnaryOperator<VaultInvoker.Builder> operator) {
+      this.builderFunction = this.builderFunction.andThen(operator);
       return this;
     }
 
+    /**
+     * Setter for {@link VaultConfig}.
+     *
+     * @param vaultConfig vaultConfig
+     * @return this
+     */
     public Builder config(UnaryOperator<VaultConfig> vaultConfig) {
       this.builderFunction = this.builderFunction.andThen(b -> b.options(vaultConfig));
       return this;
     }
 
-    public Builder tokenSupplier(VaultTokenSupplier supplier) {
-      this.builderFunction = this.builderFunction.andThen(b -> b.tokenSupplier(supplier));
+    /**
+     * Setter for {@link VaultTokenSupplier}.
+     *
+     * @param tokenSupplier tokenSupplier
+     * @return this
+     */
+    public Builder tokenSupplier(VaultTokenSupplier tokenSupplier) {
+      this.builderFunction = this.builderFunction.andThen(b -> b.tokenSupplier(tokenSupplier));
       return this;
     }
 
-    /**
-     * Builds vault config source.
-     *
-     * @return instance of {@link VaultConfigSource}
-     */
     public VaultConfigSource build() {
       return new VaultConfigSource(
           invoker != null ? invoker : builderFunction.apply(new VaultInvoker.Builder()).build(),

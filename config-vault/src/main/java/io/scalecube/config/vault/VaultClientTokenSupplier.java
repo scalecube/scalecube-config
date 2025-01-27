@@ -4,7 +4,6 @@ import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +19,8 @@ public class VaultClientTokenSupplier {
    * Constructor.
    *
    * @param vaultAddress vaultAddress
-   * @param vaultToken vaultToken (must not set be together with vaultRole)
-   * @param vaultRole vaultRole (must not set be together with vaultToken)
+   * @param vaultToken vaultToken (must not set be together with {@code vaultRole})
+   * @param vaultRole vaultRole (must not set be together with {@code vaultToken})
    */
   public VaultClientTokenSupplier(String vaultAddress, String vaultToken, String vaultRole) {
     this.vaultAddress = vaultAddress;
@@ -63,11 +62,7 @@ public class VaultClientTokenSupplier {
    *
    * @return future result
    */
-  public Future<String> getToken() {
-    return CompletableFuture.supplyAsync(this::getToken0);
-  }
-
-  private String getToken0() {
+  public CompletableFuture<String> getToken() {
     try {
       VaultTokenSupplier vaultTokenSupplier;
       VaultConfig vaultConfig;
@@ -87,7 +82,7 @@ public class VaultClientTokenSupplier {
         vaultConfig = new VaultConfig().address(vaultAddress).token(vaultToken).build();
       }
 
-      return vaultTokenSupplier.getToken(vaultConfig);
+      return CompletableFuture.supplyAsync(() -> vaultTokenSupplier.getToken(vaultConfig));
     } catch (VaultException e) {
       throw new RuntimeException(e);
     }

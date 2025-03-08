@@ -44,6 +44,10 @@ public class VaultConfigSource implements ConfigSource {
     this.secretsPaths = new ArrayList<>(secretsPaths);
   }
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
   @Override
   public Map<String, ConfigProperty> loadConfig() {
     Map<String, ConfigProperty> propertyMap = new HashMap<>();
@@ -85,7 +89,7 @@ public class VaultConfigSource implements ConfigSource {
             .map(HashSet::new)
             .orElseGet(HashSet::new);
 
-    public Builder() {}
+    private Builder() {}
 
     /**
      * Appends secrets paths (each path value may contain values separated by colons).
@@ -161,7 +165,7 @@ public class VaultConfigSource implements ConfigSource {
 
     public VaultConfigSource build() {
       return new VaultConfigSource(
-          invoker != null ? invoker : builderFunction.apply(new VaultInvoker.Builder()).build(),
+          invoker != null ? invoker : builderFunction.apply(VaultInvoker.builder()).build(),
           secretsPaths);
     }
   }

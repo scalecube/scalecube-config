@@ -26,6 +26,14 @@ public class KubernetesVaultTokenSupplier implements VaultTokenSupplier {
         Objects.requireNonNull(builder.serviceAccountTokenPath, "k8s service account token path");
   }
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static KubernetesVaultTokenSupplier newInstance() {
+    return builder().build();
+  }
+
   @Override
   public String getToken(VaultConfig config) {
     try (Stream<String> stream = Files.lines(Paths.get(serviceAccountTokenPath))) {
@@ -53,7 +61,7 @@ public class KubernetesVaultTokenSupplier implements VaultTokenSupplier {
         Optional.ofNullable(ENVIRONMENT_LOADER.loadVariable("SERVICE_ACCOUNT_TOKEN_PATH"))
             .orElse("/var/run/secrets/kubernetes.io/serviceaccount/token");
 
-    public Builder() {}
+    private Builder() {}
 
     public Builder vaultRole(String vaultRole) {
       this.vaultRole = vaultRole;

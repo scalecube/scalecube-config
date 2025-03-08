@@ -53,7 +53,7 @@ class VaultConfigSourceTest {
   @Test
   void testFirstTenant() {
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH1)
@@ -70,7 +70,7 @@ class VaultConfigSourceTest {
   @Test
   void testSecondTenant() {
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH2)
@@ -87,7 +87,7 @@ class VaultConfigSourceTest {
   @Test
   void testMultiplePathsEnv() {
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH1 + ":" + VAULT_SECRETS_PATH2)
@@ -120,7 +120,7 @@ class VaultConfigSourceTest {
   @Test
   void testMissingProperty() {
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH3)
@@ -135,7 +135,7 @@ class VaultConfigSourceTest {
 
   @Test
   void testMissingTenant() {
-    new VaultConfigSource.Builder()
+    VaultConfigSource.builder()
         .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
         .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
         .addSecretsPath("secrets/unknown/path")
@@ -145,7 +145,7 @@ class VaultConfigSourceTest {
   @Test
   void testInvalidAddress() {
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address("http://invalid.host.local:8200"))
             .addSecretsPath(VAULT_SECRETS_PATH1)
@@ -157,7 +157,7 @@ class VaultConfigSourceTest {
   @Test
   void testInvalidToken() {
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token("zzzzzz"))
             .config(c -> c.address("http://invalid.host.local:8200"))
             .addSecretsPath("secrets/unknown/path")
@@ -178,7 +178,7 @@ class VaultConfigSourceTest {
         ConfigRegistrySettings.builder()
             .addLastSource(
                 "vault",
-                new VaultConfigSource.Builder()
+                VaultConfigSource.builder()
                     .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
                     .addSecretsPath(VAULT_SECRETS_PATH1)
                     .build())
@@ -212,7 +212,7 @@ class VaultConfigSourceTest {
         ConfigRegistrySettings.builder()
             .addLastSource(
                 "vault",
-                new VaultConfigSource.Builder()
+                VaultConfigSource.builder()
                     .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
                     .addSecretsPath(VAULT_SECRETS_PATH1)
                     .build())
@@ -244,7 +244,7 @@ class VaultConfigSourceTest {
       vault.seal().seal();
       assumeTrue(vault.seal().sealStatus().getSealed(), "vault seal status");
 
-      new VaultConfigSource.Builder()
+      VaultConfigSource.builder()
           .config(c -> c.token("ROOT"))
           .config(c -> c.address(vaultInstance.address()))
           .addSecretsPath(VAULT_SECRETS_PATH1)
@@ -271,7 +271,7 @@ class VaultConfigSourceTest {
         ConfigRegistrySettings.builder()
             .addLastSource(
                 "vault",
-                new VaultConfigSource.Builder()
+                VaultConfigSource.builder()
                     .config(vaultConfig -> vaultConfig.address(address).token(rootToken))
                     .addSecretsPath(VAULT_SECRETS_PATH1)
                     .build())
@@ -319,7 +319,7 @@ class VaultConfigSourceTest {
             .getAuthClientToken();
 
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH1)
@@ -347,7 +347,7 @@ class VaultConfigSourceTest {
             .getAuthClientToken();
 
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH1)
@@ -385,7 +385,7 @@ class VaultConfigSourceTest {
             .getAuthClientToken();
 
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH1)
@@ -423,7 +423,7 @@ class VaultConfigSourceTest {
             .getAuthClientToken();
 
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH1)
@@ -449,7 +449,7 @@ class VaultConfigSourceTest {
   @Test
   void testTokenSupplierGeneratesNewRenewableTokenWithExplicitMaxTtl() throws Exception {
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH1)
@@ -482,7 +482,7 @@ class VaultConfigSourceTest {
             .getAuthClientToken();
 
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH1)
@@ -515,7 +515,7 @@ class VaultConfigSourceTest {
   void testTokenSupplierGeneratesNewRenewableTokenWhichWillBeRevoked() throws Exception {
     AtomicReference<String> tokenRef = new AtomicReference<>();
     VaultConfigSource vaultConfigSource =
-        new VaultConfigSource.Builder()
+        VaultConfigSource.builder()
             .config(c -> c.token(vaultContainerExtension.vaultInstance().rootToken()))
             .config(c -> c.address(vaultContainerExtension.vaultInstance().address()))
             .addSecretsPath(VAULT_SECRETS_PATH1)

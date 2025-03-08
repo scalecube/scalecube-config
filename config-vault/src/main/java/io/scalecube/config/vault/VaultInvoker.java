@@ -41,6 +41,10 @@ public class VaultInvoker {
     this.builder = builder;
   }
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
   /**
    * Invokes a given call with vault.
    *
@@ -213,7 +217,7 @@ public class VaultInvoker {
 
     private VaultTokenSupplier tokenSupplier = new EnvironmentVaultTokenSupplier();
 
-    public Builder() {}
+    private Builder() {}
 
     /**
      * Setter for {@link VaultConfig} operator.

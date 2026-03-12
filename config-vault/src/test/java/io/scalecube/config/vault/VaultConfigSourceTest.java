@@ -1,14 +1,12 @@
 package io.scalecube.config.vault;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -62,9 +60,9 @@ class VaultConfigSourceTest {
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     ConfigProperty actual = loadConfig.get("top_secret");
 
-    assertThat(actual, notNullValue());
-    assertThat(actual.name(), equalTo("top_secret"));
-    assertThat(actual.valueAsString(""), equalTo("password1"));
+    assertNotNull(actual);
+    assertEquals("top_secret", actual.name());
+    assertEquals("password1", actual.valueAsString(""));
   }
 
   @Test
@@ -79,9 +77,9 @@ class VaultConfigSourceTest {
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
     ConfigProperty actual = loadConfig.get("top_secret");
 
-    assertThat(actual, notNullValue());
-    assertThat(actual.name(), equalTo("top_secret"));
-    assertThat(actual.valueAsString(""), equalTo("password2"));
+    assertNotNull(actual);
+    assertEquals("top_secret", actual.name());
+    assertEquals("password2", actual.valueAsString(""));
   }
 
   @Test
@@ -95,26 +93,20 @@ class VaultConfigSourceTest {
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
 
     ConfigProperty commonSecret = loadConfig.get("top_secret");
-    assertThat(commonSecret, notNullValue());
-    assertThat(commonSecret.name(), equalTo("top_secret"));
-    assertThat(
-        "Second path should override the first one",
-        commonSecret.valueAsString(""),
-        equalTo("password2"));
+    assertNotNull(commonSecret);
+    assertEquals("top_secret", commonSecret.name());
+    assertEquals(
+        "password2", commonSecret.valueAsString(""), "Second path should override the first one");
 
     ConfigProperty fromFirstPath = loadConfig.get("only_first");
-    assertThat(fromFirstPath.name(), equalTo("only_first"));
-    assertThat(
-        "Secret defined only in first path expected",
-        fromFirstPath.valueAsString(""),
-        equalTo("pss1"));
+    assertEquals("only_first", fromFirstPath.name());
+    assertEquals(
+        "pss1", fromFirstPath.valueAsString(""), "Secret defined only in first path expected");
 
     ConfigProperty fromSecondPath = loadConfig.get("only_second");
-    assertThat(fromSecondPath.name(), equalTo("only_second"));
-    assertThat(
-        "Secret defined only in second path expected",
-        fromSecondPath.valueAsString(""),
-        equalTo("pss2"));
+    assertEquals("only_second", fromSecondPath.name());
+    assertEquals(
+        "pss2", fromSecondPath.valueAsString(""), "Secret defined only in second path expected");
   }
 
   @Test
@@ -127,10 +119,10 @@ class VaultConfigSourceTest {
             .build();
     Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
 
-    assertThat(loadConfig.size(), not(0));
+    assertFalse(loadConfig.isEmpty());
 
     ConfigProperty actual = loadConfig.get("top_secret");
-    assertThat(actual, nullValue());
+    assertNull(actual);
   }
 
   @Test
@@ -188,13 +180,13 @@ class VaultConfigSourceTest {
     ConfigRegistry configRegistry = ConfigRegistry.create(settings);
     StringConfigProperty configProperty = configRegistry.stringProperty("top_secret");
 
-    assertThat(configProperty.value().get(), containsString("password1"));
+    assertTrue(configProperty.value().get().contains("password1"));
 
     vaultInstance.putSecrets(VAULT_SECRETS_PATH1, " top_secret=new_password");
 
     TimeUnit.SECONDS.sleep(2);
 
-    assertThat(configProperty.value().get(), containsString("new_password"));
+    assertTrue(configProperty.value().get().contains("new_password"));
   }
 
   @Test
@@ -232,7 +224,7 @@ class VaultConfigSourceTest {
       fail(e);
     }
 
-    assertThat(configProperty.value().get(), containsString(PASSWORD_PROPERTY_VALUE));
+    assertTrue(configProperty.value().get().contains(PASSWORD_PROPERTY_VALUE));
   }
 
   @Test
@@ -252,9 +244,9 @@ class VaultConfigSourceTest {
           .loadConfig();
       fail("Negative test failed");
     } catch (ConfigSourceNotAvailableException expectedException) {
-      assertThat(expectedException.getCause(), instanceOf(VaultException.class));
+      assertInstanceOf(VaultException.class, expectedException.getCause());
       String message = expectedException.getCause().getMessage();
-      assertThat(message, containsString("Vault responded with HTTP status code: 503"));
+      assertTrue(message.contains("Vault responded with HTTP status code: 503"));
     }
   }
 
@@ -282,8 +274,9 @@ class VaultConfigSourceTest {
     ConfigRegistry configRegistry = ConfigRegistry.create(settings);
     StringConfigProperty configProperty = configRegistry.stringProperty("top_secret");
 
-    assertThat(
-        "initial value of top_secret", configProperty.value().get(), containsString("password1"));
+    assertTrue(
+        configProperty.value().get().contains("password1"),
+        "initial value of top_secret");
 
     Vault vault = sealedVaultInstance.vault();
     Map<String, Object> newValues = new HashMap<>();
@@ -307,7 +300,7 @@ class VaultConfigSourceTest {
       fail(vaultException.getMessage());
     }
     TimeUnit.SECONDS.sleep(2);
-    assertThat(configProperty.value().get(), containsString("new_password"));
+    assertTrue(configProperty.value().get().contains("new_password"));
   }
 
   @Test
@@ -330,9 +323,9 @@ class VaultConfigSourceTest {
       Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
       ConfigProperty actual = loadConfig.get("top_secret");
 
-      assertThat(actual, notNullValue());
-      assertThat(actual.name(), equalTo("top_secret"));
-      assertThat(actual.valueAsString(""), equalTo("password1"));
+      assertNotNull(actual);
+      assertEquals("top_secret", actual.name());
+      assertEquals("password1", actual.valueAsString(""));
 
       TimeUnit.SECONDS.sleep(1);
     }
@@ -363,9 +356,9 @@ class VaultConfigSourceTest {
             Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
             ConfigProperty actual = loadConfig.get("top_secret");
 
-            assertThat(actual, notNullValue());
-            assertThat(actual.name(), equalTo("top_secret"));
-            assertThat(actual.valueAsString(""), equalTo("password1"));
+            assertNotNull(actual);
+            assertEquals("top_secret", actual.name());
+            assertEquals("password1", actual.valueAsString(""));
 
             times.increment();
 
@@ -401,9 +394,9 @@ class VaultConfigSourceTest {
             Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
             ConfigProperty actual = loadConfig.get("top_secret");
 
-            assertThat(actual, notNullValue());
-            assertThat(actual.name(), equalTo("top_secret"));
-            assertThat(actual.valueAsString(""), equalTo("password1"));
+            assertNotNull(actual);
+            assertEquals("top_secret", actual.name());
+            assertEquals("password1", actual.valueAsString(""));
 
             times.increment();
 
@@ -437,9 +430,9 @@ class VaultConfigSourceTest {
             Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
             ConfigProperty actual = loadConfig.get("top_secret");
 
-            assertThat(actual, notNullValue());
-            assertThat(actual.name(), equalTo("top_secret"));
-            assertThat(actual.valueAsString(""), equalTo("password1"));
+            assertNotNull(actual);
+            assertEquals("top_secret", actual.name());
+            assertEquals("password1", actual.valueAsString(""));
 
             TimeUnit.SECONDS.sleep(1);
           }
@@ -465,9 +458,9 @@ class VaultConfigSourceTest {
       Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
       ConfigProperty actual = loadConfig.get("top_secret");
 
-      assertThat(actual, notNullValue());
-      assertThat(actual.name(), equalTo("top_secret"));
-      assertThat(actual.valueAsString(""), equalTo("password1"));
+      assertNotNull(actual);
+      assertEquals("top_secret", actual.name());
+      assertEquals("password1", actual.valueAsString(""));
 
       TimeUnit.SECONDS.sleep(1);
     }
@@ -496,9 +489,9 @@ class VaultConfigSourceTest {
             Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
             ConfigProperty actual = loadConfig.get("top_secret");
 
-            assertThat(actual, notNullValue());
-            assertThat(actual.name(), equalTo("top_secret"));
-            assertThat(actual.valueAsString(""), equalTo("password1"));
+            assertNotNull(actual);
+            assertEquals("top_secret", actual.name());
+            assertEquals("password1", actual.valueAsString(""));
 
             TimeUnit.SECONDS.sleep(1);
 
@@ -535,9 +528,9 @@ class VaultConfigSourceTest {
       Map<String, ConfigProperty> loadConfig = vaultConfigSource.loadConfig();
       ConfigProperty actual = loadConfig.get("top_secret");
 
-      assertThat(actual, notNullValue());
-      assertThat(actual.name(), equalTo("top_secret"));
-      assertThat(actual.valueAsString(""), equalTo("password1"));
+      assertNotNull(actual);
+      assertEquals("top_secret", actual.name());
+      assertEquals("password1", actual.valueAsString(""));
 
       TimeUnit.SECONDS.sleep(1);
 

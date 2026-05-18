@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.scalecube</groupId>
     <artifactId>scalecube-parent</artifactId>
-    <version>0.3.20</version>
+    <version>0.3.23</version>
   </parent>
 
   <artifactId>scalecube-config-parent</artifactId>
@@ -39,7 +39,7 @@
   </scm>
 
   <properties>
-    <scalecube-test-support.version>0.1.7</scalecube-test-support.version>
+    <scalecube-test-support.version>0.1.8</scalecube-test-support.version>
 
     <distributionManagement.url>https://maven.pkg.github.com/scalecube/scalecube-config
     </distributionManagement.url>
